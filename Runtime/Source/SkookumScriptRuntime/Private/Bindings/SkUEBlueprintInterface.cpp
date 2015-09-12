@@ -27,9 +27,9 @@ SkUEBlueprintInterface::SkUEBlueprintInterface()
   SK_ASSERTX(!ms_singleton_p, "There can be only one instance of this class.");
   ms_singleton_p = this;
 
-  m_struct_vector3_p          = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Vector"), false);
-  m_struct_rotation_angles_p  = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Rotator"), false);
-  m_struct_transform_p        = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Transform"), false);
+  m_struct_vector3_p          = GetBaseStructure(TEXT("Vector"));
+  m_struct_rotation_angles_p  = GetBaseStructure(TEXT("Rotator"));
+  m_struct_transform_p        = GetBaseStructure(TEXT("Transform"));
   }
 
 //---------------------------------------------------------------------------------------
