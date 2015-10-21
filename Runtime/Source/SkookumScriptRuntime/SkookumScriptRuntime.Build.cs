@@ -82,6 +82,7 @@ namespace UnrealBuildTool.Rules
             "InputCore",
             "Sockets",
             "Networking",
+            "NetworkReplayStreaming",
             "OnlineSubsystem",
             "SlateCore",
             "Slate",

@@ -7,7 +7,7 @@
   "CreatedBy" : "Agog Labs Inc.",
   "CreatedByURL" : "http://SkookumScript.com",
   "DocsURL" : "http://skookumscript.com/docs/integrations/ue4plugin/",
-  "EngineVersion" : "4.9",
+  "EngineVersion" : "4.10",
   "Description" : "SkookumScript - the powerful text-based video game language with full IDE. Simple code. Amazing gameplay.",
   "Category" : "Scripting",
   "EnabledByDefault" : true,
