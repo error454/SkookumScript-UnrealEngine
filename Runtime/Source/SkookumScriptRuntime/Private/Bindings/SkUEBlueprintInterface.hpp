@@ -25,14 +25,18 @@ class SkUEBlueprintInterface
     static SkUEBlueprintInterface * get() { return ms_singleton_p; }
 
     void      clear();
-    UClass *  reinitialize_class(SkClass * sk_class_p);
-    void      reinitialize_class_recursively(SkClass * sk_class_p);
-    void      reinitialize_all(); // Gather methods from SkookumScript
+    UClass *  reexpose_class(SkClass * sk_class_p);
+    void      reexpose_class_recursively(SkClass * sk_class_p);
+    void      reexpose_all(); // Gather methods from SkookumScript
 
     bool      is_skookum_blueprint_function(UFunction * function_p) const;
     bool      is_skookum_blueprint_event(UFunction * function_p) const;
 
   protected:
+
+    // We place this magic number in the rep offset to be able to tell if a UFunction is an Sk event
+    // Occasional false positive is ok since we are using it only to select which graph nodes to update
+    enum { EventMagicRepOffset = 0xBEEF };
 
     typedef SkInstance *  (*tK2ParamFetcher)(FFrame & stack);
     typedef uint32_t      (*tSkValueGetter)(void * const result_p, SkInstance * value_p);
@@ -55,24 +59,24 @@ class SkUEBlueprintInterface
     // Keep track of a binding between Blueprints and Sk
     struct BindingEntry
       {
-      ASymbol                   m_method_name;      // Copy of m_sk_method_p->get_name() in case m_sk_method_p goes bad
-      SkClass *                 m_sk_class_p;       // Copy of m_sk_method_p->get_scope() in case m_sk_method_p goes bad
-      SkMethodBase *            m_sk_method_p;
-      TWeakObjectPtr<UClass>    m_ue_class_p;       // Copy of m_ue_method_p->GetOwnerClass() to detect if a deleted UFunction leaves dangling pointers
+      ASymbol                   m_invokable_name;   // Copy of m_sk_invokable_p->get_name() in case m_sk_invokable_p goes bad
+      SkClass *                 m_sk_class_p;       // Copy of m_sk_invokable_p->get_scope() in case m_sk_invokable_p goes bad
+      SkInvokableBase *         m_sk_invokable_p;
+      TWeakObjectPtr<UClass>    m_ue_class_p;       // Copy of m_sk_invokable_p->GetOwnerClass() to detect if a deleted UFunction leaves dangling pointers
       TWeakObjectPtr<UFunction> m_ue_function_p;
       uint16_t                  m_num_params;
-      bool                      m_is_class_member;  // Copy of m_sk_method_p->is_class_method() in case m_sk_method_p goes bad
+      bool                      m_is_class_member;  // Copy of m_sk_invokable_p->is_class_member() in case m_sk_invokable_p goes bad
       bool                      m_marked_for_delete;
       eBindingType              m_type;
 
-      BindingEntry(SkMethodBase * sk_method_p, UFunction * ue_method_p, uint32_t num_params, eBindingType type)
-        : m_method_name(sk_method_p->get_name())
-        , m_sk_class_p(sk_method_p->get_scope())
-        , m_sk_method_p(sk_method_p)
+      BindingEntry(SkInvokableBase * sk_invokable_p, UFunction * ue_method_p, uint32_t num_params, eBindingType type)
+        : m_invokable_name(sk_invokable_p->get_name())
+        , m_sk_class_p(sk_invokable_p->get_scope())
+        , m_sk_invokable_p(sk_invokable_p)
         , m_ue_class_p(ue_method_p->GetOwnerClass())
         , m_ue_function_p(ue_method_p)
         , m_num_params(num_params)
-        , m_is_class_member(sk_method_p->is_class_member())
+        , m_is_class_member(sk_invokable_p->is_class_member())
         , m_marked_for_delete(false)
         , m_type(type)
         {}
@@ -92,8 +96,8 @@ class SkUEBlueprintInterface
       SkClassDescBase * m_result_type_p;
       tSkValueGetter    m_result_getter;
 
-      FunctionEntry(SkMethodBase * sk_method_p, UFunction * ue_function_p, uint32_t num_params, SkClassDescBase * result_type_p, tSkValueGetter result_getter)
-        : BindingEntry(sk_method_p, ue_function_p, num_params, BindingType_Function)
+      FunctionEntry(SkInvokableBase * sk_invokable_p, UFunction * ue_function_p, uint32_t num_params, SkClassDescBase * result_type_p, tSkValueGetter result_getter)
+        : BindingEntry(sk_invokable_p, ue_function_p, num_params, BindingType_Function)
         , m_result_type_p(result_type_p)
         , m_result_getter(result_getter)
         {}
@@ -136,18 +140,18 @@ class SkUEBlueprintInterface
     void                exec_method(FFrame & stack, void * const result_p, SkInstance * this_p);
     void                exec_class_method(FFrame & stack, void * const result_p);
     void                exec_instance_method(FFrame & stack, void * const result_p);
+    void                exec_coroutine(FFrame & stack, void * const result_p);
 
     static void         mthd_trigger_event(SkInvokedMethod * scope_p, SkInstance ** result_pp);
 
-    void                reinitialize_class(SkClass * sk_class_p, UClass * ue_class_p);
-    bool                try_update_binding_entry(UClass * ue_class_p, SkMethodBase * sk_method_p, int32_t * out_binding_index_p);
-    void                prepare_binding_entry(SkMethodBase * sk_method_p);
-    int32_t             try_add_binding_entry(UClass * ue_class_p, SkMethodBase * sk_method_p);
-    int32_t             add_function_entry(UClass * ue_class_p, SkMethodBase * sk_method_p);
+    void                reexpose_class(SkClass * sk_class_p, UClass * ue_class_p);
+    bool                try_update_binding_entry(UClass * ue_class_p, SkInvokableBase * sk_invokable_p, int32_t * out_binding_index_p);
+    int32_t             try_add_binding_entry(UClass * ue_class_p, SkInvokableBase * sk_invokable_p);
+    int32_t             add_function_entry(UClass * ue_class_p, SkInvokableBase * sk_invokable_p);
     int32_t             add_event_entry(UClass * ue_class_p, SkMethodBase * sk_method_p);
     int32_t             store_binding_entry(BindingEntry * binding_entry_p, int32_t binding_index_to_use);
     void                delete_binding_entry(uint32_t binding_index);
-    UFunction *         build_ue_function(UClass * ue_class_p, SkMethodBase * sk_method_p, eBindingType binding_type, ParamInfo * out_param_info_array_p);
+    UFunction *         build_ue_function(UClass * ue_class_p, SkInvokableBase * sk_invokable_p, eBindingType binding_type, ParamInfo * out_param_info_array_p);
     UProperty *         build_ue_param(UFunction * ue_function_p, SkClassDescBase * sk_parameter_class_p, const FName & param_name, ParamInfo * out_param_info_p);
     void                bind_event_method(SkMethodBase * sk_method_p);
     

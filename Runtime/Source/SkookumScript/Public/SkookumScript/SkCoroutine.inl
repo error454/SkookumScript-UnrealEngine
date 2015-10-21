@@ -32,9 +32,10 @@ A_INLINE SkCoroutineMthd::SkCoroutineMthd(
   const ASymbol & name,
   SkClass *       scope_p,
   SkParameters *  params_p,
+  uint32_t        annotation_flags,
   tSkCoroutineMthd update_m // = nullptr
   ) :
-  SkCoroutineBase(name, scope_p, params_p, params_p->get_arg_count_total()),
+  SkCoroutineBase(name, scope_p, params_p, params_p->get_arg_count_total(), annotation_flags),
   m_update_m(update_m)
   {
   }
@@ -67,9 +68,10 @@ A_INLINE SkCoroutineFunc::SkCoroutineFunc(
   const ASymbol & name,
   SkClass *       scope_p,
   SkParameters *  params_p,
+  uint32_t        annotation_flags,
   tSkCoroutineFunc update_f // = nullptr
   ) :
-  SkCoroutineBase(name, scope_p, params_p, params_p->get_arg_count_total()),
+  SkCoroutineBase(name, scope_p, params_p, params_p->get_arg_count_total(), annotation_flags),
   m_update_f(update_f)
   {
   }

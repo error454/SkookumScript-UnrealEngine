@@ -23,6 +23,7 @@
 #include <AgogCore/ABinaryParse.hpp>
 #include <AgogCore/AIdPtr.hpp>
 #include <AgogCore/AObjReusePool.hpp>
+#include <AgogCore/AList.hpp>
 #include <AgogCore/AMath.hpp>
 #include <SkookumScript/SkClass.hpp>
 #include <SkookumScript/SkBrain.hpp>

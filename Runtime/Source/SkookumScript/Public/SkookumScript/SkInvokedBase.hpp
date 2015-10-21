@@ -84,6 +84,9 @@ enum eSkNotifyChild
   SkNotifyChild_abort   = 0x1   // Abort child/sub calls
   };
 
+//---------------------------------------------------------------------------------------
+
+typedef APArray<SkInstance> tSkInvokedDataArray;
 
 //---------------------------------------------------------------------------------------
 // Notes      Invoked Object Abstract Base Class
@@ -298,6 +301,7 @@ class SkInvokedContextBase : public SkInvokedBase
 
     
     SkInvokedContextBase(SkInvokedBase * caller_p = nullptr, SkObjectBase * scope_p = nullptr) : SkInvokedBase(caller_p, scope_p) {}
+    ~SkInvokedContextBase();
 
   // Methods
 
@@ -327,22 +331,19 @@ class SkInvokedContextBase : public SkInvokedBase
 
       // See eSkArgNum earlier in the file
 
-      SkInstance *   get_arg(uint32_t pos) const                           { return m_data[pos]; }
+      SkInstance * get_arg(uint32_t pos) const                           { return m_data[pos]; }
 
       // !!DEPRECATED!!
       template <typename _UserType>
-      _UserType *    get_arg_data(uint32_t pos) const;
+      _UserType * get_arg_data(uint32_t pos) const;
 
       template <class _BindingClass>
         typename _BindingClass::tDataType & get_arg(uint32_t pos) const { return m_data[pos]->as<_BindingClass>(); }
 
-      template <class _BindingClass>
-        void set_arg_(uint32_t pos, const typename _BindingClass::tDataType & value) const { m_data[pos]->as<_BindingClass>() = value; }
+      void set_arg(uint32_t pos, SkInstance * obj_p);
+      void set_arg_and_ref(uint32_t pos, SkInstance * obj_p);
 
-      void                    set_arg(uint32_t pos, SkInstance * obj_p);
-      void                    set_arg_and_ref(uint32_t pos, SkInstance * obj_p);
-
-      const SkInstanceList &  get_data() const { return m_data; }
+      const tSkInvokedDataArray & get_data() const { return m_data; }
 
       template <typename _UserType, typename... _ParamClasses>
         _UserType * append_user_data(_ParamClasses&... args);
@@ -352,15 +353,16 @@ class SkInvokedContextBase : public SkInvokedBase
     
       void data_append_args_exprs(const APArrayBase<SkExpressionBase> & args, const SkInvokableBase & invokable_params, SkObjectBase * arg_scope_p);
       void data_append_args(SkInstance ** arguments_pp, uint32_t arg_count, const SkInvokableBase & invokable_params);
-      void data_append_arg(SkInstance * arg_p) { m_data.append(*arg_p, false); }
-      void data_append_vars(const AVCompactArrayBase<ASymbol> & var_names);
+      void data_append_arg(SkInstance * arg_p) { m_data.append(*arg_p); }
+      void data_append_var();
       void data_append_vars_ref(SkInstance ** var_pp, uint32_t var_count);
       void data_ensure_size(uint32_t arg_count) { m_data.ensure_size(arg_count); }
       void data_bind_return_args(const APArrayBase<SkIdentifierLocal> & return_args, const SkInvokableBase & invokable_params);
-      void data_remove_vars(uint32_t count, SkInstance * delay_collect_p);
-      void data_append_var();
-      void data_empty()                                                    { m_data.empty(); }
-      void data_empty_compact()                                            { m_data.empty_compact(); }
+      void data_create_vars(uint32_t start_idx, uint32_t count);
+      void data_destroy_vars(uint32_t start_idx, uint32_t count);
+      void data_destroy_vars(uint32_t start_idx, uint32_t count, SkInstance * delay_collect_p);
+      void data_empty();
+      void data_empty_compact();
 
     // Overriding from SkObjectBase -> SkInvokedBase
 
@@ -369,6 +371,8 @@ class SkInvokedContextBase : public SkInvokedBase
       virtual SkInvokedContextBase * get_scope_context() const;
 
   protected:
+     
+    friend class SkIdentifierLocal;
 
   // Types
 
@@ -400,10 +404,15 @@ class SkInvokedContextBase : public SkInvokedBase
           }
       };
 
+  // Methods
+
+    void bind_arg(uint32_t pos, SkInstance * obj_p, bool is_initial_bind);
+    void bind_arg_and_ref(uint32_t pos, SkInstance * obj_p, bool is_initial_bind);
+
   // Data Members
 
     // Array of arguments and temporary variables - accessed directly by index
-    SkInstanceList m_data;
+    tSkInvokedDataArray m_data;
 
   };  // SkInvokedContextBase
 

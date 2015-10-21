@@ -19,6 +19,9 @@
 
 #include "Platform.h"  // Set up base types, etc for the platform
 
+//---------------------------------------------------------------------------------------
+
+class ISkookumScriptRuntimeEditorInterface;
 
 //=======================================================================================
 // Global Structures
@@ -31,12 +34,15 @@ class SkUERuntime : public SkookumRuntimeBase
   {
   public:
 
-    static SkUERuntime * get_singleton() { return static_cast<SkUERuntime *>(SkookumRuntimeBase::ms_default_p); }
+    static SkUERuntime * get_singleton() { return static_cast<SkUERuntime *>(SkookumRuntimeBase::ms_singleton_p); }
 
   // Methods
 
-    SkUERuntime() : m_compiled_file_b(false), m_listener_manager(256, 256) { ms_default_p = this; }
+    SkUERuntime() : m_is_initialized(false), m_compiled_file_b(false), m_listener_manager(256, 256), m_editor_interface_p(nullptr){ ms_singleton_p = this; }
     ~SkUERuntime() {}
+
+    void startup();
+    void shutdown();
 
     // Script Loading / Binding
 
@@ -60,29 +66,33 @@ class SkUERuntime : public SkookumRuntimeBase
 
       // Flow Methods
 
-        virtual void on_init() override;
         virtual void on_bind_routines() override;
-        virtual void on_deinit() override;
+        virtual void on_pre_deinitialize_session() override;
 
       // Accessors
 
-        SkookumScriptListenerManager * get_listener_manager()          { return &m_listener_manager; }
-        SkUEBlueprintInterface * get_blueprint_interface()             { return &m_blueprint_interface; }
-        const SkUEBlueprintInterface * get_blueprint_interface() const { return &m_blueprint_interface; }
+        bool                                   is_initialized() const          { return m_is_initialized; }
+
+        SkookumScriptListenerManager *         get_listener_manager()          { return &m_listener_manager; }
+        SkUEBlueprintInterface *               get_blueprint_interface()       { return &m_blueprint_interface; }
+        const SkUEBlueprintInterface *         get_blueprint_interface() const { return &m_blueprint_interface; }
+        ISkookumScriptRuntimeEditorInterface * get_editor_interface() const    { return m_editor_interface_p; }
+
+        void                                   set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p) { m_editor_interface_p = editor_interface_p; }
 
   protected:
 
-    // Internal class methods
-
-      static void deinit();
-
     // Data Members
+
+      bool                m_is_initialized;
 
       mutable bool        m_compiled_file_b;
       mutable FString     m_compiled_path;
 
       SkookumScriptListenerManager m_listener_manager;
       SkUEBlueprintInterface       m_blueprint_interface;
+
+      ISkookumScriptRuntimeEditorInterface * m_editor_interface_p;
 
   };  // SkUERuntime
 

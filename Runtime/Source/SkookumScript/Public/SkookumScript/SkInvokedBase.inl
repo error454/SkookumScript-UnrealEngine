@@ -244,7 +244,72 @@ A_INLINE SkInstance * SkInvokedContextBase::get_this()
 A_INLINE void SkInvokedContextBase::data_append_var()
   {
   // nil does not need to be referenced/dereferenced
-  m_data.append_nil();
+  m_data.append(*SkBrain::ms_nil_p);
+  }
+
+//---------------------------------------------------------------------------------------
+// Initializes a given number of variables to nil
+// Arg         var_names - The identifier names of the temporary variables to append
+// See:        data_remove_vars(), data_empty(), data_append_args() 
+// Notes:      This is used by SkookumScript/SkCode.
+// Author(s):   Conan Reis
+A_INLINE void SkInvokedContextBase::data_create_vars(uint32_t start_idx, uint32_t count)
+  {
+  // 'nil' will be used as an initial value for the temporary variables.
+  // nil does not need to be referenced/dereferenced
+  SkInstance ** var_pp = m_data.get_array() + start_idx;
+  SkInstance ** var_end_pp = var_pp + count;
+  while (var_pp < var_end_pp)
+    {
+    *var_pp++ = SkBrain::ms_nil_p;
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Destroys the given temporary variables = releases their references to the instances 
+// that they refer to - thus removing them from the "temporary variable stack".
+A_INLINE void SkInvokedContextBase::data_destroy_vars(uint32_t start_idx, uint32_t count)
+  {
+  // Dereference variables
+  SkInstance ** var_pp = m_data.get_array() + start_idx;
+  SkInstance ** var_end_pp = var_pp + count;
+  while (var_pp < var_end_pp)
+    {
+    (*var_pp++)->dereference();
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Destroys the given temporary variables = releases their references to the instances 
+// that they refer to - thus removing them from the "temporary variable stack".
+// Arg         count - The number of variables to be removed from the top of the "stack".
+// Arg         delay_collect_p - if non-nullptr any variable associated with this data is
+//             dereferenced without performing garbage collection until ensure_reference()
+//             is called.
+// See:        data_append_vars(), data_empty(), data_append_args() 
+// Notes:      This is used by SkookumScript/SkCode.
+// Author(s):   Conan Reis
+A_INLINE void SkInvokedContextBase::data_destroy_vars(
+  uint32_t     start_idx,
+  uint32_t     count,
+  SkInstance * delay_collect_p
+  )
+  {
+  SK_ASSERTX(count > 0, "Caller must make sure we are not called to do nothing.");
+
+  if (delay_collect_p)
+    {
+    // Ensure delay_collect_p has a reference so it is not garbage collected - usually a returned object
+    delay_collect_p->reference();
+    }
+
+  data_destroy_vars(start_idx, count);
+
+  if (delay_collect_p)
+    {
+    // Remove temporary reference from delay_collect_p, but do not garbage collect it
+    delay_collect_p->dereference_delay();
+    }
   }
 
 //---------------------------------------------------------------------------------------
@@ -261,7 +326,10 @@ A_INLINE void SkInvokedContextBase::set_arg(
   SkInstance * obj_p
   )
   {
-  m_data.set_at_no_ref(pos, *obj_p);
+  SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
+  SkInstance ** elem_pp = m_data.get_array() + pos;
+  (*elem_pp)->dereference();
+  *elem_pp = obj_p;
   }
 
 //---------------------------------------------------------------------------------------
@@ -278,5 +346,60 @@ A_INLINE void SkInvokedContextBase::set_arg_and_ref(
   SkInstance * obj_p
   )
   {
-  m_data.set_at(pos, *obj_p);
+  SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
+  SkInstance ** elem_pp = m_data.get_array() + pos;
+  obj_p->reference();
+  (*elem_pp)->dereference(); // Deref after ref as it might refer to the same instance
+  *elem_pp = obj_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Sets/binds *previously referenced* argument at specified position to the object
+// specified.
+//
+// #See Also  set_arg_and_ref() and all the other set_*() and get_*() methods
+// #Author(s) Conan Reis
+A_INLINE void SkInvokedContextBase::bind_arg(
+  // 0-based index position of argument to set/bind - use values from eSkArgNum to make it
+  // more readable.
+  uint32_t pos,
+  // Object to set/bind - assumes that it already has its reference count incremented
+  SkInstance * obj_p,
+  // If to not deref the existing value
+  bool is_initial_bind
+  )
+  {
+  SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
+  SkInstance ** elem_pp = m_data.get_array() + pos;
+  if (!is_initial_bind)
+    {
+    (*elem_pp)->dereference();
+    }
+  *elem_pp = obj_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Sets/binds argument *and auto-references it* at specified position to the object
+// specified.
+//
+// #See Also  set_arg() and all the other set_*() and get_*() methods
+// #Author(s) Conan Reis
+A_INLINE void SkInvokedContextBase::bind_arg_and_ref(
+  // 0-based index position of argument to set/bind - use values from eSkArgNum to make it
+  // more readable.
+  uint32_t pos,
+  // Object to set/bind - assumes that it already has its reference count incremented
+  SkInstance * obj_p,
+  // If to not deref the existing value
+  bool is_initial_bind
+  )
+  {
+  SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
+  SkInstance ** elem_pp = m_data.get_array() + pos;
+  obj_p->reference();
+  if (!is_initial_bind)
+    {
+    (*elem_pp)->dereference(); // Deref after ref as it might refer to the same instance
+    }
+  *elem_pp = obj_p;
   }

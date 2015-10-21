@@ -102,7 +102,7 @@ class SkookumRemoteBase
 
       // IDE State
 
-        Command_show,                    // R->I cmd_show()
+        Command_show,                    // R->I cmd_show() - Show/hide/toggle Skookum IDE
         Command_disconnect,              // I->R cmd_disconnect() - Some socket implementations cannot detect or do not have an event for disconnection of a socket so explicitly tell runtim that IDE is disconnecting.
 
       // Invocation (REPL)
@@ -122,6 +122,7 @@ class SkookumRemoteBase
 
       // Debugging
 
+        Command_ready_to_debug,          // R->I cmd_ready_to_debug()
         Command_breakpoint_create,       // I->R cmd_breakpoint_create()
         Command_breakpoint_update,       // I->R cmd_breakpoint_update() - enable, disable, remove 1/all breakpoints
         Command_breakpoint_hit,          // R->I cmd_breakpoint_hit()

@@ -1,3 +1,5 @@
+
+
 // Select code & press F4 to execute it (or Shift+F4 to execute locally on IDE).
 // Or drag & drop a .sk script file here to execute it.
 
@@ -218,15 +220,15 @@ player_pawn.transform
 
 _sentry_duty
 _sentry_duty(false)
-sentry_action
+_sentry_action
 
 _berzerk
 
 
 //------------------------------------------
 // Some more random examples!
-GameplayStatics.actor_array_average_location(Enemy.instances) // Get averaged location of all enemies
-!actors: List{Actor}! GameplayStatics.all_actors_of_class(@@world TargetPoint.static_class actors) actors // Gets list of actors of class 'TargetPoint'
+GameLib.actor_array_average_location(Enemy.instances) // Get averaged location of all enemies
+!actors: List{Actor}! GameLib.all_actors_of_class(@@world TargetPoint.static_class actors) actors // Gets list of actors of class 'TargetPoint'
 
 
 // These samples just scratch the surface of what SkookumScript can do!

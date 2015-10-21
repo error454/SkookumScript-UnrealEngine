@@ -8,6 +8,6 @@
 ) Pawn
 
   [
-  GameplayStatics.player_pawn(world_context_object player_index)
+  GameLib.player_pawn(world_context_object player_index)
   ]
 

@@ -282,12 +282,32 @@ enum eSkMember
 //---------------------------------------------------------------------------------------
 enum eSkScope
   {
-  SkScope__none,     // Variable does not exist in current scope
-  SkScope_class,     // Class members
-  SkScope_instance,  // Instance members
-  SkScope_local      // Temporary variables, arguments [& perhaps variables higher on call stack?]
+  SkScope__none,        // Variable does not exist in current scope
+  SkScope_class,        // Class members
+  SkScope_instance,     // Instance members
+  SkScope_instance_raw, // Raw instance members (data members only)
+  SkScope_local         // Temporary variables, arguments [& perhaps variables higher on call stack?]
   };
 
+//---------------------------------------------------------------------------------------
+// Valid annotations (hardcoded here for now) 
+// HACK $Revisit MBreyer make data driven
+enum eSkAnnotation
+  {
+  // Annotations just used by the parser
+  SkAnnotation_Raw        = 1 << 0, // Used to denote a raw data member
+
+  // Annotations used at runtime
+  SkAnnotation_Blueprint  = 1 << 1, // Expose this method to the UE4 Blueprint system
+  };
+
+// What we are applying annotations to
+enum eSkAnnotationTarget
+  {
+  SkAnnotationTarget__any,
+  SkAnnotationTarget_invokable,
+  SkAnnotationTarget_instanceDataMember,
+  };
 
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript main class

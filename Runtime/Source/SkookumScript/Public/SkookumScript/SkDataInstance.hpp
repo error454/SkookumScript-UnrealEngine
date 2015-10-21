@@ -50,7 +50,7 @@ class SkDataInstance : public SkInstance
 
     virtual void          delete_this() override;
     virtual SkInstance *  get_data_by_name(const ASymbol & name) const override;
-    virtual bool          set_data_by_name(const ASymbol & name, SkInstance * obj_p) override;
+    virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p) override;
 
   // Pool Allocation Methods
 

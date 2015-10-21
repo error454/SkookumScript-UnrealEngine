@@ -25,6 +25,8 @@
 // Author(s):   Conan Reis
 A_INLINE SkInvokableBase::SkInvokableBase()
   : m_invoked_data_array_size(0)
+  , m_user_data(0)
+  , m_annotation_flags(0)
   {
   SK_ASSERTX(false, "m_invoked_data_array_size = ??");
   }
@@ -40,10 +42,13 @@ A_INLINE SkInvokableBase::SkInvokableBase()
 A_INLINE SkInvokableBase::SkInvokableBase(
   const ASymbol & name,
   SkClass *       scope_p,
-  uint32_t        invoked_data_array_size
+  uint32_t        invoked_data_array_size,
+  uint32_t        annotation_flags
   ) :
   SkQualifier(name, scope_p),
-  m_invoked_data_array_size((uint16_t)invoked_data_array_size)
+  m_invoked_data_array_size((uint16_t)invoked_data_array_size),
+  m_user_data(0),
+  m_annotation_flags(annotation_flags)
   {
   }
 
@@ -58,11 +63,14 @@ A_INLINE SkInvokableBase::SkInvokableBase(
   const ASymbol & name,
   SkClass *       scope_p,
   SkParameters *  params_p,
-  uint32_t        invoked_data_array_size
+  uint32_t        invoked_data_array_size,
+  uint32_t        annotation_flags
   ) :
   SkQualifier(name, scope_p),
   m_params_p(params_p),
-  m_invoked_data_array_size((uint16_t)invoked_data_array_size)
+  m_invoked_data_array_size((uint16_t)invoked_data_array_size),
+  m_user_data(0),
+  m_annotation_flags(annotation_flags)
   {
   }
 
@@ -79,9 +87,14 @@ A_INLINE SkInvokableBase::SkInvokableBase(
   // Optional single unary parameter - No parameter if nullptr.
   SkParameterBase * param_p,
   // Needed size of data array in invoked method/coroutine at runtime
-  uint32_t invoked_data_array_size
+  uint32_t invoked_data_array_size,
+  // Which annotations are present
+  uint32_t annotation_flags
   ) :
   SkQualifier(name),
+  m_invoked_data_array_size((uint16_t)invoked_data_array_size),
+  m_user_data(0),
+  m_annotation_flags(annotation_flags),
   m_params_p(SkParameters::get_or_create(result_type_p, param_p))
   {}
 

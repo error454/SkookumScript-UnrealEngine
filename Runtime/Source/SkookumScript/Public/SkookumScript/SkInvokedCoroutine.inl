@@ -150,7 +150,7 @@ A_INLINE void SkInvokedCoroutine::pool_delete(SkInvokedCoroutine * icoroutine_p)
     }
 
   icoroutine_p->stop_tracking();       // $Revisit - CReis Probably redundant - likely to already have been removed from updater.
-  icoroutine_p->m_data.empty();        // Dereference instances that live here, leave storage as-is
+  icoroutine_p->data_empty();          // Dereference instances that live here, leave storage as-is
   icoroutine_p->m_calls.empty();       // $Revisit - Empty call list - might be redundant
   icoroutine_p->AListNode<SkInvokedBase>::remove();
   icoroutine_p->m_ptr_id = AIdPtr_null;

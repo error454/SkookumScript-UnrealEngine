@@ -41,9 +41,9 @@ class SkInvokableBase : public SkQualifier
   // Common Methods
 
     SkInvokableBase();
-    SkInvokableBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size);
-    SkInvokableBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size);
-    SkInvokableBase(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t invoked_data_array_size);
+    SkInvokableBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags);
+    SkInvokableBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags);
+    SkInvokableBase(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t invoked_data_array_size, uint32_t annotation_flags);
     virtual ~SkInvokableBase();
 
   // Converter Methods
@@ -77,13 +77,17 @@ class SkInvokableBase : public SkQualifier
     #endif
 
     AString                    as_string_name(bool qualified = true) const;
-    SkInvokableBase &          assign(const SkInvokableBase & invokable)  { SkQualifier::operator=(invokable); m_params_p = invokable.m_params_p; return *this; }
+    SkInvokableBase &          assign(const SkInvokableBase & invokable);
     virtual SkExpressionBase * get_custom_expr() const;
     const SkParameters &       get_params() const                         { return *m_params_p; }
     SkParameters &             get_params()                               { return *m_params_p; }
     void                       set_params(SkParameters * params_p)        { m_params_p = params_p; }
     uint16_t                   get_invoked_data_array_size() const        { return m_invoked_data_array_size; }
     void                       set_invoked_data_array_size(uint32_t invoked_data_array_size) { m_invoked_data_array_size = (uint16_t)invoked_data_array_size; }
+    uint32_t                   get_annotation_flags() const               { return m_annotation_flags; }
+    void                       set_annotation_flags(uint32_t flags)       { m_annotation_flags = flags; }
+    uint16_t                   get_user_data() const                      { return m_user_data; }
+    void                       set_user_data(uint32_t user_data)          { m_user_data = (uint16_t)user_data; }
     virtual eSkInvokable       get_invoke_type() const = 0;
     virtual bool               is_bound() const = 0;
     virtual bool               is_class_member() const = 0;
@@ -96,7 +100,10 @@ class SkInvokableBase : public SkQualifier
   // Data Members
 
     ARefPtr<SkParameters> m_params_p;
+
     uint16_t              m_invoked_data_array_size; // How many entries we need in data storage array in the invoked method/coroutine
+    uint16_t              m_user_data;               // Custom data storage to be utilized by the engine integration
+    uint32_t              m_annotation_flags;        // Which annotations are present on this invokable
 
     // Future: ADebug / content creation data structure for parameter descriptions
 

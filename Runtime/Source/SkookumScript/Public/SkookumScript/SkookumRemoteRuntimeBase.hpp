@@ -83,8 +83,8 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
     //   method directly.
     virtual void wait_for_update() = 0;
 
-    bool      attempt_connect(bool authenticate = true);
-    bool      ensure_connected();
+    bool      attempt_connect(double connect_time_out_seconds, bool authenticate = true, bool spawn_ide = true);
+    bool      ensure_connected(double connect_time_out_seconds);
     eAConfirm ensure_compiled();
     bool      is_suspended() const;
     void      suspend();
@@ -97,8 +97,9 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
 
     void cmd_version_reply(uint8_t server_version, uint32_t authenticate_seed);
     void cmd_compiled_state(bool freshen);
-    void cmd_show(eAFlag show = AFlag_on);
+    void cmd_show(eAFlag show_flag, ASymbol focus_class_name = ASymbol::ms_null, ASymbol focus_member_name = ASymbol::ms_null, bool is_data_member = false, bool focus_member_class_scope = false);
     bool cmd_recompile_classes(SkClass * class_p, bool recurse, bool wait_reply = true);
+    void cmd_ready_to_debug();
     void cmd_breakpoint_hit(const SkBreakPoint & bp);
     void cmd_break_expression(const SkMemberExpression & expr_info);
 
@@ -106,7 +107,7 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
 
   // Internal Methods
 
-    bool wait_connect();
+    bool wait_connect(double time_out_seconds);
     bool wait_authenticate();
 
   // Events

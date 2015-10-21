@@ -259,10 +259,11 @@ class SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
       virtual eSkObjectType get_obj_type() const                                        { return SkObjectType_instance; }
       virtual SkInstance *  get_topmost_scope() const;
       virtual SkInstance *  get_data_by_name(const ASymbol & name) const;
-      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * obj_p);
+      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p);
 
-    // Overriding from ARefCountMix<>
+    // Reference count related
 
+      virtual bool is_ref_counted() const                                               { return true; }
       virtual void on_no_references();
 
 
@@ -272,6 +273,11 @@ class SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
     static SkInstance * new_instance(SkClass * class_p, const _UserType & user_data);
     static SkInstance * new_instance(SkClass * class_p);
     static AObjReusePool<SkInstance> & get_pool();
+
+    // Callback functions used by SkClassBindingBase for SkClass::register_raw_pointer_func
+    // Expert terrain!
+    static void * get_raw_pointer_val(SkInstance * obj_p) { return &obj_p->m_user_data; }
+    static void * get_raw_pointer_ref(SkInstance * obj_p) { return *((void **)&obj_p->m_user_data); }
 
   protected:
 
@@ -335,6 +341,7 @@ class SkInstanceUnreffed : public SkInstance
 
     // Overriding from SkInstance (overriding from ARefCountMix<>)
 
+      virtual bool is_ref_counted() const                                               { return false; }
       virtual void on_no_references();
 
   };

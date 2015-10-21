@@ -75,7 +75,7 @@ class SkookumRuntimeBase
 
   // Class Data Members
 
-    static SkookumRuntimeBase * ms_default_p;
+    static SkookumRuntimeBase * ms_singleton_p;
 
   // Methods
 
@@ -101,18 +101,16 @@ class SkookumRuntimeBase
       virtual void  load_compiled_class_group(SkClass * class_p);
       void          load_compiled_class_group_all();
       virtual void  on_bind_routines();
+      virtual void  on_pre_deinitialize_session();
 
     // Flow Methods
-
-      virtual void on_init()           {}
-      virtual void on_deinit()         {}
 
       // Update methods (in order of preference)
       // - just use *one* of these (the most convenient version) once an update
 
-        static void update(uint64_t sim_ticks, f64 sim_time, f32 sim_delta);
-        static void update(uint64_t sim_ticks);
-        static void update(float sim_delta);
+      static void update(uint64_t sim_ticks, f64 sim_time, f32 sim_delta);
+      static void update(uint64_t sim_ticks);
+      static void update(float sim_delta);
 
   protected:
 

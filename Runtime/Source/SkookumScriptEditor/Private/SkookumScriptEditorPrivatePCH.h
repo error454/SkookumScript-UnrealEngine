@@ -6,6 +6,8 @@
 #include "ModuleManager.h"
 #include "Engine.h"
 #include "UnrealEd.h"
+#include "SlateBasics.h"
+#include "SlateGameResources.h" 
 #include "ClassViewerModule.h"
 #include "ClassViewerFilter.h"
 #include "Kismet2/KismetEditorUtilities.h"

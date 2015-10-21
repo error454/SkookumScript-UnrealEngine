@@ -212,6 +212,9 @@ void SkClassBindingBase<_BindingClass, _DataType>::register_bindings(ASymbol cla
   // Initialize class information
   tBindingAbstract::initialize(class_name);
 
+  // Bind raw pointer callback function
+  tBindingAbstract::ms_class_p->register_raw_pointer_func(sizeof(_DataType) <= sizeof(SkInstance::tUserData) ? &SkInstance::get_raw_pointer_val : &SkInstance::get_raw_pointer_ref);
+
   // Bind basic methods
   static_assert(_BindingClass::Binding_has_ctor || sizeof(_DataType) <= sizeof(tUserData), "If _DataType does not fit inside m_user_data, it will be allocated from the heap, hence there must be a constructor to allocate the memory.");
   if (_BindingClass::Binding_has_ctor)

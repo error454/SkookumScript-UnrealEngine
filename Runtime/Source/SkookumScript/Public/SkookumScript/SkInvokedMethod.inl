@@ -46,7 +46,7 @@ A_INLINE SkInvokedMethod::SkInvokedMethod(SkInvokedBase * caller_p, SkObjectBase
 // Destructor
 A_INLINE SkInvokedMethod::~SkInvokedMethod()
   {
-  m_data.empty();
+  data_empty();
   m_data.set_custom_memory_empty_unsafe(nullptr, 0); // Remove custom memory so the array will not try to free it
   m_calls.empty();       // $Revisit - Empty call list - might be redundant
   AListNode<SkInvokedBase>::remove(); // $Revisit - MBreyer needed?

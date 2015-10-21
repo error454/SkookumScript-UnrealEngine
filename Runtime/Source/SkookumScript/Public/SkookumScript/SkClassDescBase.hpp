@@ -33,6 +33,7 @@ class  SkMetaClass;
 class  SkMethodBase;
 class  SkClassUnaryBase;
 struct SkTypedName;
+struct SkTypedNameRaw;
 
 
 //---------------------------------------------------------------------------------------
@@ -45,6 +46,13 @@ enum eSkClassType
   SkClassType_class_union     = 4   // SkClassUnion
   };
 
+
+//---------------------------------------------------------------------------------------
+
+// User data used by engine-native raw instance data members to remember
+// where in a data structure and how the raw data is stored
+// The content/layout of this type is entirely user-specific and not known or interpreted by SkookumScript
+typedef uint64_t tSkRawDataInfo;
 
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript Class Abstract Base also known as a class descriptor
@@ -72,7 +80,8 @@ class SkClassDescBase
     // Enumerated constants
     enum
       {
-      Binary_ref_size = 9
+      Binary_ref_size       = 4,
+      Binary_ref_size_typed = 5,
       };
 
     // AEx<SkMetaClass> exception id values
@@ -90,9 +99,9 @@ class SkClassDescBase
   // Converter Methods
 
     #if (SKOOKUM & SK_COMPILED_OUT)
-      virtual void as_binary_ref(void ** binary_pp) const = 0;
-      void         as_binary_ref_typed(void ** binary_pp) const;
-      virtual uint32_t as_binary_ref_typed_length() const  { return 5u; }
+      virtual void      as_binary_ref(void ** binary_pp) const = 0;
+      void              as_binary_ref_typed(void ** binary_pp) const;
+      virtual uint32_t  as_binary_ref_typed_length() const  { return Binary_ref_size_typed; }
     #endif
 
 
@@ -140,14 +149,14 @@ class SkClassDescBase
 
       // Data Member Methods
 
-        virtual SkClassDescBase * get_data_type(const ASymbol & data_name, bool * is_class_member_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const = 0;
+        virtual SkTypedName * get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const = 0;
 
       // Method Member Methods
 
         virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const = 0;
         virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const = 0;
         virtual bool           is_method_inherited_valid(const ASymbol & method_name) const = 0;
-        virtual bool           is_method_registered(const ASymbol & method_name) const;
+        virtual bool           is_method_registered(const ASymbol & method_name, bool allow_placeholder) const;
 
       // Coroutine Member Methods
 
@@ -214,7 +223,8 @@ class SkClassUnaryBase : public SkClassDescBase
 
     // Data Member Methods
 
-      virtual SkTypedName * append_data_member(const ASymbol & name, SkClassDescBase * type_p) = 0;
+      virtual SkTypedName *    append_data_member(const ASymbol & name, SkClassDescBase * type_p) = 0;
+      virtual SkTypedNameRaw * append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p) = 0;
 
   };
 

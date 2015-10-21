@@ -55,6 +55,14 @@
 // Registers bindings for SkookumScript
 void SkUEBindings::register_all()
   {
+  // Core Overlay
+  SkBoolean::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_boolean);
+  SkInteger::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_integer);
+  SkReal::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkReal>);
+  SkString::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_string);
+  SkEnum::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_enum);
+  SkList::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_list);
+
   // VectorMath Overlay
   SkVector2::register_bindings();
   SkVector3::register_bindings();
@@ -63,6 +71,13 @@ void SkUEBindings::register_all()
   SkRotationAngles::register_bindings();
   SkTransform::register_bindings();
   SkColor::register_bindings();
+  SkVector2::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector2>);
+  SkVector3::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector3>);
+  SkVector4::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector4>);
+  SkRotation::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkRotation>);
+  SkRotationAngles::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkRotationAngles>);
+  SkTransform::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkTransform>);
+  SkColor::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_color);
 
   // Engine-Generated Overlay
   SkUE::register_bindings();
@@ -72,4 +87,5 @@ void SkUEBindings::register_all()
   SkUEEntityClass_Ext::register_bindings();
   SkUEActor_Ext::register_bindings();
   SkUEName::register_bindings();
+  SkUEName::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkUEName>);
   }

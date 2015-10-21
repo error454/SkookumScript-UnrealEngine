@@ -39,9 +39,9 @@ class SkMethodBase : public SkInvokableBase
   public:
   // Common Methods
 
-    SkMethodBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size) : SkInvokableBase(name, scope_p, invoked_data_array_size) {}
-    SkMethodBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size) : SkInvokableBase(name, scope_p, params_p, invoked_data_array_size) {}
-    SkMethodBase(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t invoked_data_array_size) : SkInvokableBase(name, result_type_p, param_p, invoked_data_array_size) {}
+    SkMethodBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkInvokableBase(name, scope_p, invoked_data_array_size, annotation_flags) {}
+    SkMethodBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkInvokableBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags) {}
+    SkMethodBase(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkInvokableBase(name, result_type_p, param_p, invoked_data_array_size, annotation_flags) {}
 
   // Converter Methods
 
@@ -79,8 +79,8 @@ class SkMethod : public SkMethodBase
   // Common Methods
 
     SK_NEW_OPERATORS(SkMethod);
-    SkMethod(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size) : SkMethodBase(name, scope_p, invoked_data_array_size), m_expr_p(nullptr) {}
-    SkMethod(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, SkExpressionBase * expr_p = nullptr) : SkMethodBase(name, scope_p, params_p, invoked_data_array_size), m_expr_p(expr_p) {}
+    SkMethod(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkMethodBase(name, scope_p, invoked_data_array_size, annotation_flags), m_expr_p(nullptr) {}
+    SkMethod(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags, SkExpressionBase * expr_p = nullptr) : SkMethodBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags), m_expr_p(expr_p) {}
     virtual ~SkMethod();
 
   // Converter Methods
@@ -167,9 +167,9 @@ class SkMethodFunc : public SkMethodBase
 
   // Common Methods
 
-    SkMethodFunc(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, tSkMethodFunc atomic_f = nullptr);
-    SkMethodFunc(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, tSkMethodFunc atomic_f = nullptr) : SkMethodBase(name, result_type_p, param_p, 1), m_atomic_f(atomic_f) {}
-    SkMethodFunc(const ASymbol & name, SkClass * scope_p, tSkMethodFunc atomic_f = nullptr) : SkMethodBase(name, scope_p, 0u), m_atomic_f(atomic_f) {}
+    SkMethodFunc(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t annotation_flags, tSkMethodFunc atomic_f = nullptr);
+    SkMethodFunc(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t annotation_flags, tSkMethodFunc atomic_f = nullptr) : SkMethodBase(name, result_type_p, param_p, 1, annotation_flags), m_atomic_f(atomic_f) {}
+    SkMethodFunc(const ASymbol & name, SkClass * scope_p, uint32_t annotation_flags, tSkMethodFunc atomic_f = nullptr) : SkMethodBase(name, scope_p, 0u, annotation_flags), m_atomic_f(atomic_f) {}
 
 
   // Converter Methods
@@ -247,9 +247,9 @@ class SkMethodMthd : public SkMethodBase
 
   // Common Methods
 
-    SkMethodMthd(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, tSkMethodMthd atomic_m = nullptr);
-    SkMethodMthd(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, tSkMethodMthd atomic_m = nullptr) : SkMethodBase(name, result_type_p, param_p, 1), m_atomic_m(atomic_m) {}
-    SkMethodMthd(const ASymbol & name, SkClassDescBase * result_type_p, tSkMethodMthd atomic_m = nullptr) : SkMethodBase(name, result_type_p, nullptr, 0), m_atomic_m(atomic_m) {}
+    SkMethodMthd(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t annotation_flags, tSkMethodMthd atomic_m = nullptr);
+    SkMethodMthd(const ASymbol & name, SkClassDescBase * result_type_p, SkParameterBase * param_p, uint32_t annotation_flags, tSkMethodMthd atomic_m = nullptr) : SkMethodBase(name, result_type_p, param_p, 1, annotation_flags), m_atomic_m(atomic_m) {}
+    SkMethodMthd(const ASymbol & name, SkClassDescBase * result_type_p, uint32_t annotation_flags, tSkMethodMthd atomic_m = nullptr) : SkMethodBase(name, result_type_p, nullptr, 0, annotation_flags), m_atomic_m(atomic_m) {}
 
 
   // Converter Methods
