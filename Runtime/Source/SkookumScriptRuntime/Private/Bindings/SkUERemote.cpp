@@ -44,7 +44,8 @@ namespace
 SkUERemote::SkUERemote() :
   m_socket_p(nullptr),
   m_data_idx(ADef_uint32),
-  m_editor_interface_p(nullptr)
+  m_editor_interface_p(nullptr),
+  m_load_compiled_binaries_requested(false)
   {
   }
 
@@ -239,7 +240,7 @@ void SkUERemote::set_mode(eSkLocale mode)
           // Check if there's a file named "ide-ip.txt" present in the compiled binary folder
           // If so, use the ip stored in it to connect to the IDE
           FString ip_file_path;
-          if (static_cast<SkUERuntime*>(SkUERuntime::ms_default_p)->content_file_exists(TEXT("ide-ip.txt"), &ip_file_path))
+          if (static_cast<SkUERuntime*>(SkUERuntime::ms_singleton_p)->content_file_exists(TEXT("ide-ip.txt"), &ip_file_path))
             {
             ip_file_path /= TEXT("ide-ip.txt");
             FString ip_text;
@@ -287,13 +288,19 @@ void SkUERemote::on_cmd_send(const ADatum & datum)
     // $Note - CReis Assumes that Send() is able to transfer entire datum in 1 pass.
     m_socket_p->Send(datum.get_buffer(), datum.get_length(), bytes_sent);
 
-    //if (bytes_sent < int32(datum.get_length()))
-    //  {
-    //  SkDebug::print(
-    //    "SkookumScript: Only part of the data was sent to the remote IDE!!\n",
-    //    SkLocale_local,
-    //    SkDPrintType_warning);
-    //  }
+    // Did sending go wrong?
+    if (bytes_sent <= 0)
+      {
+      // Reconnect
+      set_mode(SkLocale_embedded);
+      ensure_connected(5.0);
+
+      // Try again
+      if (m_socket_p)
+        {
+        m_socket_p->Send(datum.get_buffer(), datum.get_length(), bytes_sent);
+        }
+      }
     }
   else
     {
@@ -306,17 +313,26 @@ void SkUERemote::on_cmd_send(const ADatum & datum)
   }
 
 //---------------------------------------------------------------------------------------
+void SkUERemote::on_cmd_freshen_compiled_reply(eCompiledState state)
+  {
+  // Call base class
+  SkookumRemoteRuntimeBase::on_cmd_freshen_compiled_reply(state);
+
+  // Trigger load of binaries
+  m_load_compiled_binaries_requested = (state == CompiledState_fresh);
+  }
+
+//---------------------------------------------------------------------------------------
 void SkUERemote::on_class_updated(SkClass * class_p)
   {
   // Only care to do anything if editor is present
-  if (m_editor_interface_p)
-    {
-    UClass * uclass_p = SkUEBlueprintInterface::get()->reinitialize_class(class_p);
-    if (uclass_p)
+  #if WITH_EDITOR
+    UClass * uclass_p = SkUEBlueprintInterface::get()->reexpose_class(class_p);
+    if (m_editor_interface_p && uclass_p)
       {
       m_editor_interface_p->on_class_updated(class_p, uclass_p);
       }
-    }
+  #endif
   }
 
 //---------------------------------------------------------------------------------------

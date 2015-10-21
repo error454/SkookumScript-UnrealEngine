@@ -72,7 +72,7 @@ public class SkookumScript : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1528";
+      var buildNumber = "1703";
       var moduleName = "SkookumScript";
 
       // Get local file path where the library is located
@@ -103,8 +103,10 @@ public class SkookumScript : ModuleRules
       // Check if a newer custom built library exists that we want to use instead
       var builtLibDirPath = Path.Combine(ModuleDirectory, "Lib", platPathSuffix);
       var builtLibFilePath = Path.Combine(builtLibDirPath, libFileName);
-      if (File.Exists(builtLibFilePath) && (!File.Exists(libFilePath) || (File.GetCreationTime(builtLibFilePath) > File.GetCreationTime(libFilePath))))
+      if (File.Exists(builtLibFilePath) && (!File.Exists(libFilePath) || (File.GetLastWriteTime(builtLibFilePath) > File.GetLastWriteTime(libFilePath))))
       {
+        Log.TraceInformation("Using locally built SkookumScript.");
+        libDirPath = builtLibDirPath;
         libFilePath = builtLibFilePath;
       }
       PublicLibraryPaths.Add(libDirPath);

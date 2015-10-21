@@ -65,8 +65,8 @@ class AListNode
 
     AListNode()                                             { m_next_p = m_prev_p = this; }
     ~AListNode()                                            { if (m_next_p != this) { remove(); } }
-    AListNode(const AListNode & node)                       { m_next_p = m_prev_p = this; }
-    const AListNode & operator=(const AListNode & node)     { return this; }
+    AListNode(const AListNode & node)                       { A_ERRORX("Must not copy construct AListNodes!"); m_next_p = m_prev_p = this; }
+    AListNode & operator=(const AListNode & node)           { A_ERRORX("Must not assign AListNodes to each other!"); return *this; }
 
     _ElementType * get_next() const;
     _ElementType * get_prev() const;

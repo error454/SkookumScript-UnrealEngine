@@ -119,10 +119,17 @@ A_INLINE void SkTypeContext::unnest_locals(
   m_current_scope_p = vars_p;
   m_current_vars_p = &vars_p->m_vars;
 
-  if (history && old_vars_p->m_var_history.is_filled())
+  if (history != AHistory_forget)
     {
     // Remember past variables
-    vars_p->m_var_history.xfer_absent_all_free_dupes(&old_vars_p->m_var_history);
+    if (old_vars_p->m_var_history.is_filled())
+      {
+      vars_p->m_var_history.xfer_absent_all_free_dupes(&old_vars_p->m_var_history);
+      }
+
+    // Also remember data indices
+    vars_p->m_data_idx_count = old_vars_p->m_data_idx_count;
+    vars_p->m_data_idx_count_max = a_max(vars_p->m_data_idx_count_max, old_vars_p->m_data_idx_count_max);
     }
 
   delete old_vars_p;

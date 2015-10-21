@@ -14,9 +14,10 @@
 #include "Bindings/SkUEBlueprintInterface.hpp"
 
 #include "Runtime/Launch/Resources/Version.h"
-#include "Runtime/Engine/Public/Tickable.h"
 #include "Engine/World.h"
 #include "Stats.h"
+
+#include "../Classes/SkookumScriptComponent.h"
 
 #include <SkUEWorld.generated.hpp>
 
@@ -28,7 +29,7 @@
 DECLARE_CYCLE_STAT(TEXT("SkookumScript Time"), STAT_SkookumScriptTime, STATGROUP_Game);
 
 //---------------------------------------------------------------------------------------
-class FSkookumScriptRuntime : public ISkookumScriptRuntime, public FTickableGameObject
+class FSkookumScriptRuntime : public ISkookumScriptRuntime
   {
   public:
 
@@ -45,41 +46,62 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime, public FTickableGame
     virtual void    PreUnloadCallback() override;
     virtual void    ShutdownModule() override;
 
-    // Overridden from FTickableGameObject
+    // Overridden from ISkookumScriptRuntime
 
-    virtual bool    IsTickable() const override;
-    virtual bool    IsTickableWhenPaused() const override;
-    virtual bool    IsTickableInEditor() const override;
-    virtual void    Tick(float deltaTime) override;
-    virtual TStatId GetStatId() const override;
+    #if WITH_EDITOR
+
+      virtual void  set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p) override;
+
+      virtual void  on_editor_map_opened() override;
+      virtual void  on_class_scripts_changed_by_editor(const FString & class_name, eChangeType change_type) override;
+      virtual void  show_ide(const FString & focus_class_name, const FString & focus_member_name, bool is_data_member, bool is_class_member) override;
+
+      virtual bool  is_class_known_to_skookum(UClass * class_p) const override;
+      virtual bool  is_struct_known_to_skookum(UStruct * struct_p) const override;
+      virtual bool  is_enum_known_to_skookum(UEnum * enum_p) const override;
+      virtual bool  has_skookum_default_constructor(UClass * class_p) const override;
+      virtual bool  has_skookum_destructor(UClass * class_p) const override;
+      virtual bool  is_skookum_component_class(UClass * class_p) const override;
+      virtual bool  is_skookum_blueprint_function(UFunction * function_p) const override;
+      virtual bool  is_skookum_blueprint_event(UFunction * function_p) const override;
+
+    #endif
+
+    virtual bool  is_skookum_initialized() const override;
+    virtual bool  is_freshen_binaries_pending() const override;
 
     // Local methods
+
+    void          tick_game(float deltaTime);
+    void          tick_editor(float deltaTime);
+
+    #ifdef SKOOKUM_REMOTE_UNREAL
+      void        tick_remote();
+    #endif
 
     void          on_world_init_pre(UWorld * world_p, const UWorld::InitializationValues init_vals);
     void          on_world_init_post(UWorld * world_p, const UWorld::InitializationValues init_vals);
     void          on_world_cleanup(UWorld * world_p, bool session_ended_b, bool cleanup_resources_b);
-    void          on_asset_loaded(UObject * new_object_p);
-    void          on_blueprint_compiled(UBlueprint * blueprint_p);
-
-    virtual void  set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p);
-    virtual bool  is_skookum_blueprint_function(UFunction * function_p) const override;
-    virtual bool  is_skookum_blueprint_event(UFunction * function_p) const override;
 
   // Data Members
 
-    SkUERuntime                             m_runtime;
-    ISkookumScriptRuntimeEditorInterface *  m_editor_interface_p;
+    SkUERuntime       m_runtime;
 
     #ifdef SKOOKUM_REMOTE_UNREAL
-      SkUERemote m_remote_client;
+      SkUERemote      m_remote_client;
+      bool            m_freshen_binaries_requested;
     #endif
 
     UWorld *          m_game_world_p;
+    UWorld *          m_editor_world_p;
 
     FDelegateHandle   m_on_world_init_pre_handle;
     FDelegateHandle   m_on_world_init_post_handle;
     FDelegateHandle   m_on_world_cleanup_handle;
-    FDelegateHandle   m_on_asset_loaded_handle;
+
+    FDelegateHandle   m_game_tick_handle;
+    FDelegateHandle   m_editor_tick_handle;
+
   };
 
 
@@ -408,8 +430,11 @@ namespace Skookum
 
 //---------------------------------------------------------------------------------------
 FSkookumScriptRuntime::FSkookumScriptRuntime()
-  : m_editor_interface_p(nullptr)
-  , m_game_world_p(nullptr)
+  : m_game_world_p(nullptr)
+  , m_editor_world_p(nullptr)
+#ifdef SKOOKUM_REMOTE_UNREAL
+  , m_freshen_binaries_requested(false)
+#endif
   {
   //m_runtime.set_compiled_path("Scripts" SK_BITS_ID "\\");
   }
@@ -424,25 +449,35 @@ void FSkookumScriptRuntime::StartupModule()
   // Note that FWorldDelegates::OnPostWorldCreation has world_p->WorldType set to None
   // Note that FWorldDelegates::OnPreWorldFinishDestroy has world_p->GetName() set to "None"
 
-  auto on_world_init_pre_delegate = FWorldDelegates::FWorldInitializationEvent::FDelegate::CreateRaw(this, &FSkookumScriptRuntime::on_world_init_pre);
-  auto on_world_init_post_delegate = FWorldDelegates::FWorldInitializationEvent::FDelegate::CreateRaw(this, &FSkookumScriptRuntime::on_world_init_post);
-  auto on_world_cleanup_delegate = FWorldDelegates::FWorldCleanupEvent::FDelegate::CreateRaw(this, &FSkookumScriptRuntime::on_world_cleanup);
-
-  m_on_world_init_pre_handle = FWorldDelegates::OnPreWorldInitialization.Add(on_world_init_pre_delegate);
-  m_on_world_init_post_handle = FWorldDelegates::OnPostWorldInitialization.Add(on_world_init_post_delegate);
-  m_on_world_cleanup_handle = FWorldDelegates::OnWorldCleanup.Add(on_world_cleanup_delegate);
-
-  #if WITH_EDITOR
-    auto on_asset_loaded_delegate = FCoreUObjectDelegates::FOnAssetLoaded::FDelegate::CreateRaw(this, &FSkookumScriptRuntime::on_asset_loaded);
-    m_on_asset_loaded_handle = FCoreUObjectDelegates::OnAssetLoaded.Add(on_asset_loaded_delegate);
-  #endif
+  m_on_world_init_pre_handle  = FWorldDelegates::OnPreWorldInitialization.AddRaw(this, &FSkookumScriptRuntime::on_world_init_pre);
+  m_on_world_init_post_handle = FWorldDelegates::OnPostWorldInitialization.AddRaw(this, &FSkookumScriptRuntime::on_world_init_post);
+  m_on_world_cleanup_handle   = FWorldDelegates::OnWorldCleanup.AddRaw(this, &FSkookumScriptRuntime::on_world_cleanup);
 
   // Hook up Unreal memory allocator
   AMemory::override_functions(&Agog::malloc_func, &Agog::free_func, &Agog::req_byte_size_func);
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Start up SkookumScript
-  m_runtime.on_init();
+  #if !WITH_EDITOR
+    // If no editor, initialize right away
+    // otherwise wait until map is loaded
+    m_runtime.startup();
+
+    #ifndef SKOOKUM_REMOTE_UNREAL
+      bool success_b = m_runtime.load_compiled_scripts();
+      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+    #endif
+  #endif
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // Send off connect request to IDE
+  // Come back later to check on it
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    if (!IsRunningCommandlet())
+      {
+      m_remote_client.set_mode(SkLocale_runtime);
+      }
+  #endif
   }
 
 //---------------------------------------------------------------------------------------
@@ -457,15 +492,33 @@ void FSkookumScriptRuntime::on_world_init_pre(UWorld * world_p, const UWorld::In
   {
   //A_DPRINT("on_world_init_pre: %S %p\n", *world_p->GetName(), world_p);
 
+  // Use this callback as an opportunity to take care of connecting to the IDE
   #ifdef SKOOKUM_REMOTE_UNREAL
-    SkUERemote::ms_client_p->ensure_connected();
-  #endif
+    if (!IsRunningCommandlet() && !m_remote_client.is_authenticated())
+      {
+      m_remote_client.attempt_connect(0.0, true, true);
+      }
+  #endif  
 
   if (world_p->IsGameWorld())
     {
-    // Set global world pointer
-    m_game_world_p = world_p;
-    SkUEClassBindingHelper::set_world(world_p);
+    if (!m_game_world_p)
+      {
+      m_game_world_p = world_p;
+      if (is_skookum_initialized())
+        {
+        SkUEClassBindingHelper::set_world(world_p);
+        }
+      m_game_tick_handle = world_p->OnTickDispatch().AddRaw(this, &FSkookumScriptRuntime::tick_game);
+      }
+    }
+  else if (world_p->WorldType == EWorldType::Editor)
+    {
+    if (!m_editor_world_p)
+      {
+      m_editor_world_p = world_p;
+      m_editor_tick_handle = world_p->OnTickDispatch().AddRaw(this, &FSkookumScriptRuntime::tick_editor);
+      }
     }
   }
 
@@ -473,6 +526,13 @@ void FSkookumScriptRuntime::on_world_init_pre(UWorld * world_p, const UWorld::In
 void FSkookumScriptRuntime::on_world_init_post(UWorld * world_p, const UWorld::InitializationValues init_vals)
   {
   //A_DPRINT("on_world_init_post: %S %p\n", *world_p->GetName(), world_p);
+
+  #if defined(SKOOKUM_REMOTE_UNREAL)
+    if (world_p->IsGameWorld())
+      {
+      SkUERemote::ms_client_p->ensure_connected(5.0);
+      }
+  #endif
   }
 
 //---------------------------------------------------------------------------------------
@@ -480,64 +540,38 @@ void FSkookumScriptRuntime::on_world_cleanup(UWorld * world_p, bool session_ende
   {
   //A_DPRINT("on_world_cleanup: %S %p\n", *world_p->GetName(), world_p);
 
-  if (world_p->IsGameWorld())
+  if (cleanup_resources_b)
     {
-    // Set world pointer to null if it was pointing to us
-    if (m_game_world_p == world_p)
+    if (world_p->IsGameWorld())
       {
-      // Clear global world pointer
-      m_game_world_p = nullptr;
-      SkUEClassBindingHelper::set_world(nullptr);
-      }
-
-    // Simple shutdown
-    //SkookumScript::get_world()->clear_coroutines();
-    A_DPRINT(
-      "SkookumScript resetting session...\n"
-      "  cleaning up...\n");
-    SkookumScript::deinitialize_session();
-    SkookumScript::initialize_session();
-    A_DPRINT("  ...done!\n\n");
-    }
-  }
-
-#if WITH_EDITOR
-//---------------------------------------------------------------------------------------
-
-void FSkookumScriptRuntime::on_asset_loaded(UObject * new_object_p)
-  {
-  // is this a new blueprint?
-  UBlueprint * blueprint_p = Cast<UBlueprint>(new_object_p);
-  if (blueprint_p)
-    {
-    // Register callback so we know when this Blueprint has been compiled
-    blueprint_p->OnCompiled().AddRaw(this, &FSkookumScriptRuntime::on_blueprint_compiled);
-
-    // Reinitialize bindings for this new blueprint
-    SkClass * sk_class_p = SkUEClassBindingHelper::get_sk_class_from_ue_class(blueprint_p->GeneratedClass);
-    if (sk_class_p)
-      {
-      m_runtime.get_blueprint_interface()->reinitialize_class(sk_class_p);
-      if (m_editor_interface_p)
+      // Set world pointer to null if it was pointing to us
+      if (m_game_world_p == world_p)
         {
-        m_editor_interface_p->on_class_updated(sk_class_p, blueprint_p->SkeletonGeneratedClass);
+        m_game_world_p->OnTickDispatch().Remove(m_game_tick_handle);
+        m_game_world_p = nullptr;
+        SkUEClassBindingHelper::set_world(nullptr);
+        }
+
+      // Simple shutdown
+      //SkookumScript::get_world()->clear_coroutines();
+      A_DPRINT(
+        "SkookumScript resetting session...\n"
+        "  cleaning up...\n");
+      SkookumScript::deinitialize_session();
+      SkookumScript::initialize_session();
+      A_DPRINT("  ...done!\n\n");
+      }
+    else if (world_p->WorldType == EWorldType::Editor)
+      {
+      // Set world pointer to null if it was pointing to us
+      if (m_editor_world_p == world_p)
+        {
+        m_editor_world_p->OnTickDispatch().Remove(m_editor_tick_handle);
+        m_editor_world_p = nullptr;
         }
       }
     }
   }
-
-//---------------------------------------------------------------------------------------
-
-void FSkookumScriptRuntime::on_blueprint_compiled(UBlueprint * blueprint_p)
-  {
-  SkClass * sk_class_p = SkUEClassBindingHelper::get_sk_class_from_ue_class(blueprint_p->GeneratedClass);
-  if (sk_class_p)
-    {
-    m_runtime.get_blueprint_interface()->reinitialize_class(sk_class_p);
-    }
-  }
-
-#endif
 
 //---------------------------------------------------------------------------------------
 // Called before the module has been unloaded
@@ -555,7 +589,7 @@ void FSkookumScriptRuntime::ShutdownModule()
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Clean up SkookumScript
-  m_runtime.on_deinit();
+  m_runtime.shutdown();
 
   #ifdef SKOOKUM_REMOTE_UNREAL
     // Remote communication to and from SkookumScript IDE
@@ -566,77 +600,217 @@ void FSkookumScriptRuntime::ShutdownModule()
   FWorldDelegates::OnPreWorldInitialization.Remove(m_on_world_init_pre_handle);
   FWorldDelegates::OnPostWorldInitialization.Remove(m_on_world_init_post_handle);
   FWorldDelegates::OnWorldCleanup.Remove(m_on_world_cleanup_handle);
-  #if WITH_EDITOR
-    FCoreUObjectDelegates::OnAssetLoaded.Remove(m_on_asset_loaded_handle);
-  #endif
   }
 
 //---------------------------------------------------------------------------------------
-// Determines whether an object is ready to be ticked. This is required for example for
-// all UObject derived classes as they might be loaded async and therefore won't be ready
-// immediately.
-bool FSkookumScriptRuntime::IsTickable() const
-  {
-  return true;
-  }
-
-// Used to determine if an object should be ticked when the game is paused.
-bool FSkookumScriptRuntime::IsTickableWhenPaused() const
-  {
-  return true;
-  }
-
-// Used to determine whether the object should be ticked in the editor
-bool FSkookumScriptRuntime::IsTickableInEditor() const
-  {
-  // Only tickable in editor while there's no game world, otherwise we get ticked twice!!
-  return !m_game_world_p;
-  }
-
-//---------------------------------------------------------------------------------------
-// Called from within LevelTick.cpp after ticking all actors or from the rendering thread
-// (depending on bIsRenderingThreadObject)
+// Update SkookumScript in game
 //
 // #Params:
 //   deltaTime: Game time passed since the last call.
-//   
-// #Author(s): Conan Reis
-void FSkookumScriptRuntime::Tick(float deltaTime)
+void FSkookumScriptRuntime::tick_game(float deltaTime)
   {
   #ifdef SKOOKUM_REMOTE_UNREAL
+    tick_remote();
+  #endif
+
+  // When paused, set deltaTime to 0.0
+  #if WITH_EDITOR
+    if (!m_game_world_p->IsPaused())
+  #endif
+      {
+      SCOPE_CYCLE_COUNTER(STAT_SkookumScriptTime);
+      m_runtime.update(deltaTime);
+      }
+  }
+
+//---------------------------------------------------------------------------------------
+// Update SkookumScript in editor
+//
+// #Params:
+//   deltaTime: Game time passed since the last call.
+void FSkookumScriptRuntime::tick_editor(float deltaTime)
+  {
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    if (!m_game_world_p)
+      {
+      tick_remote();
+      }
+  #endif
+  }
+
+#ifdef SKOOKUM_REMOTE_UNREAL
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::tick_remote()
+  {
+  if (!IsRunningCommandlet())
+    {
+    // Request recompilation of binaries if script files changed
+    if (m_freshen_binaries_requested)
+      {
+      m_remote_client.cmd_compiled_state(true);
+      m_freshen_binaries_requested = false;
+      }
+
     // Remote communication to and from SkookumScript IDE.
     // Needs to be called whether in editor or game and whether paused or not
     // $Revisit - CReis This is probably a hack. The remote client update should probably
     // live somewhere other than a tick method such as its own thread.
     m_remote_client.process_incoming();
-  #endif
 
-  if (m_game_world_p)
-    {
-    SCOPE_CYCLE_COUNTER(STAT_SkookumScriptTime);
+    // Re-load compiled binaries?
+    if (m_remote_client.is_load_compiled_binaries_requested())
+      {
+      // Load the Skookum class hierarchy scripts in compiled binary form
+      #if WITH_EDITOR
+        bool is_first_time = !is_skookum_initialized();
+      #endif
 
-    // Intentionally still called even when paused and deltaTime is 0.0f
-    m_runtime.update(deltaTime);
+      bool success_b = m_runtime.load_compiled_scripts();
+      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+      m_remote_client.clear_load_compiled_binaries_requested();
+
+      #if WITH_EDITOR
+        if (is_first_time && is_skookum_initialized())
+          {
+          // When we load the binaries for the very first time, try regenerating all generated class script files again,
+          // as the editor might have tried to generate them before but skipped because SkookumScript was not initialized yet
+          m_runtime.get_editor_interface()->generate_all_class_script_files();
+          // Also recompile Blueprints in error state as such error state might have been due to SkookumScript not being initialized at the time of compile
+          m_runtime.get_editor_interface()->recompile_blueprints_with_errors();
+          // Set world pointer now
+          SkUEClassBindingHelper::set_world(m_game_world_p);
+          }
+      #endif
+      }
     }
   }
 
-//---------------------------------------------------------------------------------------
-// return the stat id to use for this tickable
-//   
-// #Author(s): Conan Reis
-TStatId FSkookumScriptRuntime::GetStatId() const
-  {
-  RETURN_QUICK_DECLARE_CYCLE_STAT(FSkookumScriptRuntime, STATGROUP_Tickables);
-  }
+#endif
+
+#if WITH_EDITOR
 
 //---------------------------------------------------------------------------------------
 // 
 void FSkookumScriptRuntime::set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p)
   {
-  m_editor_interface_p = editor_interface_p;
+  m_runtime.set_editor_interface(editor_interface_p);
   #ifdef SKOOKUM_REMOTE_UNREAL
     m_remote_client.set_editor_interface(editor_interface_p);
   #endif
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::on_editor_map_opened()
+  {
+  // When editor is present, initialize Sk here
+  if (!m_runtime.is_initialized())
+    {
+    m_runtime.startup();
+
+    #ifdef SKOOKUM_REMOTE_UNREAL
+      // At this point, have zero patience with the IDE and launch it if not connected
+      if (!IsRunningCommandlet())
+        {
+        // At this point, wait if necessary to make sure we are connected
+        m_remote_client.ensure_connected(0.0);
+        // Kick off re-compilation of the binaries
+        m_remote_client.cmd_compiled_state(true);
+        m_freshen_binaries_requested = false; // Request satisfied
+        }
+    #else
+      // If no remote connection, load binaries at this point
+      bool success_b = m_runtime.load_compiled_scripts();
+      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+    #endif
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::on_class_scripts_changed_by_editor(const FString & class_name, eChangeType change_type)
+  {
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    m_freshen_binaries_requested = true;
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::show_ide(const FString & focus_class_name, const FString & focus_member_name, bool is_data_member, bool is_class_member)
+  {
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    // Remove qualifier from member name if present
+    FString focus_class_name_ide = focus_class_name;
+    FString focus_member_name_ide = focus_member_name;
+    int32 at_pos = 0;
+    if (focus_member_name_ide.FindChar('@', at_pos))
+      {
+      focus_class_name_ide = focus_member_name_ide.Left(at_pos).TrimTrailing();
+      focus_member_name_ide = focus_member_name_ide.Mid(at_pos + 1).Trim();
+      }
+
+    // Convert to symbols and send off
+    ASymbol focus_class_name_sym(ASymbol::create_existing(FStringToAString(focus_class_name_ide)));
+    ASymbol focus_member_name_sym(ASymbol::create_existing(FStringToAString(focus_member_name_ide)));
+    m_remote_client.cmd_show(AFlag_on, focus_class_name_sym, focus_member_name_sym, is_data_member, is_class_member);
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_class_known_to_skookum(UClass * class_p) const
+  {
+  return SkUEClassBindingHelper::get_sk_class_from_ue_class(class_p) != nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_struct_known_to_skookum(UStruct * struct_p) const
+  {
+  return SkUEClassBindingHelper::get_static_sk_class_from_ue_struct(struct_p) != nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_enum_known_to_skookum(UEnum * enum_p) const
+  {
+  return SkUEClassBindingHelper::get_static_sk_class_from_ue_enum(enum_p) != nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::has_skookum_default_constructor(UClass * class_p) const
+  {
+  SkClass * sk_class_p = SkUEClassBindingHelper::get_sk_class_from_ue_class(class_p);
+  if (sk_class_p)
+    {
+    return (sk_class_p->find_instance_method_inherited(ASymbolX_ctor) != nullptr);
+    }
+
+  return false;
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::has_skookum_destructor(UClass * class_p) const
+  {
+  SkClass * sk_class_p = SkUEClassBindingHelper::get_sk_class_from_ue_class(class_p);
+  if (sk_class_p)
+    {
+    return (sk_class_p->find_instance_method_inherited(ASymbolX_dtor) != nullptr);
+    }
+
+  return false;
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_skookum_component_class(UClass * class_p) const
+  {
+  return (class_p == USkookumScriptComponent::StaticClass());
   }
 
 //---------------------------------------------------------------------------------------
@@ -651,6 +825,26 @@ bool FSkookumScriptRuntime::is_skookum_blueprint_function(UFunction * function_p
 bool FSkookumScriptRuntime::is_skookum_blueprint_event(UFunction * function_p) const
   {
   return m_runtime.get_blueprint_interface()->is_skookum_blueprint_event(function_p);
+  }
+
+#endif
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_skookum_initialized() const
+  {
+  return SkookumScript::is_flag_set(SkookumScript::Flag_evaluate);
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_freshen_binaries_pending() const
+  {
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    return m_freshen_binaries_requested;
+  #else
+    return false;
+  #endif
   }
 
 

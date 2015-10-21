@@ -46,6 +46,9 @@ class SkUERemote : public SkookumRemoteRuntimeBase
     virtual bool              is_connected() const override;
     virtual void              set_mode(eSkLocale mode) override;
 
+    bool                      is_load_compiled_binaries_requested() const { return m_load_compiled_binaries_requested; }
+    void                      clear_load_compiled_binaries_requested()    { m_load_compiled_binaries_requested = false; }
+
     //---------------------------------------------------------------------------------------
     // Determines amount of time elapsed time in seconds (from some consistent start time at
     // or before its first call like: start of system, start of app launch, etc.)
@@ -98,6 +101,7 @@ class SkUERemote : public SkookumRemoteRuntimeBase
   // Events
 
     virtual void              on_cmd_send(const ADatum & datum) override;
+    virtual void              on_cmd_freshen_compiled_reply(eCompiledState state) override;
     virtual void              on_class_updated(SkClass * class_p) override;
 
   // Data Members
@@ -109,6 +113,9 @@ class SkUERemote : public SkookumRemoteRuntimeBase
 
     // Data byte index point - ADef_uint32 when not in progress
     uint32_t    m_data_idx;
+
+    // Binaries have been successfully compiled and are ready to load
+    bool        m_load_compiled_binaries_requested;
 
     // Editor interface so we can notify it about interesting events
     ISkookumScriptRuntimeEditorInterface * m_editor_interface_p;

@@ -120,7 +120,7 @@ struct SkMemberInfo
 
       #if (SKOOKUM & SK_COMPILED_OUT)
         virtual void     as_binary(void ** binary_pp) const;
-        virtual uint32_t as_binary_length() const               { return 4u + 4u + 1u; }
+        virtual uint32_t as_binary_length() const;
       #endif
 
   };  // SkMemberInfo

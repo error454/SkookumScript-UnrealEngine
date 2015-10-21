@@ -137,21 +137,10 @@
 // `SKDEBUG_HOOKS` is not defined.
 #if (SKOOKUM & SK_DEBUG)
   
-  #if defined(SKDEBUG_HOOKS) // Both (SKOOKUM & SK_DEBUG) and SKDEBUG_HOOKS
-
     #define SKDEBUG_HOOK_EXPR(_expr_p, _scope_p, _caller_p) \
       if (SkDebug::ms_expr_hook_flag | ((_expr_p)->m_debug_info & SkDebugInfo::Flag_debug_enabled)) \
         { SkDebug::hook_expression((SkExpressionBase *)(_expr_p), (_scope_p), (_caller_p)); } \
       (void(0))
-
-  #else  // Just (SKOOKUM & SK_DEBUG)
-
-    #define SKDEBUG_HOOK_EXPR(_expr_p, _scope_p, _caller_p) \
-      if ((_expr_p)->m_debug_info & SkDebugInfo::Flag_debug_enabled) \
-        { SkDebug::hook_expression((SkExpressionBase *)(_expr_p), (_scope_p), (_caller_p)); } \
-      (void(0))
-
-  #endif
 
 #elif defined(SKDEBUG_HOOKS)
 
@@ -382,6 +371,7 @@ class SkMemberExpression : public SkMemberInfo
     // Accessor methods
 
       virtual SkExpressionBase * get_expr() const;
+      virtual void               release_expr();
 
       uint32_t get_source_idx();
       bool     is_origin_source() const;
@@ -407,8 +397,10 @@ class SkMemberExpression : public SkMemberInfo
       // Cached info - may go stale - use get_expr() instead of using directly
       mutable SkExpressionBase * m_expr_p;
 
-      // Expression character index position - cached from m_expr_p and only valid if
-      // SK_DEBUG flag is set in the SKOOKUM define.
+      // Expression character index position - may go stale - use get_source_idx()
+      // cached from m_expr_p and only valid if SK_DEBUG flag is set in the SKOOKUM define.
+      // $Revisit - CReis Consider using line and row instead of index to decrease shifting
+      // when the code is edited.
       mutable uint32_t m_source_idx;
 
       // $Revisit - CReis Might need this if different source origins are used
@@ -563,15 +555,17 @@ class SkBreakPoint : public SkMemberExpression
 
     // Accessor methods
 
-      virtual SkExpressionBase * get_expr() const;
+      virtual SkExpressionBase * get_expr() const override;
+      virtual void               release_expr() override;
+      void                       acquire_expr()  { get_expr(); }
 
   // Methods
 
     void enable(bool set_break = true);
-    void enable_set()                         { enable(); }
-    void enable_clear()                       { enable(false); }
-    void enable_toggle()                      { enable(!m_enabled); }
-    bool is_enabled() const                   { return m_enabled; }
+    void enable_set()                            { enable(); }
+    void enable_clear()                          { enable(false); }
+    void enable_toggle()                         { enable(!m_enabled); }
+    bool is_enabled() const                      { return m_enabled; }
     void remove();
 
   //protected: // Public for now
@@ -579,7 +573,6 @@ class SkBreakPoint : public SkMemberExpression
     // Internal Methods
 
       void reaquire_expr(bool force = false) const;
-      void release_expr();
 
     // Data Members
 
@@ -836,6 +829,8 @@ class SkDebug
 
   // Public Class Data Members - for quick access
 
+    static bool ms_no_step_default_hack;
+
     // Number of spaces to indent - used in situations like when converting in-memory
     // structures to code scripts like most `as_string_debug()` methods.
     // This is independent of tab stop size.
@@ -941,6 +936,8 @@ class SkDebug
         static void           breakpoint_enable_all();
         static void           breakpoint_disable_all();
         static void           breakpoint_remove_all();
+        static void           breakpoint_release_all();
+        static void           breakpoint_acquire_all();
         static void           breakpoint_list_all();
 
         static bool breakpoint_is_on_class(const SkClass & ssclass);

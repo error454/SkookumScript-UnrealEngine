@@ -31,9 +31,10 @@ A_INLINE SkMethodFunc::SkMethodFunc(
   const ASymbol & name,
   SkClass *       scope_p,
   SkParameters *  params_p,
+  uint32_t        annotation_flags,
   tSkMethodFunc   atomic_f // = nullptr
   ) :
-  SkMethodBase(name, scope_p, params_p, params_p->get_arg_count_total()),
+  SkMethodBase(name, scope_p, params_p, params_p->get_arg_count_total(), annotation_flags),
   m_atomic_f(atomic_f)
   {
   }
@@ -57,9 +58,10 @@ A_INLINE SkMethodMthd::SkMethodMthd(
   const ASymbol & name,
   SkClass *       scope_p,
   SkParameters *  params_p,
+  uint32_t        annotation_flags,
   tSkMethodMthd   atomic_m // = nullptr
   ) :
-  SkMethodBase(name, scope_p, params_p, params_p->get_arg_count_total()),
+  SkMethodBase(name, scope_p, params_p, params_p->get_arg_count_total(), annotation_flags),
   m_atomic_m(atomic_m)
   {
   }

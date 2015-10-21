@@ -117,6 +117,7 @@
   ASYM(name) \
   ASYM(nand) \
   ASYM(negated) \
+  ASYM(negate) \
   ASYM(nil) \
   ASYM(nor) \
   ASYM(normal) \
@@ -282,6 +283,10 @@ const uint32_t ASymbolId_not                = 0x0805fd75;
 const uint32_t ASymbolId_nxor               = 0xfc3101bc;
 const uint32_t ASymbolId_or                 = 0x1db77587;
 const uint32_t ASymbolId_xor                = 0xf9cd8782;
+
+  // Annotations
+const uint32_t ASymbolId_raw                = 0x1ab3db55;
+const uint32_t ASymbolId_blueprint          = 0x2645e266; // $Revisit MBreyer make this data driven 
 
   // C++ Reserved Words to watch for
 const uint32_t ASymbolId_break              = 0x0c7c50da;

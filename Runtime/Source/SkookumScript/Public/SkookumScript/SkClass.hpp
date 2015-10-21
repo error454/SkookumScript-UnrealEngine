@@ -39,12 +39,14 @@ class  SkObjectId;
 // Short-hand for arrays
 // $Revisit - CReis These arrays will eventually become non-sorted virtual method tables
 typedef APSorted<SkClassUnaryBase, SkClassUnaryBase, SkClassUnaryBase> tSkSortedTypes;
-typedef APSortedLogical<SkClass, ASymbol>         tSkClasses;
-typedef APSortedLogical<SkMethodBase, ASymbol>    tSkMethodTable;
-typedef APSortedLogical<SkCoroutineBase, ASymbol> tSkCoroutines;
-typedef APSortedLogical<SkTypedName, ASymbol>     tSkTypedNames;
-typedef APArrayLogical<SkTypedName, ASymbol>      tSkTypedNameArray;
-typedef APArrayLogical<SkInvokableBase, ASymbol>  tSkVTable; // Virtual method table
+typedef APSortedLogical<SkClass, ASymbol>            tSkClasses;
+typedef APSortedLogical<SkMethodBase, ASymbol>       tSkMethodTable;
+typedef APSortedLogical<SkCoroutineBase, ASymbol>    tSkCoroutines;
+typedef APSortedLogical<SkTypedName, ASymbol>        tSkTypedNames;
+typedef APArrayLogical<SkTypedName, ASymbol>         tSkTypedNameArray;
+typedef APArrayLogical<SkTypedNameRaw, ASymbol>      tSkTypedNameRawArray;
+//typedef APSortedLogical<SkTypedNameIndexed, ASymbol> tSkTypedNamesIndexed;
+typedef APArrayLogical<SkInvokableBase, ASymbol>     tSkVTable; // Virtual method table
 
 
 //---------------------------------------------------------------------------------------
@@ -96,6 +98,24 @@ enum eSkBindFlag
     // a member that has already been bound.  [Just used as hint since flag not set.]
     SkBindFlag__no_rebind     = 0x0,
   };
+
+//---------------------------------------------------------------------------------------
+// Function to resolve the m_raw_data_info member of all raw data members of this class
+typedef void (*tSkRawResolveFunc)(tSkTypedNameRawArray & data_raw, SkClass * class_p);
+
+//---------------------------------------------------------------------------------------
+// Function to get/set raw data of this class type
+// If value_p is given, it acts as a setter and sets the given value and returns nullptr
+// If value_p is nullptr, it acts as a getter and returns a new instance with the value of the member
+typedef SkInstance * (*tSkRawAccessorFunc)(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p);
+
+//---------------------------------------------------------------------------------------
+// Function to get a pointer to the raw data from an instance of this class type
+typedef void * (*tSkRawPointerFunc)(SkInstance * obj_p);
+
+//---------------------------------------------------------------------------------------
+// Used to lookup named instance objects via object id expressions
+typedef SkInstance * (*tSkObjectIdLookupFunc)(SkObjectId * obj_id_p);
 
 //---------------------------------------------------------------------------------------
 // SkookumScript MetaClass - i.e. a class treated as an instance using class scope (only
@@ -158,7 +178,7 @@ class SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
       SkClassUnaryBase *         find_common_class(const SkClass & cls) const;
       virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const;
       virtual eSkClassType       get_class_type() const;
-      virtual SkClassDescBase *  get_data_type(const ASymbol & data_name, bool * is_class_member_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       virtual SkClass *          get_key_class() const;
       virtual const ASymbol &    get_key_class_name() const;
       virtual SkMetaClass &      get_metaclass() const;
@@ -183,7 +203,8 @@ class SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
 
       // Data Member Methods
 
-        virtual SkTypedName * append_data_member(const ASymbol & name, SkClassDescBase * type_p);
+        virtual SkTypedName *    append_data_member(const ASymbol & name, SkClassDescBase * type_p);
+        virtual SkTypedNameRaw * append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p);
 
     // Overriding from SkInstance
 
@@ -194,7 +215,7 @@ class SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
       #endif
 
       virtual SkInstance *  get_data_by_name(const ASymbol & name) const;
-      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * obj_p);
+      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p);
 
     // Overriding from SkObjectBase
 
@@ -274,14 +295,16 @@ class SkClass : public SkClassUnaryBase, public ANamed
       Flag_demand_load      = 1 << 1,  // Class only loads members when asked to do so
       Flag_demand_load_lock = 1 << 2,  // Once loaded do not allow it to be unloaded
       Flag_demand_unload    = 1 << 3,  // Deferred unload - unload when next possible to do so
+      
+      Flag_is_actor         = 1 << 4,  // For fast lookup if this class is derived from actor
 
       // Object id flags - look-up/validate for this class - i.e. Class@'name'
-        Flag_object_id_lookup = 1 << 4,
+        Flag_object_id_lookup = 1 << 5,
 
         // Validation flags - use masks below
-          Flag_object_id_parse_any   = 1 << 5,
-          Flag_object_id_parse_list  = 1 << 6,
-          Flag_object_id_parse_defer = 1 << 7,
+          Flag_object_id_parse_any   = 1 << 6,
+          Flag_object_id_parse_list  = 1 << 7,
+          Flag_object_id_parse_defer = 1 << 8,
 
         // Object id validation setting (masks):
           // Accept none during compile [used to temporarily disable object ids]
@@ -301,7 +324,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
 
       // Defaults and masks
         Flag__default         = Flag_none,
-        Flag__default_actor   = Flag__default | Flag_object_id_lookup | Flag_object_id_parse_any,
+        Flag__default_actor   = Flag__default | Flag_object_id_lookup | Flag_object_id_parse_any | Flag_is_actor,
         Flag__demand_loaded   = Flag_loaded | Flag_demand_load,
         Flag__mask_binary     = Flag_demand_load | Flag__id_mask
       };
@@ -402,9 +425,18 @@ class SkClass : public SkClassUnaryBase, public ANamed
     void         set_flag_load(bool loaded = true);
     void         set_loaded()                                           { set_flag_load(); }
 
+    static void          register_raw_resolve_func(tSkRawResolveFunc raw_resolve_f);
+    void                 register_raw_accessor_func(tSkRawAccessorFunc raw_member_accessor_f);
+    void                 register_raw_pointer_func(tSkRawPointerFunc raw_pointer_func_f);
+    tSkRawAccessorFunc   get_raw_accessor_func() const  { return m_raw_member_accessor_f; }
+    tSkRawPointerFunc    get_raw_pointer_func() const   { return m_raw_pointer_f; }
+    SkInstance *         new_instance_from_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p) const;
+    void                 assign_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p) const;
+    void *               get_raw_pointer(SkInstance * obj_p) const;
+
     void                 enable_object_id_lookup(bool enable = true);
     bool                 is_object_id_lookup() const                    { return (m_flags & Flag_object_id_lookup) != 0u; }
-    void                 set_object_id_lookup_func(SkInstance * (* object_id_lookup_f)(SkObjectId * obj_id_p));
+    void                 set_object_id_lookup_func(tSkObjectIdLookupFunc object_id_lookup_f);
     virtual SkInstance * object_id_lookup(SkObjectId * obj_id_p) const;
 
     #if (SKOOKUM & SK_CODE_IN)
@@ -476,6 +508,8 @@ class SkClass : public SkClassUnaryBase, public ANamed
       void                       get_superclasses_all(tSkClasses * classes_p) const;
       uint32_t                   get_superclass_depth() const;
       SkClass *                  get_class_depth_at(uint32_t depth) const;
+      AString                    get_class_path_str(int32_t scripts_path_depth) const;
+      bool                       is_actor_class() const                 { return (m_flags & Flag_is_actor) != 0; }
       bool                       is_class(const SkClass & cls) const;
       bool                       is_subclass(const SkClass & superclass) const;
       bool                       is_superclass(const SkClass & subclass) const;
@@ -484,7 +518,8 @@ class SkClass : public SkClassUnaryBase, public ANamed
       void                       iterate_recurse(AFunctionArgBase<SkClass *> * apply_class_p, eAHierarchy hierarchy = AHierarchy__all);
       SkClass *                  next_class(SkClass * root_p) const;
       SkClass *                  next_sibling() const;
-      void                       resolve_vtable_indices_recurse();
+      void                       resolve_raw_data();
+      void                       resolve_raw_data_recurse();
 
 
     // Method Methods
@@ -559,9 +594,11 @@ class SkClass : public SkClassUnaryBase, public ANamed
     // Data Methods
 
       virtual SkTypedName *     append_data_member(const ASymbol & name, SkClassDescBase * type_p);
-      virtual SkClassDescBase * get_data_type(const ASymbol & data_name, bool * is_class_member_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
-      SkClassDescBase *         get_instance_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
-      SkClassDescBase *         get_class_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      virtual SkTypedNameRaw *  append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p);
+      virtual SkTypedName *     get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      SkTypedName *             get_instance_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      SkTypedNameRaw *          get_instance_data_type_raw(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      SkTypedName *             get_class_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       uint32_t                  get_inherited_instance_data_count() const;
 
       // Instance Methods
@@ -570,6 +607,10 @@ class SkClass : public SkClassUnaryBase, public ANamed
         const tSkTypedNameArray & get_instance_data() const        { return m_data; }
         uint32_t                  get_total_data_count() const     { return m_total_data_count; }
         void                      remove_instance_data_all();
+
+        SkTypedNameRaw *              append_instance_data_raw(const ASymbol & name, SkClassDescBase * type_p, eSubclass subclasses = Subclass_recurse);
+        const tSkTypedNameRawArray &  get_instance_data_raw() const { return m_data_raw; }
+        uint32_t                      compute_total_raw_data_count() const;
 
         #if (SKOOKUM & SK_COMPILED_IN)
           SkClass * find_instance_data_scope(const ASymbol & name, ePath check_path = Path_super_sub);
@@ -600,7 +641,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
       virtual const ASymbol &   get_key_class_name() const;
       virtual bool              is_class_type(const SkClassDescBase * type_p) const;
       virtual bool              is_generic() const;
-      virtual bool              is_method_registered(const ASymbol & method_name) const;
+      virtual bool              is_method_registered(const ASymbol & method_name, bool allow_placeholder) const;
 
     // Overriding from SkClassUnaryBase
 
@@ -610,12 +651,14 @@ class SkClass : public SkClassUnaryBase, public ANamed
 
   // Internal Methods
 
-    void         recurse_instance_data(const SkTypedName * typed_p);
-    void         recurse_class_data(const SkTypedName * typed_p);
+    void         recurse_increment_total_data_count();
+    void         recurse_increment_total_class_data_count();
     void         recurse_remove_instance_data_all(uint32_t data_idx, uint32_t count);
     void         recurse_remove_class_data_all(uint32_t data_idx, uint32_t count);
     void         recurse_class_ctor();
     void         recurse_class_dtor();
+    void         recurse_replace_vtable_entry_i(int16_t vtable_index, SkInvokableBase * old_entry_p, SkInvokableBase * new_entry_p);
+    void         recurse_replace_vtable_entry_c(int16_t vtable_index, SkInvokableBase * old_entry_p, SkInvokableBase * new_entry_p);
     void         demand_unload_recurse();
     void         set_destructor(SkMethodBase * destructor_p);
     void         build_vtables();
@@ -640,8 +683,17 @@ class SkClass : public SkClassUnaryBase, public ANamed
     // Child classes of this class
     tSkClasses m_subclasses;
 
+    // Function to resolve the raw data info of all raw data members of a given class
+    static tSkRawResolveFunc ms_raw_resolve_f;
+
+    // Function to set/get raw data members of this class type
+    tSkRawAccessorFunc m_raw_member_accessor_f;
+
+    // Function to get raw data pointer from an instance of this class type
+    tSkRawPointerFunc m_raw_pointer_f;
+
     // Used to lookup named instance objects via object id expressions.  See object_id_lookup()
-    SkInstance * (* m_object_id_lookup_f)(SkObjectId * obj_id_p);
+    tSkObjectIdLookupFunc m_object_id_lookup_f;
 
     // Used to validate object ids for this class.
     // $Revisit - CReis Since there are few classes that use object ids it might be an idea
@@ -661,6 +713,11 @@ class SkClass : public SkClassUnaryBase, public ANamed
       // m_data_table references this and inherited members for constructing instances of
       // this class.
       tSkTypedNameArray m_data;
+
+      // Data Members (name, class type and raw storage information) for engine-native instances of this class
+      // Same naming rules apply as for m_data
+      // These are created by the parser and then at load time initialized with the proper storage info by the engine
+      tSkTypedNameRawArray m_data_raw;
 
       // Shortcut of total count of all m_data members of this class and superclasses combined
       uint32_t m_total_data_count;
@@ -814,7 +871,7 @@ class SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassUnion>
       virtual SkClassDescBase *  as_finalized_generic(const SkClassDescBase & scope_type) const;
       virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const;
       virtual eSkClassType       get_class_type() const;
-      virtual SkClassDescBase *  get_data_type(const ASymbol & data_name, bool * is_class_member_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       virtual SkClassDescBase *  get_item_type() const;
       virtual SkClass *          get_key_class() const;
       virtual const ASymbol &    get_key_class_name() const;

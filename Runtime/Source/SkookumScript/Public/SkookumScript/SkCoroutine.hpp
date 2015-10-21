@@ -38,8 +38,8 @@ class SkCoroutineBase : public SkInvokableBase
 
   // Common Methods
 
-    SkCoroutineBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size) : SkInvokableBase(name, scope_p, invoked_data_array_size) {}
-    SkCoroutineBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size) : SkInvokableBase(name, scope_p, params_p, invoked_data_array_size) {}
+    SkCoroutineBase(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkInvokableBase(name, scope_p, invoked_data_array_size, annotation_flags) {}
+    SkCoroutineBase(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkInvokableBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags) {}
 
   // Converter Methods
 
@@ -78,8 +78,8 @@ class SkCoroutine : public SkCoroutineBase
 	  SK_NEW_OPERATORS(SkCoroutine);
   // Common Methods
 
-    SkCoroutine(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size) : SkCoroutineBase(name, scope_p, invoked_data_array_size), m_expr_p(nullptr) {}
-    SkCoroutine(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, SkExpressionBase * body_p = nullptr) : SkCoroutineBase(name, scope_p, params_p, invoked_data_array_size), m_expr_p(body_p) {}
+    SkCoroutine(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkCoroutineBase(name, scope_p, invoked_data_array_size, annotation_flags), m_expr_p(nullptr) {}
+    SkCoroutine(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags, SkExpressionBase * body_p = nullptr) : SkCoroutineBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags), m_expr_p(body_p) {}
     virtual ~SkCoroutine();
 
   // Converter Methods
@@ -175,7 +175,7 @@ class SkCoroutineMthd : public SkCoroutineBase
 
   // Common Methods
 
-    SkCoroutineMthd(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, tSkCoroutineMthd update_m = nullptr);
+    SkCoroutineMthd(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t annotation_flags, tSkCoroutineMthd update_m = nullptr);
 
   // Converter Methods
 
@@ -237,7 +237,7 @@ class SkCoroutineFunc : public SkCoroutineBase
 
   // Common Methods
 
-    SkCoroutineFunc(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, tSkCoroutineFunc update_f = nullptr);
+    SkCoroutineFunc(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t annotation_flags, tSkCoroutineFunc update_f = nullptr);
 
   // Converter Methods
 

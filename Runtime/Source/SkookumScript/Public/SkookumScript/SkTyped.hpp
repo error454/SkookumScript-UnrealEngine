@@ -79,6 +79,32 @@ struct SkTypedName : ANamed
 typedef APSortedLogical<SkTypedName, ASymbol> tSkTypedNames;
 
 //---------------------------------------------------------------------------------------
+// SkookumScript Typed Name + Raw data info
+struct SkTypedNameRaw : SkTypedName
+  {
+  SK_NEW_OPERATORS(SkTypedNameRaw);
+
+  // Common Methods
+
+  SkTypedNameRaw() : m_raw_data_info(0) {}
+  SkTypedNameRaw(const ASymbol & name, const SkClassDescBase * type_p) : SkTypedName(name, type_p), m_raw_data_info(0) {}
+
+  #if (SKOOKUM & SK_COMPILED_IN)
+    SkTypedNameRaw(const void ** binary_pp) : SkTypedName(binary_pp) {}
+  #endif
+
+  // Data Members
+
+  // User data for the engine to store information about the 
+  // offset, size, bit shift etc. of a raw data member if this is one
+  // This value is for runtime use only and not serialized into the compiled binary
+  tSkRawDataInfo m_raw_data_info;
+
+  };
+
+typedef APSortedLogical<SkTypedNameRaw, ASymbol> tSkTypedNamesRaw;
+
+//---------------------------------------------------------------------------------------
 // SkookumScript Typed Name + Runtime Data Index
 struct SkTypedNameIndexed : SkTypedName
   {
@@ -86,12 +112,13 @@ struct SkTypedNameIndexed : SkTypedName
 
   // Common Methods
 
-    SkTypedNameIndexed() : m_data_idx(0) {}
-    SkTypedNameIndexed(const ASymbol & name, const SkClassDescBase * type_p, uint32_t data_idx);
+    SkTypedNameIndexed() : m_data_idx(0), m_has_been_bound(false) {}
+    SkTypedNameIndexed(const ASymbol & name, const SkClassDescBase * type_p, uint32_t data_idx) : SkTypedName(name, type_p), m_data_idx(data_idx), m_has_been_bound(false) {}
 
   // Data Members
 
     uint32_t  m_data_idx;
+    bool      m_has_been_bound; // Keep track if this variable has ever been bound
 
   };
 

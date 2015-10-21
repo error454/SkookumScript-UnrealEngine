@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------------------
 // Adds SkookumScript text-based scripting capabilities to an actor.
 UCLASS(classGroup=Scripting, editinlinenew, BlueprintType, meta=(BlueprintSpawnableComponent), hideCategories=(Object, ActorComponent), EarlyAccessPreview)
-class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent
+class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent, public AListNode<USkookumScriptComponent>
   {
 
     GENERATED_UCLASS_BODY()
@@ -47,24 +47,11 @@ class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent
   // Methods
 
     // Gets our SkookumScript instance
-    SkInstance * get_instance() const { return m_instance_p; }
+    SkInstance * get_sk_instance() const { return m_instance_p; }
 
-    // Calls a script coroutine on this actor (no arguments)
-    // Coroutines are durational and used to do time-based / concurrent tasks that can take more than one frame to complete.
-    // @param name name of the coroutine 
-    UFUNCTION(BlueprintCallable, Category = "Script|Functions")
-    virtual void invoke_coroutine(FString name);
-
-    // Calls a script method on this actor (no arguments)
-    // Methods complete immediately.
-    // @param name name of the method to call
-    UFUNCTION(BlueprintCallable, Category = "Script|Functions")
-    virtual void invoke_method(FString method_name);
-
-    // Calls a script query/predicate method on this actor (no arguments) and returns true or false
-    // @param name name of the query method to call
-    UFUNCTION(BlueprintCallable, Category = "Script|Functions")
-    virtual bool invoke_query(FString query_name);
+    // Create/delete the sk instance of all SkookumScript components out there
+    static void create_registered_sk_instances();
+    static void delete_registered_sk_instances();
 
     // Begin UActorComponent interface
 
@@ -75,10 +62,17 @@ class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent
 
   protected:
 
-  // Internal Data Members
+    // Creates/deletes our SkookumScript instance
+    void create_sk_instance();
+    void delete_sk_instance();
 
     // Keep the SkookumScript instance belonging to this actor around
     AIdPtr<SkInstance> m_instance_p;
+
+  private:
+
+    // Global list of all SkookumScript components
+    static AList<USkookumScriptComponent> ms_registered_skookumscript_components;
 
   };  // USkookumScriptComponent
 

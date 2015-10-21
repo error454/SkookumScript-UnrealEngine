@@ -33,10 +33,10 @@ File Names and Bodies:
 ----------------------
 
 method-file-name   = method-name '()' ['C'] '.sk'
-method-file        = ws parameters [ws code-block] ws
+method-file        = ws {annotation ws} parameters [ws code-block] ws
 
 coroutine-file-name = coroutine-name '().sk'
-coroutine-file      = ws parameter-list [ws code-block] ws
+coroutine-file      = ws {annotation ws} parameter-list [ws code-block] ws
 
 data-file-name     = '!Data' ['C'] '.sk'
 data-file          = ws [data-definition {wsr data-definition} ws]
@@ -45,6 +45,8 @@ data-definition    = [class-desc ws] '!' instance-name
 object-id-filename = file-title '.sk-ids'
 object-id-file     = {ws symbol-literal | raw-object-id} ws
 raw-object-id      = {printable}^1-255 newline | end-of-file
+
+annotation         = '&' instance_name
 
 Expressions (the starting point):
 ----------------------
@@ -66,7 +68,7 @@ symbol-literal    = ''' {character} '''
 character-literal = '`' character
 list-literal      = [list-class constructor-name invocation-args]
                     '{' ws [expression {ws [',' ws] expression} ws] '}'
-closure           = ['^' ['_' ws] [expression ws]] [parameters ws] code-block
+closure           = ['^' {annotation ws} ['_' ws] [expression ws]] [parameters ws] code-block
 
 Identifiers:
 ----------------------
@@ -321,6 +323,7 @@ class SkParser : public AString
 
 
       // Expected a particular lexical or syntactical element, but did not find it
+      Result_err_expected_annotation_arg,     // Expected required argument for an annotation
       Result_err_expected_binding,            // A binding must begin with a colon ':'.
       Result_err_expected_block,              // Expected a code block [ ], but did not find one.
       Result_err_expected_cast_op,            // Expected the class cast operator '<>', but it was not found.
@@ -389,6 +392,7 @@ class SkParser : public AString
 
       // Found a known lexical or syntactical element where it was not expected
       Result_err_unexpected_bind_expr,        // A variable rebind to an instance may only be applied to an identifier
+      Result_err_unexpected_bind_expr_raw,    // Trying to bind to a raw data member
       Result_err_unexpected_branch_expr,      // A concurrent branch only makes sense when used on an expression that is not immediate and may take more than one frame to execute such as a coroutine call.
       Result_err_unexpected_cdtor,            // While parsing for a 'create temporary variable statement', a constructor or a destructor call was found instead.
       Result_err_unexpected_char,             // Expected a particular character or type of character, but did not receive it.
@@ -420,8 +424,12 @@ class SkParser : public AString
       Result_err_size_radix_small,            // The radix / base of a number literal must be 2 or greater
       Result_err_size_identifier,             // An identifier may be no more than 255 characters long.
       Result_err_size_symbol,                 // A symbol literal may be no more than 255 characters long.
+      Result_err_size_uint16_out_of_range,    // Value must be between 0 and 65535
 
       // Context errors
+      Result_err_context_annotation_unknown,  // Unknown annotation found
+      Result_err_context_annotation_invalid,  // Annotation is not allowed in this context
+      Result_err_context_annotation_duplicate,// Duplicate annotation provided
       Result_err_context_case_compare,        // The case comparison expression must resolve to a class type that has an equals operator '='.
       Result_err_context_conversion_params,   // A conversion method may not have any parameters [this may change in the future].
       Result_err_context_duped_data,          // * This data member name is a duplicate of one already existing in this class
@@ -492,6 +500,7 @@ class SkParser : public AString
       Identify_comment,        // It could be a block of comments which could include a series of single line comments
       Identify_string,         // Simple string or symbol literal
       Identify_number,
+      Identify_annotation,
       Identify_lexical_error
       };
 
@@ -523,6 +532,14 @@ class SkParser : public AString
       {
       ResultDesired_false  = 0,
       ResultDesired_true   = 1
+      };
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    enum eStatementTiming
+      {
+      StatementTiming_sequential = 0,
+      StatementTiming_concurrent = 1
       };
 
 
@@ -663,6 +680,15 @@ class SkParser : public AString
       NestInfo(const ASymbol & name) : ANamed(name) {}
       };
 
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Represents parsed list of annotations
+    struct Annotations
+      {
+      uint32_t  m_flags;            // One bit per type of annotation
+      
+      Annotations() : m_flags(0) {}
+      };
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -696,7 +722,7 @@ class SkParser : public AString
     // preparse of the code and often only if data-structures are being created).
 
     bool              parse_class_meta_source(SkClass * scope_p, Args & args = ms_def_args.reset(), bool apply_meta_data_b = true);
-    bool              parse_data_members_source(SkClassUnaryBase * scope_p, Args & args = ms_def_args.reset(), bool append_to_class_b = true);
+    bool              parse_data_members_source(SkClassUnaryBase * scope_p, Args & args = ms_def_args.reset(), bool append_to_class_b = true, uint32_t * num_data_members_p = nullptr);
     SkMethodBase *    parse_method_source(const ASymbol & name, SkClassUnaryBase * scope_p, Args & args = ms_def_args.reset(), bool append_to_class_b = true);
     SkCoroutineBase * parse_coroutine_source(const ASymbol & name, SkClassUnaryBase * scope_p, Args & args = ms_def_args.reset(), bool append_to_class_b = true);
     uint32_t          parse_symbol_ids_source(ASymbolTable * ids_p, Args & args = ms_def_args.reset());
@@ -716,7 +742,7 @@ class SkParser : public AString
 
       SkExpressionBase * parse_binding(Args & args = ms_def_args.reset()) const;
       SkLiteralClosure * parse_closure(Args & args = ms_def_args.reset(), bool allow_inline = false) const;
-      SkCode *           parse_code_block(Args & args = ms_def_args.reset(), eSkInvokeTime desired_exec_time = SkInvokeTime_any, eResultDesired result = ResultDesired_true) const;
+      SkCode *           parse_code_block(Args & args = ms_def_args.reset(), eSkInvokeTime desired_exec_time = SkInvokeTime_any, eStatementTiming statement_timing = StatementTiming_sequential, eResultDesired result = ResultDesired_true) const;
       SkExpressionBase * parse_code_block_optimized(Args & args = ms_def_args.reset(), eSkInvokeTime desired_exec_time = SkInvokeTime_any, eResultDesired result = ResultDesired_true) const;
       SkExpressionBase * parse_expression(Args & args = ms_def_args.reset(), eSkInvokeTime desired_exec_time = SkInvokeTime_any) const;
       SkExpressionBase * parse_instantiate_or_list(Args & args = ms_def_args.reset()) const;
@@ -730,6 +756,7 @@ class SkParser : public AString
 
     // Simple Parse Methods
 
+      eResult parse_annotations(          uint32_t start_pos, uint32_t * end_pos_p, Annotations * annotations_p, eSkAnnotationTarget target) const;
       eResult parse_class(                uint32_t start_pos = 0u, uint32_t * end_pos_p = nullptr, SkClass ** class_pp = nullptr) const;
       eResult parse_class_desc(           uint32_t start_pos = 0u, uint32_t * end_pos_p = nullptr, SkClassDescBase ** type_p = nullptr) const;
       eResult parse_class_instance(       uint32_t start_pos = 0u, uint32_t * end_pos_p = nullptr, SkClassUnaryBase ** class_pp = nullptr, bool * item_type_b_p = nullptr) const;

@@ -16,6 +16,7 @@
 #include <AgogCore/ABinaryParse.hpp>
 #include <AgogCore/ASymbolTable.hpp>
 #include <SkookumScript/SkBrain.hpp>
+#include <SkookumScript/SkDebug.hpp>
 #include <SkookumScript/SkSymbolDefs.hpp>
 
 
@@ -192,6 +193,25 @@ A_INLINE SkTypedName * SkMetaClass::append_data_member(
   }
 
 
+//---------------------------------------------------------------------------------------
+// Adds an class data member with the specified name to this class.
+// Arg         name - name of class data member.  It must be unique - no superclass nor
+//             subclass may have it and there should be no instance data member with the
+//             same name either.
+// Arg         type_p - class type of data member
+// See:        append_class_data()
+// Modifiers:   virtual - overridden from SkClassUnaryBase
+// Author(s):   Conan Reis
+A_INLINE SkTypedNameRaw * SkMetaClass::append_data_member_raw(
+  const ASymbol &   name,
+  SkClassDescBase * type_p
+  )
+  {
+  SK_ERRORX("Raw class data is not supported. The parser should make sure this gets never called.");
+  return nullptr;
+  }
+
+
 //=======================================================================================
 // SkClass Inline Methods
 //=======================================================================================
@@ -246,6 +266,28 @@ A_INLINE void SkClass::set_flag_load(
     }
   }
 
+//---------------------------------------------------------------------------------------
+// Uses the raw member accessor to get an instance with the value of a raw member
+
+A_INLINE SkInstance * SkClass::new_instance_from_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p) const
+  {
+  return (*m_raw_member_accessor_f)(obj_p, raw_data_info, data_type_p, nullptr);
+  }
+
+//---------------------------------------------------------------------------------------
+// Uses the raw member accessor to set the value of a raw member from a given instance
+
+A_INLINE void SkClass::assign_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p) const
+  {
+  (*m_raw_member_accessor_f)(obj_p, raw_data_info, data_type_p, value_p);
+  }
+
+//---------------------------------------------------------------------------------------
+
+A_INLINE void * SkClass::get_raw_pointer(SkInstance * obj_p) const
+  {
+  return (*m_raw_pointer_f)(obj_p);
+  }
 
 #if (SKOOKUM & SK_CODE_IN)
 
@@ -642,12 +684,12 @@ A_INLINE SkMetaClass & SkClass::get_metaclass() const
 // Returns:    true if method is registered
 // Arg         method_name - name of method to check
 // Author(s):   Conan Reis
-A_INLINE bool SkClass::is_method_registered(const ASymbol & method_name) const
+A_INLINE bool SkClass::is_method_registered(const ASymbol & method_name, bool allow_placeholder) const
   {
   // Note that only instance methods are checked - SkMetaClass checks class methods
   SkMethodBase * method_p = find_instance_method(method_name);
 
-  return !((method_p == nullptr) || method_p->is_placeholder());
+  return method_p && (allow_placeholder || !method_p->is_placeholder());
   }
 
 //---------------------------------------------------------------------------------------
@@ -709,6 +751,16 @@ A_INLINE SkTypedName * SkClass::append_data_member(
   return append_instance_data(name, type_p);
   }
 
+//---------------------------------------------------------------------------------------
+// Adds a raw instance data member with the specified name to this class.
+A_INLINE SkTypedNameRaw * SkClass::append_data_member_raw(
+  const ASymbol &   name,
+  SkClassDescBase * type_p
+  )
+  {
+  return append_instance_data_raw(name, type_p);
+  }
+
 
 //=======================================================================================
 // SkClassUnion Inline Methods
@@ -768,7 +820,7 @@ A_INLINE SkClassUnion & SkClassUnion::operator=(const SkClassUnion & class_union
 // Author(s):   Conan Reis
 A_INLINE uint32_t SkClassUnion::as_binary_ref_typed_length() const
   {
-  return ms_compounds_use_ref ? Binary_ref_size : (1u + as_binary_length());
+  return ms_compounds_use_ref ? Binary_ref_size_typed : (1u + as_binary_length());
   }
 
 #endif // (SKOOKUM & SK_COMPILED_OUT)
@@ -864,15 +916,15 @@ A_INLINE eSkClassType SkClassUnion::get_class_type() const
 // Params:
 //   data_name: name of data member
 //   scope_p: address to store 
-A_INLINE SkClassDescBase * SkClassUnion::get_data_type(
+A_INLINE SkTypedName * SkClassUnion::get_data_type(
   const ASymbol & data_name,
-  bool *          is_class_member_p,  // = nullptr
+  eSkScope *      scope_p,  // = nullptr
   uint32_t *      data_idx_p,         // = nullptr
   SkClass **      data_owner_class_pp // = nullptr
   ) const
   {
   // Without a cast to a specific class use nearest shared superclass.
-  return m_common_class_p->get_data_type(data_name, is_class_member_p, data_idx_p, data_owner_class_pp);
+  return m_common_class_p->get_data_type(data_name, scope_p, data_idx_p, data_owner_class_pp);
   }
 
 //---------------------------------------------------------------------------------------

@@ -16,6 +16,9 @@
 #include "SkUERuntime.hpp"
 #include "SkUERemote.hpp"
 #include "SkUEBindings.hpp"
+#include "SkUEClassBinding.hpp"
+
+#include "../../Classes/SkookumScriptComponent.h"
 
 #include "GenericPlatformProcess.h"
 #include <chrono>
@@ -79,66 +82,54 @@ namespace
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
-// Description Initializes Skookum session.
-// See Also    on_deinit()
+// One-time initialization of SkookumScript
+// See Also    shutdown()
 // Author(s)   Conan Reis
-void SkUERuntime::on_init()
+void SkUERuntime::startup()
   {
+  SK_ASSERTX(!m_is_initialized, "Tried to initialize SkUERuntime twice in a row.");
+
   A_DPRINT("\nSkookumScript starting up.\n");
 
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // One time-only per application session initializations
-  static bool s_once_per_app_session_init = false;
-
-  if (!s_once_per_app_session_init) 
-    {
-    // Let scripting system know that the game engine is present and is being hooked-in
-    SkDebug::enable_engine_present();
-
-    #ifdef SKOOKUM_REMOTE_UNREAL
-      SkDebug::register_print_with_agog();
-    #endif
-
-    SkBrain::register_bind_atomics_func(SkookumRuntimeBase::bind_routines);
-
-    s_once_per_app_session_init = true;
-    }
+  // Let scripting system know that the game engine is present and is being hooked-in
+  SkDebug::enable_engine_present();
 
   #ifdef SKOOKUM_REMOTE_UNREAL
-    // Only bother connecting if not running on the command line)
-    if (!IsRunningCommandlet())
-      {
-      // Auto-connect to remote IDE
-      if (SkookumRemoteRuntimeBase::ms_client_p->ensure_connected())
-        {
-        // Ensure compiled binaries are up to date
-        switch (SkookumRemoteRuntimeBase::ms_client_p->ensure_compiled())
-          {
-          case AConfirm_yes: 
-            SkDebug::print("\nSkookumNet: Compiled binaries are up-to-date.\n");
-            break;
+    SkDebug::register_print_with_agog();
+  #endif
 
-          case AConfirm_no:
-            // $Revisit - CReis If not compiled then load old or quit
-            SkDebug::print("\nSkookumNet: Compiled binaries are *not* up-to-date.\n", SkLocale_all, SkDPrintType_warning);
-            break;
+  SkBrain::register_bind_atomics_func(SkookumRuntimeBase::bind_routines);
 
-          default: // AConfirm_abort
-            SkDebug::print("\nSkookumNet: Timed out while compiling binaries.\n", SkLocale_all, SkDPrintType_warning);
-          }
-        }
-      else
-        {
-        SkDebug::print("\nSkookumNet: Timed out trying to connect!\n", SkLocale_all, SkDPrintType_warning);
-        }
-      }
-  #endif  // SKOOKUM_REMOTE_UNREAL
+  SkClass::register_raw_resolve_func(SkUEClassBindingHelper::resolve_raw_data);
 
-  // Load the Skookum class hierarchy scripts in compiled binary form
-  bool success_b = load_compiled_scripts();
+  m_is_initialized = true;
+  }
 
-  SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+//---------------------------------------------------------------------------------------
+// One-time shutdown of SkookumScript
+void SkUERuntime::shutdown()
+  {
+  SK_ASSERTX(!SkookumScript::is_flag_set(SkookumScript::Flag_updating), "Attempting to shut down SkookumScript while it is in the middle of an update.");
+  SK_ASSERTX(m_is_initialized, "Tried to shut down SkUERuntime without prior initialization.");
+
+  A_DPRINT("\nSkookumScript shutting down.\n");
+
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Disconnect from remote client
+    SkookumRemoteBase::ms_default_p->set_mode(SkLocale_embedded);
+  #endif
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // Clears out Blueprint interface mappings
+  SkUEBlueprintInterface::get()->clear();
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // Unloads SkookumScript and cleans-up
+  SkookumScript::deinitialize_session();
+  SkookumScript::deinitialize();
+
+  m_is_initialized = false;
   }
 
 //---------------------------------------------------------------------------------------
@@ -151,50 +142,20 @@ void SkUERuntime::on_bind_routines()
   {
   A_DPRINT(A_SOURCE_STR "\nBind routines for SkUERuntime.\n");
 
-  SkUEBindings::register_all();
-  m_blueprint_interface.reinitialize_all(); // Hook up Blueprint functions and events for static classes
-  }
-
-//---------------------------------------------------------------------------------------
-// Author(s)   Conan Reis
-void SkUERuntime::on_deinit()
-  {
-  A_DPRINT("\nSkookumScript shutting down.\n");
-
-  #ifdef SKOOKUM_REMOTE_UNREAL
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Disconnect from remote client
-    SkookumRemoteBase::ms_default_p->set_mode(SkLocale_embedded);
+  #if WITH_EDITORONLY_DATA
+    SkUEClassBindingHelper::reset_dynamic_class_mappings(); // Start over fresh
   #endif
 
-  deinit();
+  SkUEBindings::register_all();
+  m_blueprint_interface.reexpose_all(); // Hook up Blueprint functions and events for static classes
+  USkookumScriptComponent::create_registered_sk_instances(); // Re-populate all SkookumScript components with an SkInstance
   }
 
 //---------------------------------------------------------------------------------------
-// #Author(s):  Conan Reis
-void SkUERuntime::deinit()
+// Override to run cleanup code before SkookumScript deinitializes its session
+void SkUERuntime::on_pre_deinitialize_session()
   {
-  if (SkookumScript::is_flag_set(SkookumScript::Flag_updating))
-    {
-    A_DPRINT("\n  Attempting to shut down SkookumScript while it is in the middle of an update.\n");
-    
-    A_DPRINT("  ...might need to defer shutdown until after update is completed.\n");
-
-    // $Revisit - CReis May still need defer mechanism
-    // Still in the middle of an update - defer it
-    //A_DPRINT("  ...deferring shutdown until after update is completed.\n");
-    //ADeferFunc::post_func(deinit);
-    //return;
-    }
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // Clears out Blueprint interface mappings
-  SkUEBlueprintInterface::get()->clear();
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  // Unloads SkookumScript and cleans-up
-  SkookumScript::deinitialize_session();
-  SkookumScript::deinitialize();
+  USkookumScriptComponent::delete_registered_sk_instances(); // Frees up all instances used by SkookumScript components
   }
 
 //---------------------------------------------------------------------------------------

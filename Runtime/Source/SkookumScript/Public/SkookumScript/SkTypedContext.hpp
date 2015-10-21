@@ -141,35 +141,30 @@ struct SkTypeContext
 
     SkClassDescBase * finalize_generic(const SkClassDescBase & type) const;
 
-    // Member Data Methods - variables belonging to m_obj_scope_p
-
-      SkClassDescBase * get_member_type(const ASymbol & var_name, bool * is_class_member_p = nullptr) const;
-
     // Local Data Methods - variables from arguments and code block temporaries
 
       SkClassDescBase * get_rparam_type(const ASymbol & var_name) const;
       SkClassDescBase * get_local_variable_type(const ASymbol & var_name) const;
 
-      uint32_t  append_local(const ASymbol & var_name, SkClassDescBase * type_p);
-      void      archive_locals(const AVCompactArrayBase<ASymbol> & var_names);
-      bool      find_local_variable(const ASymbol & var_name, uint32_t * data_idx_p = nullptr) const;
-      void      free_locals(const AVCompactArrayBase<ASymbol> & var_names);
-      void      free_all_locals();
-      bool      is_locals() const;
-      void      merge(tSkTypedNamesIndexed * merge_vars_p) const;
-      void      merge_locals(tSkTypedNamesIndexed * merge_vars_p, bool first_path_b) const;
-      void      capture_locals_start();
-      void      capture_locals_stop(tSkIndexedNames * captured_p);
-      void      on_identifier_created(SkIdentifierLocal * identifier_p);
-      void      nest_locals();
-      void      unnest_locals(eAHistory history = AHistory_remember);
-      void      accept_nest();
+      uint32_t              append_local(const ASymbol & var_name, SkClassDescBase * type_p);
+      void                  archive_locals(const AVCompactArrayBase<ASymbol> & var_names);
+      SkTypedNameIndexed *  find_local_variable(const ASymbol & var_name) const;
+      void                  free_locals(const AVCompactArrayBase<ASymbol> & var_names);
+      void                  free_all_locals();
+      bool                  is_locals() const;
+      void                  merge(tSkTypedNamesIndexed * merge_vars_p) const;
+      void                  merge_locals(tSkTypedNamesIndexed * merge_vars_p, bool first_path_b) const;
+      void                  capture_locals_start();
+      void                  capture_locals_stop(tSkIndexedNames * captured_p);
+      void                  on_identifier_created(SkIdentifierLocal * identifier_p);
+      void                  nest_locals();
+      void                  unnest_locals(eAHistory history = AHistory_remember);
+      void                  accept_nest();
 
     // Combined Member & Local Methods
 
       void              change_variable_type(const ASymbol & var_name, SkClassDescBase * type_p);
       void              change_variable_types(const tSkTypedNamesIndexed & vars);
-      eSkScope          find_variable(const ASymbol & var_name) const;
       SkClassDescBase * get_variable_type(const ASymbol & var_name, bool skip_current_scope_b = false, uint32_t * data_idx_p = nullptr) const;
       bool              is_previous_variable(const ASymbol & var_name) const;
       bool              is_variable(const ASymbol & var_name) const;
