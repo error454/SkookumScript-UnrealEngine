@@ -203,7 +203,7 @@ bool FSkookumScriptGeneratorBase::save_text_file_if_changed(const FString & file
       }
     else
       {
-      m_temp_file_paths.Add(temp_file_path);
+      m_temp_file_paths.AddUnique(temp_file_path);
       }
     }
 
@@ -231,7 +231,8 @@ void FSkookumScriptGeneratorBase::flush_saved_text_files()
 
 bool FSkookumScriptGeneratorBase::is_property_type_supported(UProperty * property_p)
   {
-  if (property_p->IsA(ULazyObjectProperty::StaticClass())
+  if (property_p->HasAnyPropertyFlags(CPF_EditorOnly)
+    || property_p->IsA(ULazyObjectProperty::StaticClass())
     || property_p->IsA(UAssetObjectProperty::StaticClass())
     || property_p->IsA(UAssetClassProperty::StaticClass())
     || property_p->IsA(UWeakObjectProperty::StaticClass()))

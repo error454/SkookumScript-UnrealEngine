@@ -99,7 +99,6 @@ void SkUERuntime::startup()
   #endif
 
   SkBrain::register_bind_atomics_func(SkookumRuntimeBase::bind_routines);
-
   SkClass::register_raw_resolve_func(SkUEClassBindingHelper::resolve_raw_data);
 
   m_is_initialized = true;
@@ -146,7 +145,7 @@ void SkUERuntime::on_bind_routines()
     SkUEClassBindingHelper::reset_dynamic_class_mappings(); // Start over fresh
   #endif
 
-  SkUEBindings::register_all();
+  SkUEBindings::register_all_bindings();
   m_blueprint_interface.reexpose_all(); // Hook up Blueprint functions and events for static classes
   USkookumScriptComponent::create_registered_sk_instances(); // Re-populate all SkookumScript components with an SkInstance
   }

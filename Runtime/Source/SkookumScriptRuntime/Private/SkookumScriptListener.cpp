@@ -30,7 +30,7 @@
 FSkookumScriptListenerAutoPtr::~FSkookumScriptListenerAutoPtr()
   {
   USkookumScriptListener * listener_p = Get();
-  SK_ASSERTX(listener_p, "USkookumScriptListeners are entirely under Sk control and cannot just go away.");
+  SK_ASSERTX_NO_THROW(listener_p, "USkookumScriptListeners are entirely under Sk control and cannot just go away.");
   SkookumScriptListenerManager::get_singleton()->free_listener(listener_p);
   }
 

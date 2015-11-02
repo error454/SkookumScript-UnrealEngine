@@ -45,6 +45,12 @@ class SkUEClassBindingHelper
     static void           reset_static_class_mappings(uint32_t reserve);
     static void           reset_static_struct_mappings(uint32_t reserve);
     static void           reset_static_enum_mappings(uint32_t reserve);
+    static void           register_static_class(UClass * ue_class_p);
+    static void           register_static_struct(UStruct * ue_struct_p);
+    static void           register_static_enum(UEnum * ue_enum_p);
+    static bool           is_static_class_registered(UClass * ue_class_p);
+    static bool           is_static_struct_registered(UStruct * ue_struct_p);
+    static bool           is_static_enum_registered(UEnum * ue_enum_p);
     static void           add_static_class_mapping(SkClass * sk_class_p, UClass * ue_class_p);
     static void           add_static_struct_mapping(SkClass * sk_class_p, UStruct * ue_struct_p);
     static void           add_static_enum_mapping(SkClass * sk_class_p, UEnum * ue_enum_p);
@@ -266,6 +272,8 @@ class SkUEClassBindingStruct : public SkClassBindingBase<_BindingClass, _DataTyp
   {
   public:
 
+    typedef SkClassBindingAbstract<_BindingClass>             tBindingAbstract;
+    typedef SkClassBindingBase<_BindingClass, _DataType>      tBindingBase;
     typedef SkUEClassBindingStruct<_BindingClass, _DataType>  tBindingStruct;
 
     static UStruct * ms_ustruct_p; // Pointer to the UStruct belonging to this binding
@@ -335,6 +343,27 @@ UStruct * SkUEClassBindingStruct<_BindingClass, _DataType>::ms_ustruct_p = nullp
 //=======================================================================================
 // Inline Function Definitions
 //=======================================================================================
+
+//---------------------------------------------------------------------------------------
+
+inline bool SkUEClassBindingHelper::is_static_class_registered(UClass * ue_class_p)
+  {
+  return ms_static_class_map_u2s.Find(ue_class_p) != nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+
+inline bool SkUEClassBindingHelper::is_static_struct_registered(UStruct * ue_struct_p)
+  {
+  return ms_static_struct_map_u2s.Find(ue_struct_p) != nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+
+inline bool SkUEClassBindingHelper::is_static_enum_registered(UEnum * ue_enum_p)
+  {
+  return ms_static_enum_map_u2s.Find(ue_enum_p) != nullptr;
+  }
 
 //---------------------------------------------------------------------------------------
 

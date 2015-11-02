@@ -116,22 +116,8 @@ IMPLEMENT_MODULE(FSkookumScriptEditor, SkookumScriptEditor)
 
 void FSkookumScriptEditor::StartupModule()
   {
+  // Get pointer to runtime module
   m_runtime_p = FModuleManager::Get().GetModule("SkookumScriptRuntime");
-  get_runtime()->set_editor_interface(this);
-
-  // Hook up delegates
-  m_on_asset_loaded_handle      = FCoreUObjectDelegates::OnAssetLoaded.AddRaw(this, &FSkookumScriptEditor::on_asset_loaded);
-  m_on_object_modified_handle   = FCoreUObjectDelegates::OnObjectModified.AddRaw(this, &FSkookumScriptEditor::on_object_modified);
-  m_on_map_opened_handle        = FEditorDelegates::OnMapOpened.AddRaw(this, &FSkookumScriptEditor::on_map_opened);
-  m_on_new_asset_created_handle = FEditorDelegates::OnNewAssetCreated.AddRaw(this, &FSkookumScriptEditor::on_new_asset_created);
-  m_on_assets_deleted_handle    = FEditorDelegates::OnAssetsDeleted.AddRaw(this, &FSkookumScriptEditor::on_assets_deleted);
-  m_on_asset_post_import_handle = FEditorDelegates::OnAssetPostImport.AddRaw(this, &FSkookumScriptEditor::on_asset_post_import);
-
-  FAssetRegistryModule & asset_registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
-  m_on_asset_added_handle             = asset_registry.Get().OnAssetAdded().AddRaw(this, &FSkookumScriptEditor::on_asset_added);
-  m_on_asset_renamed_handle           = asset_registry.Get().OnAssetRenamed().AddRaw(this, &FSkookumScriptEditor::on_asset_renamed);
-  m_on_in_memory_asset_created_handle = asset_registry.Get().OnInMemoryAssetCreated().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_created);
-  m_on_in_memory_asset_deleted_handle = asset_registry.Get().OnInMemoryAssetDeleted().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_deleted);
 
   // Set up scripts path and depth
   m_scripts_path = FPaths::GameDir() / TEXT("Scripts/Project-Generated");
@@ -152,34 +138,59 @@ void FSkookumScriptEditor::StartupModule()
   m_package_name_key = TEXT("// UE4 Package Name: \"");
   m_package_path_key = TEXT("// UE4 Package Path: \"");
 
-  //---------------------------------------------------------------------------------------
-  // UI extension
+  if (IsRunningCommandlet())
+    {
+    // Tell runtime to start skookum now
+    get_runtime()->startup_skookum();
+    }
+  else
+    {
+    // Tell runtime that editor is present
+    get_runtime()->set_editor_interface(this);
 
-  // Register commands and styles
-  FSkookumScriptEditorCommands::Register();
-  FSlateStyleRegistry::UnRegisterSlateStyle(FSkookumStyles::GetStyleSetName()); // Hot reload hack
-  FSkookumStyles::Initialize();
+    // Hook up delegates
+    m_on_asset_loaded_handle = FCoreUObjectDelegates::OnAssetLoaded.AddRaw(this, &FSkookumScriptEditor::on_asset_loaded);
+    m_on_object_modified_handle = FCoreUObjectDelegates::OnObjectModified.AddRaw(this, &FSkookumScriptEditor::on_object_modified);
+    m_on_map_opened_handle = FEditorDelegates::OnMapOpened.AddRaw(this, &FSkookumScriptEditor::on_map_opened);
+    m_on_new_asset_created_handle = FEditorDelegates::OnNewAssetCreated.AddRaw(this, &FSkookumScriptEditor::on_new_asset_created);
+    m_on_assets_deleted_handle = FEditorDelegates::OnAssetsDeleted.AddRaw(this, &FSkookumScriptEditor::on_assets_deleted);
+    m_on_asset_post_import_handle = FEditorDelegates::OnAssetPostImport.AddRaw(this, &FSkookumScriptEditor::on_asset_post_import);
 
-  // Button commands 
-  m_button_commands = MakeShareable(new FUICommandList);
-  m_button_commands->MapAction(
-    FSkookumScriptEditorCommands::Get().m_skookum_button,
-    FExecuteAction::CreateRaw(this, &FSkookumScriptEditor::on_skookum_button_clicked),
-    FCanExecuteAction());
+    FAssetRegistryModule & asset_registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
+    m_on_asset_added_handle = asset_registry.Get().OnAssetAdded().AddRaw(this, &FSkookumScriptEditor::on_asset_added);
+    m_on_asset_renamed_handle = asset_registry.Get().OnAssetRenamed().AddRaw(this, &FSkookumScriptEditor::on_asset_renamed);
+    m_on_in_memory_asset_created_handle = asset_registry.Get().OnInMemoryAssetCreated().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_created);
+    m_on_in_memory_asset_deleted_handle = asset_registry.Get().OnInMemoryAssetDeleted().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_deleted);
 
-  // Add to level tool bar
-  m_level_tool_bar_extender = MakeShareable(new FExtender);
-  m_level_tool_bar_extension = m_level_tool_bar_extender->AddToolBarExtension("Compile", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_level_tool_bar));
-  FLevelEditorModule & level_editor_module = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-  m_level_extension_manager = level_editor_module.GetToolBarExtensibilityManager();
-  m_level_extension_manager->AddExtender(m_level_tool_bar_extender);
+    //---------------------------------------------------------------------------------------
+    // UI extension
 
-  // Add to blueprint tool bar
-  m_blueprint_tool_bar_extender = MakeShareable(new FExtender);
-  m_blueprint_tool_bar_extension = m_blueprint_tool_bar_extender->AddToolBarExtension("Asset", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_blueprint_tool_bar));
-  FBlueprintEditorModule & blueprint_editor_module = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet");
-  m_blueprint_extension_manager = blueprint_editor_module.GetMenuExtensibilityManager();
-  m_blueprint_extension_manager->AddExtender(m_blueprint_tool_bar_extender);
+    // Register commands and styles
+    FSkookumScriptEditorCommands::Register();
+    FSlateStyleRegistry::UnRegisterSlateStyle(FSkookumStyles::GetStyleSetName()); // Hot reload hack
+    FSkookumStyles::Initialize();
+
+    // Button commands 
+    m_button_commands = MakeShareable(new FUICommandList);
+    m_button_commands->MapAction(
+      FSkookumScriptEditorCommands::Get().m_skookum_button,
+      FExecuteAction::CreateRaw(this, &FSkookumScriptEditor::on_skookum_button_clicked),
+      FCanExecuteAction());
+
+    // Add to level tool bar
+    m_level_tool_bar_extender = MakeShareable(new FExtender);
+    m_level_tool_bar_extension = m_level_tool_bar_extender->AddToolBarExtension("Compile", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_level_tool_bar));
+    FLevelEditorModule & level_editor_module = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+    m_level_extension_manager = level_editor_module.GetToolBarExtensibilityManager();
+    m_level_extension_manager->AddExtender(m_level_tool_bar_extender);
+
+    // Add to blueprint tool bar
+    m_blueprint_tool_bar_extender = MakeShareable(new FExtender);
+    m_blueprint_tool_bar_extension = m_blueprint_tool_bar_extender->AddToolBarExtension("Asset", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_blueprint_tool_bar));
+    FBlueprintEditorModule & blueprint_editor_module = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet");
+    m_blueprint_extension_manager = blueprint_editor_module.GetMenuExtensibilityManager();
+    m_blueprint_extension_manager->AddExtender(m_blueprint_tool_bar_extender);
+    }
 
   }
 
@@ -190,49 +201,53 @@ void FSkookumScriptEditor::ShutdownModule()
   get_runtime()->set_editor_interface(nullptr);
   m_runtime_p.Reset();
 
-  FCoreUObjectDelegates::OnAssetLoaded.Remove(m_on_asset_loaded_handle);
-  FCoreUObjectDelegates::OnObjectModified.Remove(m_on_object_modified_handle);
-  FEditorDelegates::OnMapOpened.Remove(m_on_map_opened_handle);
-  FEditorDelegates::OnNewAssetCreated.Remove(m_on_new_asset_created_handle);
-  FEditorDelegates::OnAssetsDeleted.Remove(m_on_assets_deleted_handle);
-  FEditorDelegates::OnAssetPostImport.Remove(m_on_asset_post_import_handle);
-
-  FAssetRegistryModule * asset_registry_p = FModuleManager::GetModulePtr<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
-  if (asset_registry_p)
+  if (!IsRunningCommandlet())
     {
-    asset_registry_p->Get().OnAssetAdded().Remove(m_on_asset_added_handle);
-    asset_registry_p->Get().OnAssetRenamed().Remove(m_on_asset_renamed_handle);
-    asset_registry_p->Get().OnInMemoryAssetCreated().Remove(m_on_in_memory_asset_created_handle);
-    asset_registry_p->Get().OnInMemoryAssetDeleted().Remove(m_on_in_memory_asset_deleted_handle);
-    }
 
-  //---------------------------------------------------------------------------------------
-  // UI extension
+    // Remove delegates
+    FCoreUObjectDelegates::OnAssetLoaded.Remove(m_on_asset_loaded_handle);
+    FCoreUObjectDelegates::OnObjectModified.Remove(m_on_object_modified_handle);
+    FEditorDelegates::OnMapOpened.Remove(m_on_map_opened_handle);
+    FEditorDelegates::OnNewAssetCreated.Remove(m_on_new_asset_created_handle);
+    FEditorDelegates::OnAssetsDeleted.Remove(m_on_assets_deleted_handle);
+    FEditorDelegates::OnAssetPostImport.Remove(m_on_asset_post_import_handle);
 
-  if (m_level_extension_manager.IsValid())
-    {
-    FSkookumScriptEditorCommands::Unregister();
-    m_level_tool_bar_extender->RemoveExtension(m_level_tool_bar_extension.ToSharedRef());
-    m_level_extension_manager->RemoveExtender(m_level_tool_bar_extender);
-    }
-  else
-    {
-    m_level_extension_manager.Reset();
-    }
+    FAssetRegistryModule * asset_registry_p = FModuleManager::GetModulePtr<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
+    if (asset_registry_p)
+      {
+      asset_registry_p->Get().OnAssetAdded().Remove(m_on_asset_added_handle);
+      asset_registry_p->Get().OnAssetRenamed().Remove(m_on_asset_renamed_handle);
+      asset_registry_p->Get().OnInMemoryAssetCreated().Remove(m_on_in_memory_asset_created_handle);
+      asset_registry_p->Get().OnInMemoryAssetDeleted().Remove(m_on_in_memory_asset_deleted_handle);
+      }
 
-  if (m_blueprint_extension_manager.IsValid())
-    {
-    FSkookumScriptEditorCommands::Unregister();
-    m_blueprint_tool_bar_extender->RemoveExtension(m_blueprint_tool_bar_extension.ToSharedRef());
-    m_blueprint_extension_manager->RemoveExtender(m_blueprint_tool_bar_extender);
-    }
-  else
-    {
-    m_blueprint_extension_manager.Reset();
-    }
+    //---------------------------------------------------------------------------------------
+    // UI extension
 
-  FSkookumStyles::Shutdown();
+    if (m_level_extension_manager.IsValid())
+      {
+      FSkookumScriptEditorCommands::Unregister();
+      m_level_tool_bar_extender->RemoveExtension(m_level_tool_bar_extension.ToSharedRef());
+      m_level_extension_manager->RemoveExtender(m_level_tool_bar_extender);
+      }
+    else
+      {
+      m_level_extension_manager.Reset();
+      }
 
+    if (m_blueprint_extension_manager.IsValid())
+      {
+      FSkookumScriptEditorCommands::Unregister();
+      m_blueprint_tool_bar_extender->RemoveExtension(m_blueprint_tool_bar_extension.ToSharedRef());
+      m_blueprint_extension_manager->RemoveExtender(m_blueprint_tool_bar_extender);
+      }
+    else
+      {
+      m_blueprint_extension_manager.Reset();
+      }
+
+    FSkookumStyles::Shutdown();
+    }
   }
 
 //=======================================================================================		//=======================================================================================
@@ -243,12 +258,6 @@ void FSkookumScriptEditor::ShutdownModule()
 
 void FSkookumScriptEditor::on_class_updated(SkClass * sk_class_p, UClass * ue_class_p)
   {
-  // Don't do anything if invoked from the command line
-  if (IsRunningCommandlet())
-    {
-    return;
-    }
-
   // 1) Refresh actions (in Blueprint editor drop down menu)
   FBlueprintActionDatabase::Get().RefreshClassActions(ue_class_p);
 
@@ -398,7 +407,7 @@ void FSkookumScriptEditor::on_asset_loaded(UObject * new_object_p)
     // Register callback so we know when this Blueprint has been compiled
     blueprint_p->OnCompiled().AddRaw(this, &FSkookumScriptEditor::on_blueprint_compiled);
 
-    if (m_is_skookum_project && get_runtime()->is_skookum_initialized())
+    if (m_is_skookum_project)
       {
       // And generate script files
       generate_class_script_files(blueprint_p->GeneratedClass, true);
@@ -411,7 +420,7 @@ void FSkookumScriptEditor::on_asset_loaded(UObject * new_object_p)
 //
 void FSkookumScriptEditor::on_object_modified(UObject * obj_p)
   {
-  if (m_is_skookum_project && get_runtime()->is_skookum_initialized())
+  if (m_is_skookum_project)
     {
     // Is this a blueprint?
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
@@ -438,7 +447,7 @@ void FSkookumScriptEditor::on_assets_deleted(const TArray<UClass*> & deleted_ass
 //
 void FSkookumScriptEditor::on_asset_post_import(UFactory * factory_p, UObject * obj_p)
   {
-  if (m_is_skookum_project && get_runtime()->is_skookum_initialized())
+  if (m_is_skookum_project)
     {
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
     if (blueprint_p)
@@ -475,7 +484,7 @@ void FSkookumScriptEditor::on_asset_renamed(const FAssetData & asset_data, const
 //
 void FSkookumScriptEditor::on_in_memory_asset_created(UObject * obj_p)
   {
-  if (m_is_skookum_project && get_runtime()->is_skookum_initialized())
+  if (m_is_skookum_project)
     {
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
     if (blueprint_p)
@@ -504,10 +513,8 @@ void FSkookumScriptEditor::on_in_memory_asset_deleted(UObject * obj_p)
 // Called when the map is done loading (load progress reaches 100%)
 void FSkookumScriptEditor::on_map_opened(const FString & file_name, bool as_template)
   {
-  if (m_is_skookum_project)
-    {
-    generate_used_class_script_files();
-    }
+  // Generate all script files one more time to be sure
+  generate_all_class_script_files();
 
   // Let runtime know we are done opening a new map
   get_runtime()->on_editor_map_opened();
@@ -518,7 +525,7 @@ void FSkookumScriptEditor::on_map_opened(const FString & file_name, bool as_temp
 void FSkookumScriptEditor::on_blueprint_compiled(UBlueprint * blueprint_p)
   {
   // Re-generate script files for this class as things might have changed
-  if (m_is_skookum_project && get_runtime()->is_skookum_initialized())
+  if (m_is_skookum_project)
     {
     generate_class_script_files(blueprint_p->GeneratedClass, true);
     }
@@ -610,13 +617,13 @@ bool FSkookumScriptEditor::is_property_type_supported_and_known(UProperty * var_
     }
 
   UObjectPropertyBase * object_var_p = Cast<UObjectPropertyBase>(var_p);
-  if (object_var_p && (!object_var_p->PropertyClass || !get_runtime()->is_class_known_to_skookum(object_var_p->PropertyClass)))
+  if (object_var_p && (!object_var_p->PropertyClass || !get_runtime()->is_static_class_known_to_skookum(object_var_p->PropertyClass)))
     {
     return false;
     }
 
   UStructProperty * struct_var_p = Cast<UStructProperty>(var_p);
-  if (struct_var_p && (!struct_var_p->Struct || (get_skookum_struct_type(struct_var_p->Struct) == SkTypeID_UStruct && !get_runtime()->is_struct_known_to_skookum(struct_var_p->Struct))))
+  if (struct_var_p && (!struct_var_p->Struct || (get_skookum_struct_type(struct_var_p->Struct) == SkTypeID_UStruct && !get_runtime()->is_static_struct_known_to_skookum(struct_var_p->Struct))))
     {
     return false;
     }
@@ -628,7 +635,7 @@ bool FSkookumScriptEditor::is_property_type_supported_and_known(UProperty * var_
     }
 
   UEnum * enum_p = get_enum(var_p);
-  if (enum_p && !get_runtime()->is_enum_known_to_skookum(enum_p))
+  if (enum_p && !get_runtime()->is_static_enum_known_to_skookum(enum_p))
     {
     return false;
     }

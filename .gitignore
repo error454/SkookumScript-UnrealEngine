@@ -4,6 +4,8 @@
 *.sdf
 *.opensdf
 CMakeLists.txt
+.hg/**
+.hgignore
 /Runtime/Scripts/Engine-Generated/**
 /Runtime/*.bat
 /Runtime/*.sh

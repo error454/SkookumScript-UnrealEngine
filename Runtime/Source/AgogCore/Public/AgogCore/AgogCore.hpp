@@ -31,6 +31,7 @@
 #include <float.h>   // float minimums and maximums: FLT_DIG, FLT_MAX, FLT_EPSILON, DBL_DIG
 #include <stddef.h>  // size_t on OS X
 #include <new>       // new & delete
+#include <memory.h>  // memcpy
 
 // Additional includes at end of file
 
@@ -134,6 +135,8 @@
 
     #endif
   
+    #define A_BREAK()   __debugbreak()
+
   #endif  // _MSC_VER
 
 #endif  // A_PLAT_PC
@@ -225,7 +228,9 @@
   #define A_NO_SSE
   #define AGOG_ALIGNMENT32
   #define AGOG_LITTLE_ENDIAN_HOST   1    // Little endian
+
   #define NO_AGOG_PLACEMENT_NEW
+  #define A_NO_GLOBAL_EXCEPTION_CATCH
 
   // $Revisit - CReis Look into using __func__ and __PRETTY_FUNCTION__ instead
   #define __FUNCSIG__  __FUNCTION__

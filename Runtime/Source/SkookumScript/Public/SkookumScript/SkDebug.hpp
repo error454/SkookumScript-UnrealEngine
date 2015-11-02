@@ -37,6 +37,7 @@
   #define SK_DPRINTF(_msg, ...)                                     ADebug::print_format(_msg, __VA_ARGS__)
 
   #define SK_ASSERTX(_boolean_exp, _ex_desc)                        A_VERIFY(_boolean_exp, _ex_desc, AErrId_generic, SkDebug)
+  #define SK_ASSERTX_NO_THROW(_boolean_exp, _ex_desc)               A_VERIFY_NO_THROW(_boolean_exp, _ex_desc, AErrId_generic, SkDebug)
   #define SK_ASSERT(_boolean_exp, _ex_desc, _ExClass)               A_VERIFY(_boolean_exp, _ex_desc, AErrId_generic, _ExClass)
   #define SK_ASSERT_INVOKED(_boolean_exp, _ex_desc)                 A_VERIFY(_boolean_exp, (SkDebugInfoSetter(), _ex_desc), AErrId_generic, SkDebug)
   #define SK_ASSERT_INFO(_boolean_exp, _ex_desc, _info)             A_VERIFY(_boolean_exp, (SkDebugInfoSetter(_info), _ex_desc), AErrId_generic, SkDebug)
@@ -70,6 +71,7 @@
   #define SK_DPRINTF(_msg, ...)                                     (void(0))
 
   #define SK_ASSERTX(_boolean_exp, _ex_desc)                        (void(0))
+  #define SK_ASSERTX_NO_THROW(_boolean_exp, _ex_desc)               (void(0))
   #define SK_ASSERT(_boolean_exp, _ex_desc, _ExClass)               (void(0))
   #define SK_ASSERT_INVOKED(_boolean_exp, _ex_desc, _info)          (void(0))
   #define SK_ASSERT_INFO(_boolean_exp, _ex_desc, _info)             (void(0))
