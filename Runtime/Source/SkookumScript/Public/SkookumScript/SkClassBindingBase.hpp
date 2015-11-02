@@ -34,10 +34,10 @@ class SkClassBindingBase : public SkClassBindingAbstract<_BindingClass>, public 
 
     // Types
 
-    typedef _DataType tDataType;
-    typedef SkClassBindingAbstract<_BindingClass> tBindingAbstract;
-    typedef SkClassBindingBase<_BindingClass, _DataType> tBindingBase;
-    typedef SkInstance::tUserData tUserData;
+    typedef _DataType                                     tDataType;
+    typedef SkClassBindingAbstract<_BindingClass>         tBindingAbstract;
+    typedef SkClassBindingBase<_BindingClass, _DataType>  tBindingBase;
+    typedef SkInstance::tUserData                         tUserData;
 
     // Constants
 

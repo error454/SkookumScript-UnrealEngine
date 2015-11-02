@@ -48,6 +48,10 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
 
     // Overridden from ISkookumScriptRuntime
 
+    virtual void  startup_skookum() override;
+    virtual bool  is_skookum_initialized() const override;
+    virtual bool  is_freshen_binaries_pending() const override;
+
     #if WITH_EDITOR
 
       virtual void  set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p) override;
@@ -56,9 +60,9 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
       virtual void  on_class_scripts_changed_by_editor(const FString & class_name, eChangeType change_type) override;
       virtual void  show_ide(const FString & focus_class_name, const FString & focus_member_name, bool is_data_member, bool is_class_member) override;
 
-      virtual bool  is_class_known_to_skookum(UClass * class_p) const override;
-      virtual bool  is_struct_known_to_skookum(UStruct * struct_p) const override;
-      virtual bool  is_enum_known_to_skookum(UEnum * enum_p) const override;
+      virtual bool  is_static_class_known_to_skookum(UClass * class_p) const override;
+      virtual bool  is_static_struct_known_to_skookum(UStruct * struct_p) const override;
+      virtual bool  is_static_enum_known_to_skookum(UEnum * enum_p) const override;
       virtual bool  has_skookum_default_constructor(UClass * class_p) const override;
       virtual bool  has_skookum_destructor(UClass * class_p) const override;
       virtual bool  is_skookum_component_class(UClass * class_p) const override;
@@ -66,9 +70,6 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
       virtual bool  is_skookum_blueprint_event(UFunction * function_p) const override;
 
     #endif
-
-    virtual bool  is_skookum_initialized() const override;
-    virtual bool  is_freshen_binaries_pending() const override;
 
     // Local methods
 
@@ -433,7 +434,7 @@ FSkookumScriptRuntime::FSkookumScriptRuntime()
   : m_game_world_p(nullptr)
   , m_editor_world_p(nullptr)
 #ifdef SKOOKUM_REMOTE_UNREAL
-  , m_freshen_binaries_requested(false)
+  , m_freshen_binaries_requested(true)
 #endif
   {
   //m_runtime.set_compiled_path("Scripts" SK_BITS_ID "\\");
@@ -456,17 +457,14 @@ void FSkookumScriptRuntime::StartupModule()
   // Hook up Unreal memory allocator
   AMemory::override_functions(&Agog::malloc_func, &Agog::free_func, &Agog::req_byte_size_func);
 
+  // Gather and register all UE classes/structs/enums known to SkookumScript
+  SkUEBindings::register_static_types();
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Start up SkookumScript
   #if !WITH_EDITOR
     // If no editor, initialize right away
-    // otherwise wait until map is loaded
-    m_runtime.startup();
-
-    #ifndef SKOOKUM_REMOTE_UNREAL
-      bool success_b = m_runtime.load_compiled_scripts();
-      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
-    #endif
+    startup_skookum();
   #endif
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -552,14 +550,18 @@ void FSkookumScriptRuntime::on_world_cleanup(UWorld * world_p, bool session_ende
         SkUEClassBindingHelper::set_world(nullptr);
         }
 
-      // Simple shutdown
-      //SkookumScript::get_world()->clear_coroutines();
-      A_DPRINT(
-        "SkookumScript resetting session...\n"
-        "  cleaning up...\n");
-      SkookumScript::deinitialize_session();
-      SkookumScript::initialize_session();
-      A_DPRINT("  ...done!\n\n");
+      // Restart SkookumScript if initialized
+      if (is_skookum_initialized())
+        {
+        // Simple shutdown
+        //SkookumScript::get_world()->clear_coroutines();
+        A_DPRINT(
+          "SkookumScript resetting session...\n"
+          "  cleaning up...\n");
+        SkookumScript::deinitialize_session();
+        SkookumScript::initialize_session();
+        A_DPRINT("  ...done!\n\n");
+        }
       }
     else if (world_p->WorldType == EWorldType::Editor)
       {
@@ -663,31 +665,60 @@ void FSkookumScriptRuntime::tick_remote()
     if (m_remote_client.is_load_compiled_binaries_requested())
       {
       // Load the Skookum class hierarchy scripts in compiled binary form
-      #if WITH_EDITOR
-        bool is_first_time = !is_skookum_initialized();
-      #endif
+      bool is_first_time = !is_skookum_initialized();
 
       bool success_b = m_runtime.load_compiled_scripts();
       SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
       m_remote_client.clear_load_compiled_binaries_requested();
 
-      #if WITH_EDITOR
-        if (is_first_time && is_skookum_initialized())
-          {
-          // When we load the binaries for the very first time, try regenerating all generated class script files again,
-          // as the editor might have tried to generate them before but skipped because SkookumScript was not initialized yet
-          m_runtime.get_editor_interface()->generate_all_class_script_files();
-          // Also recompile Blueprints in error state as such error state might have been due to SkookumScript not being initialized at the time of compile
-          m_runtime.get_editor_interface()->recompile_blueprints_with_errors();
-          // Set world pointer now
-          SkUEClassBindingHelper::set_world(m_game_world_p);
-          }
-      #endif
+      if (is_first_time && is_skookum_initialized())
+        {
+        #if WITH_EDITOR
+          // Recompile Blueprints in error state as such error state might have been due to SkookumScript not being initialized at the time of compile
+          if (m_runtime.get_editor_interface())
+            {
+            m_runtime.get_editor_interface()->recompile_blueprints_with_errors();
+            }
+        #endif
+
+        // Set world pointer variable now that SkookumScript is initialized
+        SkUEClassBindingHelper::set_world(m_game_world_p);
+        }
       }
     }
   }
 
 #endif
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::startup_skookum()
+  {
+  m_runtime.startup();
+
+  #ifndef SKOOKUM_REMOTE_UNREAL
+    bool success_b = m_runtime.load_compiled_scripts();
+    SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_skookum_initialized() const
+  {
+  return SkookumScript::is_flag_set(SkookumScript::Flag_evaluate);
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+bool FSkookumScriptRuntime::is_freshen_binaries_pending() const
+  {
+#ifdef SKOOKUM_REMOTE_UNREAL
+  return m_freshen_binaries_requested;
+#else
+  return false;
+#endif
+  }
 
 #if WITH_EDITOR
 
@@ -761,23 +792,23 @@ void FSkookumScriptRuntime::show_ide(const FString & focus_class_name, const FSt
 
 //---------------------------------------------------------------------------------------
 // 
-bool FSkookumScriptRuntime::is_class_known_to_skookum(UClass * class_p) const
+bool FSkookumScriptRuntime::is_static_class_known_to_skookum(UClass * class_p) const
   {
-  return SkUEClassBindingHelper::get_sk_class_from_ue_class(class_p) != nullptr;
+  return SkUEClassBindingHelper::is_static_class_registered(class_p);
   }
 
 //---------------------------------------------------------------------------------------
 // 
-bool FSkookumScriptRuntime::is_struct_known_to_skookum(UStruct * struct_p) const
+bool FSkookumScriptRuntime::is_static_struct_known_to_skookum(UStruct * struct_p) const
   {
-  return SkUEClassBindingHelper::get_static_sk_class_from_ue_struct(struct_p) != nullptr;
+  return SkUEClassBindingHelper::is_static_struct_registered(struct_p);
   }
 
 //---------------------------------------------------------------------------------------
 // 
-bool FSkookumScriptRuntime::is_enum_known_to_skookum(UEnum * enum_p) const
+bool FSkookumScriptRuntime::is_static_enum_known_to_skookum(UEnum * enum_p) const
   {
-  return SkUEClassBindingHelper::get_static_sk_class_from_ue_enum(enum_p) != nullptr;
+  return SkUEClassBindingHelper::is_static_enum_registered(enum_p);
   }
 
 //---------------------------------------------------------------------------------------
@@ -828,24 +859,5 @@ bool FSkookumScriptRuntime::is_skookum_blueprint_event(UFunction * function_p) c
   }
 
 #endif
-
-//---------------------------------------------------------------------------------------
-// 
-bool FSkookumScriptRuntime::is_skookum_initialized() const
-  {
-  return SkookumScript::is_flag_set(SkookumScript::Flag_evaluate);
-  }
-
-//---------------------------------------------------------------------------------------
-// 
-bool FSkookumScriptRuntime::is_freshen_binaries_pending() const
-  {
-  #ifdef SKOOKUM_REMOTE_UNREAL
-    return m_freshen_binaries_requested;
-  #else
-    return false;
-  #endif
-  }
-
 
 //#pragma optimize("g", on)

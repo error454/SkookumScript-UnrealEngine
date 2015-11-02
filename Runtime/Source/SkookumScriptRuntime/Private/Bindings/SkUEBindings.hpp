@@ -17,7 +17,8 @@ class SkUEBindings
 
     // Class Methods
 
-    static void register_all();
+    static void register_static_types();
+    static void register_all_bindings();
 
   }; // SkUEBindings
 

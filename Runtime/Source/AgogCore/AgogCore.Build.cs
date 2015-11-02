@@ -33,8 +33,6 @@ public class AgogCore : ModuleRules
     case UnrealTargetPlatform.IOS:
       bPlatformAllowed = true;
       Definitions.Add("A_PLAT_iOS");
-      Definitions.Add("NO_AGOG_PLACEMENT_NEW");
-      Definitions.Add("A_NO_GLOBAL_EXCEPTION_CATCH");
       useDebugCRT = true;
       break;
     }
@@ -71,7 +69,7 @@ public class AgogCore : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1703";
+      var buildNumber = "1773";
       var moduleName = "AgogCore";
 
       // Get local file path where the library is located
@@ -96,7 +94,7 @@ public class AgogCore : ModuleRules
         catch (System.Exception)
         {
           if (File.Exists(libFilePath)) File.Delete(libFilePath);
-          throw new BuildException("Could not download {0}!", libUrl);
+          Log.TraceInformation("Could not download {0}!", libUrl);
         }
       }
       // Check if a newer custom built library exists that we want to use instead

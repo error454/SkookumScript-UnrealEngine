@@ -28,21 +28,6 @@
 // Global Macros / Defines
 //=======================================================================================
 
-// A_BREAK can be overridden with something custom.
-#if !defined(A_BREAK)
-
-  #ifdef A_PLAT_PC
-    // This will break whether in debug or release
-    // Note that instead of using an assembly interrupt, the Microsoft Specific compiler
-    // intrinsic _debugbreak() is be used - it generates code identical to the assembly
-    // interrupt.
-    #define A_BREAK()   __debugbreak()
-  #else
-    #error A_BREAK must be defined!
-  #endif
-
-#endif
-
 // If this define is present, it indicates that exceptions may be used
 //#if defined(_CPPUNWIND) || defined(__TEMPLATES__)  // These defines are MSVC specific
 //  #define A_EXCEPTION_CAPABLE
@@ -222,9 +207,22 @@
     } \
   }
 
-#define A_VERIFYX(_boolean_exp, _error_msg)              A_VERIFY(_boolean_exp, _error_msg, AErrId_generic, ADebug)
-#define A_VERIFY_OS(_boolean_exp, _error_msg, _ExClass)  A_VERIFY(_boolean_exp, ADebugOS::get_last_os_error(_error_msg), AErrId_os_error, _ExClass)
-#define A_VERIFY_MEMORY(_boolean_exp, _ExClass)          A_VERIFY(_boolean_exp, "Unable to allocate memory", AErrId_low_memory, _ExClass)
+#define A_VERIFY_NO_THROW(_boolean_expr, _error_msg, _err_id, _ExClass) \
+  { \
+  static bool _test = true; \
+  if (_test && !(_boolean_expr)) \
+    { \
+    eAErrAction _action; \
+    if (ADebug::resolve_error(AErrMsg((_error_msg), "Test failed: " #_boolean_expr, A_ERR_ARGS, _err_id), &_action, &_test) || _action != AErrAction_ignore) \
+      A_BREAK(); \
+    } \
+  }
+
+#define A_VERIFYX(_boolean_exp, _error_msg)                       A_VERIFY(_boolean_exp, _error_msg, AErrId_generic, ADebug)
+#define A_VERIFYX_NO_THROW(_boolean_exp, _error_msg)              A_VERIFY_NO_THROW(_boolean_exp, _error_msg, AErrId_generic, ADebug)
+#define A_VERIFY_OS(_boolean_exp, _error_msg, _ExClass)           A_VERIFY(_boolean_exp, ADebugOS::get_last_os_error(_error_msg), AErrId_os_error, _ExClass)
+#define A_VERIFY_OS_NO_THROW(_boolean_exp, _error_msg, _ExClass)  A_VERIFY_NO_THROW(_boolean_exp, ADebugOS::get_last_os_error(_error_msg), AErrId_os_error, _ExClass)
+#define A_VERIFY_MEMORY(_boolean_exp, _ExClass)                   A_VERIFY(_boolean_exp, "Unable to allocate memory", AErrId_low_memory, _ExClass)
 
 #ifdef A_EXTRA_CHECK  // Checked build
   #define A_ASSERT(_boolean_exp, _error_msg, _err_id, _ExClass)  A_VERIFY(_boolean_exp, _error_msg, _err_id, _ExClass)

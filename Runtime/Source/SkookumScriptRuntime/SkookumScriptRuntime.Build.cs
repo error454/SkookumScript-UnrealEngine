@@ -24,8 +24,6 @@ namespace UnrealBuildTool.Rules
           break;
         case UnrealTargetPlatform.IOS:
           Definitions.Add("A_PLAT_iOS");
-          Definitions.Add("NO_AGOG_PLACEMENT_NEW");
-          Definitions.Add("A_NO_GLOBAL_EXCEPTION_CATCH");              
           break;
       }
 
@@ -82,6 +80,7 @@ namespace UnrealBuildTool.Rules
             "InputCore",
             "Sockets",
             "Networking",
+            "NetworkReplayStreaming",
             "OnlineSubsystem",
             "SlateCore",
             "Slate",

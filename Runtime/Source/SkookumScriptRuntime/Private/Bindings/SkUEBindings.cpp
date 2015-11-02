@@ -52,8 +52,15 @@
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
+// Registers UE classes, structs and enums
+void SkUEBindings::register_static_types()
+  {
+  SkUE::register_static_types();
+  }
+
+//---------------------------------------------------------------------------------------
 // Registers bindings for SkookumScript
-void SkUEBindings::register_all()
+void SkUEBindings::register_all_bindings()
   {
   // Core Overlay
   SkBoolean::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_boolean);

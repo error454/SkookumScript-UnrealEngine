@@ -38,7 +38,7 @@ SkUEBlueprintInterface::~SkUEBlueprintInterface()
   {
   clear();
 
-  SK_ASSERTX(ms_singleton_p == this, "There can be only one instance of this class.");
+  SK_ASSERTX_NO_THROW(ms_singleton_p == this, "There can be only one instance of this class.");
   ms_singleton_p = nullptr;
   }
 

@@ -542,6 +542,27 @@ void SkUEClassBindingHelper::reset_static_enum_mappings(uint32_t reserve)
 
 //---------------------------------------------------------------------------------------
 
+void SkUEClassBindingHelper::register_static_class(UClass * ue_class_p)
+  {
+  ms_static_class_map_u2s.Add(ue_class_p, nullptr);
+  }
+
+//---------------------------------------------------------------------------------------
+
+void SkUEClassBindingHelper::register_static_struct(UStruct * ue_struct_p)
+  {
+  ms_static_struct_map_u2s.Add(ue_struct_p, nullptr);
+  }
+
+//---------------------------------------------------------------------------------------
+
+void SkUEClassBindingHelper::register_static_enum(UEnum * ue_enum_p)
+  {
+  ms_static_enum_map_u2s.Add(ue_enum_p, nullptr);
+  }
+
+//---------------------------------------------------------------------------------------
+
 void SkUEClassBindingHelper::add_static_class_mapping(SkClass * sk_class_p, UClass * ue_class_p)
   {
   ms_static_class_map_u2s.Add(ue_class_p, sk_class_p);
