@@ -20,21 +20,19 @@ public class AgogCore : ModuleRules
     {
     case UnrealTargetPlatform.Win32:
       bPlatformAllowed = true;
-      platPathSuffix = Path.Combine("Win32", "VS2013");
+      platPathSuffix = Path.Combine("Win32", WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2015 ? "VS2015" : "VS2013");
       libPathExt = ".lib";
       Definitions.Add("WIN32_LEAN_AND_MEAN");
       break;
     case UnrealTargetPlatform.Win64:
       bPlatformAllowed = true;
-      platPathSuffix = Path.Combine("Win64", "VS2013");
+      platPathSuffix = Path.Combine("Win64", WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2015 ? "VS2015" : "VS2013");
       libPathExt = ".lib";
       Definitions.Add("WIN32_LEAN_AND_MEAN");
       break;
     case UnrealTargetPlatform.IOS:
       bPlatformAllowed = true;
       Definitions.Add("A_PLAT_iOS");
-      Definitions.Add("NO_AGOG_PLACEMENT_NEW");
-      Definitions.Add("A_NO_GLOBAL_EXCEPTION_CATCH");
       useDebugCRT = true;
       break;
     }
@@ -71,7 +69,7 @@ public class AgogCore : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1703";
+      var buildNumber = "1773";
       var moduleName = "AgogCore";
 
       // Get local file path where the library is located
@@ -96,7 +94,7 @@ public class AgogCore : ModuleRules
         catch (System.Exception)
         {
           if (File.Exists(libFilePath)) File.Delete(libFilePath);
-          throw new BuildException("Could not download {0}!", libUrl);
+          Log.TraceInformation("Could not download {0}!", libUrl);
         }
       }
       // Check if a newer custom built library exists that we want to use instead

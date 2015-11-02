@@ -165,7 +165,7 @@ void USkookumScriptComponent::UninitializeComponent()
   Super::UninitializeComponent();
 
   // Call SkookumScript destructor, but only if we are located inside the game world
-  if (GetOwner()->GetWorld() == SkUEClassBindingHelper::get_world())
+  if (m_instance_p && GetOwner()->GetWorld() == SkUEClassBindingHelper::get_world())
     {
     //SkDebug::print_ide(a_str_format("USkookumScriptComponent::UninitializeComponent() 0x%p\n", this), SkLocale_ide, SkDPrintType_trace);
     SK_ASSERTX(SkookumScript::is_flag_set(SkookumScript::Flag_evaluate), "SkookumScript must be in initialized state when UninitializeComponent() is invoked.");

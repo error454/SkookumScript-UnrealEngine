@@ -519,23 +519,6 @@ void FSkookumScriptGenerator::generate_class_binding_file(UStruct * class_or_str
     class_p ? TEXT("tBindingEntity") : TEXT("tBindingStruct"),
     get_skookum_symbol_id(*skookum_class_name), *skookum_class_name);
 
-  // Only set ms_uclass_or_struct_p if DLL exported
-  if (class_p)
-    {
-    if (does_class_have_static_class(class_p))
-      {
-      generated_code += FString::Printf(TEXT("  ms_uclass_p = %s::StaticClass();\r\n"), *class_name_cpp);
-      }
-    else
-      {
-      generated_code += FString::Printf(TEXT("  ms_uclass_p = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *class_or_struct_p->GetName());
-      }
-    }
-  else
-    {
-    generated_code += FString::Printf(TEXT("  ms_ustruct_p = FindObject<UStruct>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *class_or_struct_p->GetName());
-    }
-
   for (uint32 scope = 0; scope < 2; ++scope)
     {
     if (bindings[scope].Num() > 0)
@@ -677,7 +660,7 @@ void FSkookumScriptGenerator::generate_enum_binding_files()
   generated_code = TEXT("#pragma once\r\n\r\n");
   for (auto enum_p : m_exported_enums)
     {
-    generated_code += FString::Printf(TEXT("class SkUE%s : public SkEnum\n  {\r\n  public:\r\n    static SkClass *     ms_class_p;\r\n"), *enum_p->GetName());
+    generated_code += FString::Printf(TEXT("class SkUE%s : public SkEnum\n  {\r\n  public:\r\n    static SkClass *     ms_class_p;\r\n    static UEnum *       ms_uenum_p;\r\n"), *enum_p->GetName());
     generated_code += FString::Printf(TEXT("    static SkInstance *  new_instance(%s value) { return SkEnum::new_instance((SkEnumType)value, ms_class_p); }\r\n"), *enum_p->CppType);
     generated_code += TEXT("  };\r\n\r\n");
     }
@@ -689,7 +672,7 @@ void FSkookumScriptGenerator::generate_enum_binding_files()
   generated_code = TEXT("\r\n");
   for (auto enum_p : m_exported_enums)
     {
-    generated_code += FString::Printf(TEXT("SkClass * SkUE%s::ms_class_p;\r\n"), *enum_p->GetName());
+    generated_code += FString::Printf(TEXT("SkClass * SkUE%s::ms_class_p;\r\nUEnum *   SkUE%s::ms_uenum_p;\r\n"), *enum_p->GetName(), *enum_p->GetName());
     }
   generated_code += TEXT("\r\nnamespace SkUE\r\n  {\r\n\r\n");
   generated_code += TEXT("  void register_enum_bindings()\r\n    {\r\n");
@@ -697,10 +680,10 @@ void FSkookumScriptGenerator::generate_enum_binding_files()
     {
     generated_code += FString::Printf(TEXT("    SkUE%s::ms_class_p = SkBrain::get_class(ASymbol::create_existing(0x%08x));\r\n"), *enum_p->GetName(), get_skookum_symbol_id(enum_p->GetName()));
     }
-  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_enum_mappings(%d);\r\n"), m_exported_enums.Num());
+  generated_code += TEXT("\r\n");
   for (auto enum_p : m_exported_enums)
     {
-    generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_enum_mapping(SkUE%s::ms_class_p, FindObject<UEnum>(ANY_PACKAGE, TEXT(\"%s\")));\r\n"), *enum_p->GetName(), *enum_p->GetName());
+    generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_enum_mapping(SkUE%s::ms_class_p, SkUE%s::ms_uenum_p);\r\n"), *enum_p->GetName(), *enum_p->GetName());
     }
   generated_code += TEXT("    }\r\n");
   generated_code += TEXT("\r\n  } // SkUE\r\n");
@@ -1230,21 +1213,89 @@ void FSkookumScriptGenerator::generate_master_binding_file()
 
   generated_code += TEXT("\r\nnamespace SkUE\r\n  {\r\n\r\n");
 
+  //--- register_static_types() ---
+
+  generated_code += TEXT("  void register_static_types()\r\n    {\r\n");
+  
+  // Store UE class pointers
+  uint32_t num_exported_classes = 0;
+  for (auto class_or_struct_p : m_exported_classes)
+    {
+    UClass * class_p = Cast<UClass>(class_or_struct_p);
+    if (class_p)
+      {
+      ++num_exported_classes;
+      if (does_class_have_static_class(class_p))
+        {
+        generated_code += FString::Printf(TEXT("    SkUE%s::ms_uclass_p = %s::StaticClass();\r\n"), *get_skookum_class_name(class_p), *get_cpp_class_name(class_p));
+        }
+      else
+        {
+        generated_code += FString::Printf(TEXT("    SkUE%s::ms_uclass_p = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *get_skookum_class_name(class_p), *class_p->GetName());
+        }
+      }
+    }
+  generated_code += TEXT("\r\n");
+
+  // Store UE struct pointers
+  for (auto class_or_struct_p : m_exported_classes)
+    {
+    if (!Cast<UClass>(class_or_struct_p))
+      {
+      generated_code += FString::Printf(TEXT("    SkUE%s::ms_ustruct_p = FindObject<UStruct>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *get_skookum_class_name(class_or_struct_p), *class_or_struct_p->GetName());
+      }
+    }
+  generated_code += TEXT("\r\n");
+
+  // Store UE enum pointers
+  for (auto enum_p : m_exported_enums)
+    {
+    generated_code += FString::Printf(TEXT("    SkUE%s::ms_uenum_p = FindObject<UEnum>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *enum_p->GetName(), *enum_p->GetName());
+    }
+
+  // Register static classes
+  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_class_mappings(%d);\r\n"), num_exported_classes);
+  for (auto class_or_struct_p : m_exported_classes)
+    {
+    if (Cast<UClass>(class_or_struct_p))
+      {
+      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::register_static_class(SkUE%s::ms_uclass_p);\r\n"), *get_skookum_class_name(class_or_struct_p));
+      }
+    }
+
+  // Register static structs
+  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_struct_mappings(%d);\r\n"), m_exported_classes.Num() - num_exported_classes);
+  for (auto class_or_struct_p : m_exported_classes)
+    {
+    if (!Cast<UClass>(class_or_struct_p))
+      {
+      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::register_static_struct(SkUE%s::ms_ustruct_p);\r\n"), *get_skookum_class_name(class_or_struct_p));
+      }
+    }
+
+  // Register static enums
+  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_enum_mappings(%d);\r\n"), m_exported_enums.Num());
+  for (auto enum_p : m_exported_enums)
+    {
+    generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::register_static_enum(SkUE%s::ms_uenum_p);\r\n"), *enum_p->GetName());
+    }
+
+  generated_code += TEXT("    }\r\n\r\n");
+
+  //--- register_bindings() ---
+
   generated_code += TEXT("  void register_bindings()\r\n    {\r\n");
 
-  // Bind all classes
-  uint32_t num_exported_classes = 0; // How many of the classesare actually class and not just structs
+  // Bind all classes & structs
   for (auto class_or_struct_p : m_exported_classes)
     {
     generated_code += FString::Printf(TEXT("    SkUE%s::register_bindings();\r\n"), *get_skookum_class_name(class_or_struct_p));
-    num_exported_classes += uint32_t(Cast<UClass>(class_or_struct_p) != nullptr);
     }
 
   // Set up enum classes
-  generated_code += TEXT("\r\n    register_enum_bindings();\r\n");
+  generated_code += TEXT("\r\n    register_enum_bindings();\r\n\r\n");
 
   // Generate static class mappings
-  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_class_mappings(%d);\r\n"), num_exported_classes);
   for (auto class_p : m_exported_classes)
     {
     if (Cast<UClass>(class_p))
@@ -1254,7 +1305,6 @@ void FSkookumScriptGenerator::generate_master_binding_file()
     }
 
   // Generate static struct mappings
-  generated_code += FString::Printf(TEXT("\r\n    SkUEClassBindingHelper::reset_static_struct_mappings(%d);\r\n"), m_exported_classes.Num() - num_exported_classes);
   for (auto class_p : m_exported_classes)
     {
     if (!Cast<UClass>(class_p))

@@ -48,6 +48,10 @@ class ISkookumScriptRuntime : public IModuleInterface
 
     // Methods
 
+    virtual void  startup_skookum() = 0;
+    virtual bool  is_skookum_initialized() const = 0;
+    virtual bool  is_freshen_binaries_pending() const = 0;
+
     #if WITH_EDITOR
 
       virtual void  set_editor_interface(ISkookumScriptRuntimeEditorInterface * editor_interface_p) = 0;
@@ -56,9 +60,9 @@ class ISkookumScriptRuntime : public IModuleInterface
       virtual void  on_class_scripts_changed_by_editor(const FString & class_name, eChangeType change_type) = 0;
       virtual void  show_ide(const FString & focus_class_name, const FString & focus_member_name, bool is_data_member, bool is_class_member) = 0;
 
-      virtual bool  is_class_known_to_skookum(UClass * class_p) const = 0;
-      virtual bool  is_struct_known_to_skookum(UStruct * struct_p) const = 0;
-      virtual bool  is_enum_known_to_skookum(UEnum * enum_p) const = 0;
+      virtual bool  is_static_class_known_to_skookum(UClass * class_p) const = 0;
+      virtual bool  is_static_struct_known_to_skookum(UStruct * struct_p) const = 0;
+      virtual bool  is_static_enum_known_to_skookum(UEnum * enum_p) const = 0;
       virtual bool  has_skookum_default_constructor(UClass * class_p) const = 0;
       virtual bool  has_skookum_destructor(UClass * class_p) const = 0;
       virtual bool  is_skookum_component_class(UClass * class_p) const = 0;
@@ -66,9 +70,6 @@ class ISkookumScriptRuntime : public IModuleInterface
       virtual bool  is_skookum_blueprint_event(UFunction * function_p) const = 0;
 
     #endif
-
-    virtual bool  is_skookum_initialized() const = 0;
-    virtual bool  is_freshen_binaries_pending() const = 0;
 
   };
 

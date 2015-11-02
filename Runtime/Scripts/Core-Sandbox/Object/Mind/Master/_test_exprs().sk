@@ -9,7 +9,11 @@
   [
   !str:       "hello".[append(" world") self]
   !counter:   20
-  !actor:     Actor.named("ActorName")
+  // Using string as name identifier
+  //!actor:     Actor.named("ActorName")
+  // Using symbol as name identifier
+  //!actor:     Actor.named('ActorName')
+  //!actor_ref: @'ActorName'
   
   test
   test2
@@ -24,6 +28,11 @@
       this.test
       ]
     arg1 > 3
+      [
+      test2
+      test
+      ]
+    2r101010 = 16r2a // 42 = 42
       [
       test2
       test

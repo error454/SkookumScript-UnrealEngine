@@ -4,6 +4,8 @@
 *.sdf
 *.opensdf
 CMakeLists.txt
+.hg/**
+.hgignore
 /Runtime/Scripts/Engine-Generated/**
 /Runtime/*.bat
 /Runtime/*.sh
@@ -14,9 +16,12 @@ CMakeLists.txt
 /Runtime/SkookumIDE/*.exe
 
 /Runtime/*2013*.*
+/Runtime/*2015*.*
 /Runtime/Source/AgogCore/*2013*.user
+/Runtime/Source/AgogCore/*2015*.user
 /Runtime/Source/AgogCore/Lib/**
 /Runtime/Source/SkookumScript/*2013*.*
+/Runtime/Source/SkookumScript/*2015*.*
 /Runtime/Source/SkookumScript/Lib/**
 /Runtime/Source/SkookumScript/Private/**
 /Runtime/Source/SkookumLibs*.*

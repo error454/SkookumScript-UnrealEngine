@@ -564,6 +564,15 @@ A_INLINE SkMethodBase * SkClass::find_method(const ASymbol & method_name, bool *
 A_INLINE SkInvokableBase * SkClass::get_invokable_from_vtable(eSkScope scope, int16_t vtable_index) const
   {
   const tSkVTable & vtable = (scope == SkScope_instance ? m_vtable_i : m_vtable_c);
+
+  // Recover from bad vtable index
+  #ifdef SK_RUNTIME_RECOVER
+    if ((uint32_t)vtable_index >= vtable.get_length())
+      {
+      return nullptr;
+      }
+  #endif
+
   return vtable.get_at(vtable_index);
   }
 
@@ -571,6 +580,14 @@ A_INLINE SkInvokableBase * SkClass::get_invokable_from_vtable(eSkScope scope, in
 // Gets instance method from this class or a superclass.
 A_INLINE SkInvokableBase * SkClass::get_invokable_from_vtable_i(int16_t vtable_index) const
   {
+  // Recover from bad vtable index
+  #ifdef SK_RUNTIME_RECOVER
+    if ((uint32_t)vtable_index >= m_vtable_i.get_length())
+      {
+      return nullptr;
+      }
+  #endif
+
   return m_vtable_i.get_at(vtable_index);
   }
 
@@ -578,6 +595,14 @@ A_INLINE SkInvokableBase * SkClass::get_invokable_from_vtable_i(int16_t vtable_i
 // Gets class method from this class or a superclass.
 A_INLINE SkInvokableBase * SkClass::get_invokable_from_vtable_c(int16_t vtable_index) const
   {
+  // Recover from bad vtable index
+  #ifdef SK_RUNTIME_RECOVER
+    if ((uint32_t)vtable_index >= m_vtable_c.get_length())
+      {
+      return nullptr;
+      }
+  #endif
+
   return m_vtable_c.get_at(vtable_index);
   }
 
