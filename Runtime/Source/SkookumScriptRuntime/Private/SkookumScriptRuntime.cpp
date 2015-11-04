@@ -696,10 +696,13 @@ void FSkookumScriptRuntime::startup_skookum()
   {
   m_runtime.startup();
 
-  #ifndef SKOOKUM_REMOTE_UNREAL
+#ifdef SKOOKUM_REMOTE_UNREAL // Always initialize here if there's no remote connection
+  if (IsRunningCommandlet())
+#endif
+    {
     bool success_b = m_runtime.load_compiled_scripts();
     SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
-  #endif
+    }
   }
 
 //---------------------------------------------------------------------------------------
