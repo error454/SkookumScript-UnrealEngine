@@ -275,24 +275,29 @@ void FSkookumScriptGenerator::FinishExport()
 #endif
 
   // Now remove all exported classes from the used classes list and see if anything is left
-  for (auto exported_class_p : m_exported_classes)
+  int32 used_count_before;
+  do
     {
-    m_used_classes.Remove(exported_class_p);
-    }
-  // Anything left is a struct or class that was never seen in IScriptGeneratorPluginInterface::ExportClass() but is needed for the code to compile
-  // Export these too and hope for the best
-  for (auto orphan_struct_p : m_used_classes)
-    {
-    UClass * orphan_class_p = Cast<UClass>(orphan_struct_p);
-    if (orphan_class_p)
+    for (auto exported_class_p : m_exported_classes)
       {
-      generate_class(orphan_class_p, FString());
+      m_used_classes.Remove(exported_class_p);
       }
-    else
+    // Anything left is a struct or class that was never seen in IScriptGeneratorPluginInterface::ExportClass() but is needed for the code to compile
+    // Export these too and hope for the best
+    used_count_before = m_used_classes.Num();
+    for (auto orphan_struct_p : m_used_classes)
       {
-      generate_struct(orphan_struct_p, FString());
+      UClass * orphan_class_p = Cast<UClass>(orphan_struct_p);
+      if (orphan_class_p)
+        {
+        generate_class(orphan_class_p, FString());
+        }
+      else
+        {
+        generate_struct(orphan_struct_p, FString());
+        }
       }
-    }
+    } while (m_used_classes.Num() > used_count_before);
 
   generate_enum_binding_files();
   generate_master_binding_file();
@@ -1225,11 +1230,13 @@ void FSkookumScriptGenerator::generate_master_binding_file()
     if (class_p)
       {
       ++num_exported_classes;
+      /* This does not work for a renegade class or two so disable for now
       if (does_class_have_static_class(class_p))
         {
         generated_code += FString::Printf(TEXT("    SkUE%s::ms_uclass_p = %s::StaticClass();\r\n"), *get_skookum_class_name(class_p), *get_cpp_class_name(class_p));
         }
       else
+      */
         {
         generated_code += FString::Printf(TEXT("    SkUE%s::ms_uclass_p = FindObject<UClass>(ANY_PACKAGE, TEXT(\"%s\"));\r\n"), *get_skookum_class_name(class_p), *class_p->GetName());
         }

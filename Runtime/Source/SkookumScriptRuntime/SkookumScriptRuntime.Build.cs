@@ -65,6 +65,7 @@ namespace UnrealBuildTool.Rules
             "Core",
             "CoreUObject",
             "Engine",
+            "UMG",
           }
         );
 
@@ -79,9 +80,11 @@ namespace UnrealBuildTool.Rules
           {
             "InputCore",
             "Sockets",
+            "HTTP",
             "Networking",
             "NetworkReplayStreaming",
             "OnlineSubsystem",
+            "MovieScene",
             "SlateCore",
             "Slate",
             "AgogCore",

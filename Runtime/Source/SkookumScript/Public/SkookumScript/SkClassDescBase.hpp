@@ -54,6 +54,9 @@ enum eSkClassType
 // The content/layout of this type is entirely user-specific and not known or interpreted by SkookumScript
 typedef uint64_t tSkRawDataInfo;
 
+// Special value marking raw data field as invalid
+const tSkRawDataInfo SkRawDataInfo_Invalid = uint64_t(int64_t(-1));
+
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript Class Abstract Base also known as a class descriptor
 //            - "class-desc" from the language syntax:
