@@ -32,6 +32,11 @@
 // Engine-Generated
 //=======================================================================================
 
+// HACK to support UMG module
+#include "MovieScene.h"
+#include "UserWidget.h"
+#include "Widgets/Layout/SScaleBox.h"
+
 #include <SkUE.generated.inl> // Massive code file containing thousands of generated bindings
 
 //=======================================================================================

@@ -434,7 +434,7 @@ FSkookumScriptRuntime::FSkookumScriptRuntime()
   : m_game_world_p(nullptr)
   , m_editor_world_p(nullptr)
 #ifdef SKOOKUM_REMOTE_UNREAL
-  , m_freshen_binaries_requested(true)
+  , m_freshen_binaries_requested(WITH_EDITORONLY_DATA) // With cooked data, load binaries immediately and do not freshen
 #endif
   {
   //m_runtime.set_compiled_path("Scripts" SK_BITS_ID "\\");
@@ -696,7 +696,7 @@ void FSkookumScriptRuntime::startup_skookum()
   {
   m_runtime.startup();
 
-#ifdef SKOOKUM_REMOTE_UNREAL // Always initialize here if there's no remote connection
+#if defined(SKOOKUM_REMOTE_UNREAL) && WITH_EDITORONLY_DATA // Always initialize here if there's no remote connection or cooked build
   if (IsRunningCommandlet())
 #endif
     {
