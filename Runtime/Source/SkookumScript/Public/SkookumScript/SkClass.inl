@@ -271,6 +271,7 @@ A_INLINE void SkClass::set_flag_load(
 
 A_INLINE SkInstance * SkClass::new_instance_from_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p) const
   {
+  SK_ASSERTX(raw_data_info != SkRawDataInfo_Invalid, a_str_format("Tried to access invalid raw data member of class '%s'", get_name_cstr()));
   return (*m_raw_member_accessor_f)(obj_p, raw_data_info, data_type_p, nullptr);
   }
 
@@ -279,6 +280,7 @@ A_INLINE SkInstance * SkClass::new_instance_from_raw_data(void * obj_p, tSkRawDa
 
 A_INLINE void SkClass::assign_raw_data(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p) const
   {
+  SK_ASSERTX(raw_data_info != SkRawDataInfo_Invalid, a_str_format("Tried to access invalid raw data member of class '%s'", get_name_cstr()));
   (*m_raw_member_accessor_f)(obj_p, raw_data_info, data_type_p, value_p);
   }
 
