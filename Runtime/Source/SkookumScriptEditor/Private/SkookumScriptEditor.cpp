@@ -119,6 +119,9 @@ void FSkookumScriptEditor::StartupModule()
   // Get pointer to runtime module
   m_runtime_p = FModuleManager::Get().GetModule("SkookumScriptRuntime");
 
+  // Tell runtime that editor is present (needed even in commandlet mode as we might have to demand-load blueprints)
+  get_runtime()->set_editor_interface(this);
+
   // Set up scripts path and depth
   m_scripts_path = FPaths::GameDir() / TEXT("Scripts/Project-Generated");
   compute_scripts_path_depth(FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini"), TEXT("Project-Generated"));
@@ -145,9 +148,6 @@ void FSkookumScriptEditor::StartupModule()
     }
   else
     {
-    // Tell runtime that editor is present
-    get_runtime()->set_editor_interface(this);
-
     // Hook up delegates
     m_on_asset_loaded_handle = FCoreUObjectDelegates::OnAssetLoaded.AddRaw(this, &FSkookumScriptEditor::on_asset_loaded);
     m_on_object_modified_handle = FCoreUObjectDelegates::OnObjectModified.AddRaw(this, &FSkookumScriptEditor::on_object_modified);
