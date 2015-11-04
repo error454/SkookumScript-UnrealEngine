@@ -61,7 +61,10 @@ void SkUEBlueprintInterface::clear()
 UClass * SkUEBlueprintInterface::reexpose_class(SkClass * sk_class_p)
   {
   UClass * ue_class_p = SkUEClassBindingHelper::get_static_ue_class_from_sk_class_super(sk_class_p);
-  reexpose_class(sk_class_p, ue_class_p);
+  if (ue_class_p)
+    {
+    reexpose_class(sk_class_p, ue_class_p);
+    }
   return ue_class_p;
   }
 
@@ -127,7 +130,7 @@ void SkUEBlueprintInterface::reexpose_all()
   clear();
 
   // Traverse Sk classes and gather methods that want to be exposed
-  reexpose_class_recursively(SkUEActor::ms_class_p);
+  reexpose_class_recursively(SkUEEntity::ms_class_p);
   }
 
 //---------------------------------------------------------------------------------------

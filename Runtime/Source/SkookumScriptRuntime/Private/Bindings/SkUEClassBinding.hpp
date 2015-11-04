@@ -406,7 +406,7 @@ inline UClass * SkUEClassBindingHelper::get_static_ue_class_from_sk_class_super(
     if (ue_class_pp) return *ue_class_pp;
     sk_ue_class_p = sk_ue_class_p->get_superclass();
     } while (sk_ue_class_p);
-  SK_ERRORX("There must be always a class match somewhere in the hierarchy.");
+
   return nullptr;
   }
 
