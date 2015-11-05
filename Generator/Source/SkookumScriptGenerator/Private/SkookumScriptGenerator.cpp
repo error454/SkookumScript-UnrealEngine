@@ -1302,6 +1302,9 @@ void FSkookumScriptGenerator::generate_master_binding_file()
   // Set up enum classes
   generated_code += TEXT("\r\n    register_enum_bindings();\r\n\r\n");
 
+  // Clear out old sk class pointers if any
+  generated_code += TEXT("\r\n    SkUEClassBindingHelper::forget_sk_classes_in_all_mappings();\r\n\r\n");  
+
   // Generate static class mappings
   for (auto class_p : m_exported_classes)
     {

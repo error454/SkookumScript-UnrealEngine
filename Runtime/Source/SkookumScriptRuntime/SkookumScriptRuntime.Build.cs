@@ -84,7 +84,6 @@ namespace UnrealBuildTool.Rules
             "Networking",
             "NetworkReplayStreaming",
             "OnlineSubsystem",
-            "MovieScene",
             "SlateCore",
             "Slate",
             "AgogCore",
