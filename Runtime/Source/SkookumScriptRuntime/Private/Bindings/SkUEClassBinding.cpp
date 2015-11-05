@@ -169,7 +169,7 @@ void SkUEClassBindingHelper::resolve_raw_data(tSkTypedNameRawArray & raw_data, S
           // If this is the case, a recompile would have been triggered when this class was loaded by get_ue_class_from_sk_class()
           // Which means binaries would be recompiled and reloaded once more, fixing this issue
           // So make sure this assumption is true
-          SK_ASSERTX(FModuleManager::Get().GetModulePtr<ISkookumScriptRuntime>("SkookumScriptRuntime")->is_freshen_binaries_pending(), a_str_format("Sk Variable '%s' not found in UE4 reflection data.", var_p->get_name_cstr()));
+          SK_ASSERTX(FModuleManager::Get().GetModulePtr<ISkookumScriptRuntime>("SkookumScriptRuntime")->is_freshen_binaries_pending(), a_str_format("Sk Variable '%s.%s' not found in UE4 reflection data.", class_p->get_name_cstr_dbg(), var_p->get_name_cstr()));
           var_p->m_raw_data_info = SkRawDataInfo_Invalid;
           }
         }
@@ -553,6 +553,36 @@ void SkUEClassBindingHelper::reset_static_enum_mappings(uint32_t reserve)
   {
   ms_static_enum_map_u2s.Reset();
   ms_static_enum_map_u2s.Reserve(reserve);
+  }
+
+//---------------------------------------------------------------------------------------
+// Forget all Sk classes
+
+void SkUEClassBindingHelper::forget_sk_classes_in_all_mappings()
+  {
+  // Set all sk classes to null in ue->sk maps
+  for (auto pair_iter = ms_static_class_map_u2s.CreateIterator(); pair_iter; ++pair_iter)
+    {
+    pair_iter.Value() = nullptr;
+    }
+  for (auto pair_iter = ms_static_struct_map_u2s.CreateIterator(); pair_iter; ++pair_iter)
+    {
+    pair_iter.Value() = nullptr;
+    }
+  for (auto pair_iter = ms_static_enum_map_u2s.CreateIterator(); pair_iter; ++pair_iter)
+    {
+    pair_iter.Value() = nullptr;
+    }  
+
+  // Completely clear sk->ue map
+  ms_static_class_map_s2u.Reset();
+  ms_static_struct_map_s2u.Reset();
+  //ms_static_enum_map_s2u.Reset();
+
+  // Also clear out dynamic mappings if we got any
+  #if WITH_EDITORONLY_DATA
+    reset_dynamic_class_mappings();
+  #endif
   }
 
 //---------------------------------------------------------------------------------------

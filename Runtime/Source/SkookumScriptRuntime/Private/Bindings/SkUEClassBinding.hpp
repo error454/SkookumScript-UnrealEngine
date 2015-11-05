@@ -45,6 +45,7 @@ class SkUEClassBindingHelper
     static void           reset_static_class_mappings(uint32_t reserve);
     static void           reset_static_struct_mappings(uint32_t reserve);
     static void           reset_static_enum_mappings(uint32_t reserve);
+    static void           forget_sk_classes_in_all_mappings();
     static void           register_static_class(UClass * ue_class_p);
     static void           register_static_struct(UStruct * ue_struct_p);
     static void           register_static_enum(UEnum * ue_enum_p);
