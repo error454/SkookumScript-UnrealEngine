@@ -33,7 +33,6 @@
 //=======================================================================================
 
 // HACK to support UMG module
-#include "MovieScene.h"
 #include "UserWidget.h"
 #include "Widgets/Layout/SScaleBox.h"
 
