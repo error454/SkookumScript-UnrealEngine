@@ -126,14 +126,18 @@ void SkUEClassBindingHelper::resolve_raw_data(tSkTypedNameRawArray & raw_data, S
     ue_struct_or_class_p = get_static_ue_struct_from_sk_class(class_p);
     }
 
-  // Resolve pointer and accessor functions for 
-  // 1) enums since they are the same for all enums
-  // 2) Blueprint-generated classes
+  // By default, inherit raw pointer and accessor functions from super class
   SkClass * super_class_p = class_p->get_superclass();
-  if (super_class_p && (super_class_p == SkEnum::ms_class_p || (ue_class_p && ue_class_p->ClassGeneratedBy != nullptr)))
+  if (super_class_p)
     {
-    class_p->register_raw_pointer_func(super_class_p->get_raw_pointer_func());
-    class_p->register_raw_accessor_func(super_class_p->get_raw_accessor_func());
+    if (!class_p->get_raw_pointer_func())
+      {
+      class_p->register_raw_pointer_func(super_class_p->get_raw_pointer_func());
+      }
+    if (!class_p->get_raw_accessor_func())
+      {
+      class_p->register_raw_accessor_func(super_class_p->get_raw_accessor_func());
+      }
     }
 
   // Resolve raw data
