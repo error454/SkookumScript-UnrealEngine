@@ -85,6 +85,7 @@ class FSkookumScriptGenerator : public ISkookumScriptGenerator, public FSkookumS
 
   static const FName    ms_meta_data_key_custom_structure_param;
   static const FName    ms_meta_data_key_array_parm;
+  static const FName    ms_meta_data_key_module_relative_path;
 
 #ifdef USE_DEBUG_LOG_FILE
   FILE *                m_debug_log_file; // Quick file handle to print debug stuff to, generates log file in output folder
@@ -124,15 +125,16 @@ class FSkookumScriptGenerator : public ISkookumScriptGenerator, public FSkookumS
 
   bool                  can_export_class(UClass * class_p, const FString & source_header_file_name) const;
   bool                  can_export_struct(UStruct * struct_p);
+  bool                  can_export_enum(UEnum * enum_p);
   bool                  can_export_method(UClass * class_p, UFunction * function_p);
   bool                  can_export_property(UStruct * class_or_struct_p, UProperty * property_p);
 
   FString               get_skookum_property_type_name(UProperty * property_p);
   FString               get_skookum_property_binding_class_name(UProperty * property_p);
-  FString               get_cpp_class_name(UStruct * class_or_struct_p);
+  static FString        get_cpp_class_name(UStruct * class_or_struct_p);
   static FString        get_cpp_property_type_name(UProperty * property_p);
   static FString        get_cpp_property_cast_name(UProperty * property_p); // Returns the type to be used to cast an assignment before assigning
-  static FString        get_skookum_default_initializer(UFunction * function_p, UProperty * param_p);
+  FString               get_skookum_default_initializer(UFunction * function_p, UProperty * param_p);
 
   };
 
@@ -162,6 +164,7 @@ void FSkookumScriptGenerator::ShutdownModule()
 
 const FName FSkookumScriptGenerator::ms_meta_data_key_custom_structure_param(TEXT("CustomStructureParam"));
 const FName FSkookumScriptGenerator::ms_meta_data_key_array_parm(TEXT("ArrayParm"));
+const FName FSkookumScriptGenerator::ms_meta_data_key_module_relative_path(TEXT("ModuleRelativePath"));
 
 //---------------------------------------------------------------------------------------
 
@@ -250,7 +253,7 @@ void FSkookumScriptGenerator::FinishExport()
       }
     }
 
-#if 0 // This is currently not working as the required header files for the structs and enums are not known and lead to compile errors in the binding code
+#if 0 // This works only in UE4.10 and up
   // Now export all structs contained in the same packages as the classes
   TArray<UObject *> obj_array;
   GetObjectsOfClass(UScriptStruct::StaticClass(), obj_array, false, RF_ClassDefaultObject | RF_PendingKill);
@@ -258,7 +261,8 @@ void FSkookumScriptGenerator::FinishExport()
     {
     if (m_class_packages.Contains(obj_p->GetOuter()))
       {
-      generate_struct(static_cast<UStruct *>(obj_p), FString());
+      UScriptStruct * script_struct_p = CastChecked<UScriptStruct>(obj_p);
+      generate_struct(script_struct_p);
       }
     }
 
@@ -275,29 +279,25 @@ void FSkookumScriptGenerator::FinishExport()
 #endif
 
   // Now remove all exported classes from the used classes list and see if anything is left
-  int32 used_count_before;
-  do
+  for (auto exported_class_p : m_exported_classes)
     {
-    for (auto exported_class_p : m_exported_classes)
+    m_used_classes.Remove(exported_class_p);
+    }
+  // Anything left is a struct or class that was never seen in IScriptGeneratorPluginInterface::ExportClass() but is needed for the code to compile
+  // Export these too and hope for the best
+  while (m_used_classes.Num() > 0)
+    {
+    UStruct * struct_p = m_used_classes.Pop();
+    UClass * class_p = Cast<UClass>(struct_p);
+    if (class_p)
       {
-      m_used_classes.Remove(exported_class_p);
+      generate_class(class_p, class_p->GetMetaData(ms_meta_data_key_module_relative_path));
       }
-    // Anything left is a struct or class that was never seen in IScriptGeneratorPluginInterface::ExportClass() but is needed for the code to compile
-    // Export these too and hope for the best
-    used_count_before = m_used_classes.Num();
-    for (auto orphan_struct_p : m_used_classes)
+    else
       {
-      UClass * orphan_class_p = Cast<UClass>(orphan_struct_p);
-      if (orphan_class_p)
-        {
-        generate_class(orphan_class_p, FString());
-        }
-      else
-        {
-        generate_struct(orphan_struct_p, FString());
-        }
+      generate_struct(struct_p, FString());
       }
-    } while (m_used_classes.Num() > used_count_before);
+    }
 
   generate_enum_binding_files();
   generate_master_binding_file();
@@ -441,7 +441,10 @@ void FSkookumScriptGenerator::generate_class_header_file(UStruct * class_or_stru
   if (source_header_file_name.Len() > 0)
     {
     FString relative_path(source_header_file_name);
-    FPaths::MakePathRelativeTo(relative_path, *m_runtime_plugin_root_path);
+    if (!FPaths::IsRelative(relative_path))
+      {
+      FPaths::MakePathRelativeTo(relative_path, *m_runtime_plugin_root_path);
+      }
     generated_code += FString::Printf(TEXT("#include <%s>\r\n\r\n"), *relative_path);
     }
   else
@@ -470,7 +473,7 @@ void FSkookumScriptGenerator::generate_class_binding_file(UStruct * class_or_str
   {
   const FString skookum_class_name = get_skookum_class_name(class_or_struct_p);
   const FString class_binding_file_name = FString::Printf(TEXT("SkUE%s.generated.inl"), *skookum_class_name);
-  m_all_binding_file_names.Add(class_binding_file_name);
+  m_all_binding_file_names.AddUnique(class_binding_file_name);
 
   const FString class_name_cpp = get_cpp_class_name(class_or_struct_p);
 
@@ -560,7 +563,7 @@ void FSkookumScriptGenerator::generate_struct(UStruct * struct_p, const FString 
     // Generate script files
     generate_class_script_files(struct_p);
 
-    // Generate binding code files
+    // Generate binding code files    
     generate_class_header_file(struct_p, source_header_file_name);
     generate_class_binding_file(struct_p);
     }
@@ -588,7 +591,7 @@ void FSkookumScriptGenerator::generate_enum_from_property(UProperty * prop_p)
 
 void FSkookumScriptGenerator::generate_enum(UEnum * enum_p)
   {
-  if (!m_exported_enums.Contains(enum_p))
+  if (can_export_enum(enum_p))
     {
     m_exported_enums.Add(enum_p);
     generate_enum_script_files(enum_p);
@@ -663,6 +666,17 @@ void FSkookumScriptGenerator::generate_enum_binding_files()
 
   // Generate header file
   generated_code = TEXT("#pragma once\r\n\r\n");
+  TSet<FString> include_files;
+  include_files.Reserve(m_exported_enums.Num());
+  for (auto enum_p : m_exported_enums)
+    {
+    include_files.Add(enum_p->GetMetaData(ms_meta_data_key_module_relative_path));
+    }
+  for (auto include_file : include_files)
+    {
+    generated_code += FString::Printf(TEXT("#include \"%s\"\r\n"), *include_file);
+    }
+  generated_code += TEXT("\r\n");
   for (auto enum_p : m_exported_enums)
     {
     generated_code += FString::Printf(TEXT("class SkUE%s : public SkEnum\n  {\r\n  public:\r\n    static SkClass *     ms_class_p;\r\n    static UEnum *       ms_uenum_p;\r\n"), *enum_p->GetName());
@@ -719,6 +733,24 @@ void FSkookumScriptGenerator::generate_method_script_file(UFunction * function_p
     {
     function_body += TEXT("(");
 
+    // Figure out column width of variable types & names
+    int32 max_type_length = 0;
+    int32 max_name_length = 0;
+    int32 param_count = 0;
+    for (TFieldIterator<UProperty> param_it(function_p); param_it; ++param_it)
+      {
+      UProperty * param_p = *param_it;
+      if (!(param_p->GetPropertyFlags() & CPF_ReturnParm))
+        {
+        FString type_name = get_skookum_property_type_name(param_p);
+        FString var_name = skookify_var_name(param_p->GetName(), param_p->IsA(UBoolProperty::StaticClass()));
+        max_type_length = FMath::Max(max_type_length, type_name.Len());
+        max_name_length = FMath::Max(max_name_length, var_name.Len());
+        ++param_count;
+        }
+      }
+
+    // Format nicely
     FString separator;
     FString return_type_name;
     for (TFieldIterator<UProperty> param_it(function_p); param_it; ++param_it)
@@ -730,11 +762,27 @@ void FSkookumScriptGenerator::generate_method_script_file(UFunction * function_p
         }
       else
         {
-        function_body += separator + get_skookum_property_type_name(param_p) + TEXT(" ") + skookify_var_name(param_p->GetName(), param_p->IsA(UBoolProperty::StaticClass())) + get_skookum_default_initializer(function_p, param_p);
+        FString type_name = get_skookum_property_type_name(param_p);
+        FString var_name = skookify_var_name(param_p->GetName(), param_p->IsA(UBoolProperty::StaticClass()));
+        FString default_initializer = get_skookum_default_initializer(function_p, param_p);
+        function_body += separator + type_name.RightPad(max_type_length) + TEXT(" ");
+        if (default_initializer.IsEmpty())
+          {
+          function_body += var_name;
+          }
+        else
+          {
+          function_body += var_name.RightPad(max_name_length) + get_skookum_default_initializer(function_p, param_p);
+          }
         }
-      separator = TEXT(", ");
+      separator = TEXT(",\n ");
       }
 
+    // Place return type on new line if present and more than one parameter
+    if (param_count > 1 && !return_type_name.IsEmpty())
+      {
+      function_body += TEXT("\n");
+      }
     function_body += TEXT(") ") + return_type_name + TEXT("\n");
     }
   else
@@ -1357,6 +1405,13 @@ bool FSkookumScriptGenerator::can_export_struct(UStruct * struct_p)
 
 //---------------------------------------------------------------------------------------
 
+bool FSkookumScriptGenerator::can_export_enum(UEnum * enum_p)
+  {
+  return !m_exported_enums.Contains(enum_p);
+  }
+
+//---------------------------------------------------------------------------------------
+
 bool FSkookumScriptGenerator::can_export_method(UClass * class_p, UFunction * function_p)
   {
   // If this function is inherited, do nothing as SkookumScript will inherit it for us
@@ -1383,9 +1438,9 @@ bool FSkookumScriptGenerator::can_export_method(UClass * class_p, UFunction * fu
     UProperty * param_p = *param_it;
 
     if (param_p->IsA(UDelegateProperty::StaticClass()) ||
-      param_p->IsA(UMulticastDelegateProperty::StaticClass()) ||
-      param_p->IsA(UWeakObjectProperty::StaticClass()) ||
-      param_p->IsA(UInterfaceProperty::StaticClass()))
+        param_p->IsA(UMulticastDelegateProperty::StaticClass()) ||
+        param_p->IsA(UWeakObjectProperty::StaticClass()) ||
+        param_p->IsA(UInterfaceProperty::StaticClass()))
       {
       return false;
       }
@@ -1572,9 +1627,9 @@ FString FSkookumScriptGenerator::get_cpp_property_cast_name(UProperty * property
 FString FSkookumScriptGenerator::get_skookum_default_initializer(UFunction * function_p, UProperty * param_p)
   {
   FString default_value;
-  // This is disabled for now until Epic has made some requested changes in HeaderParser.cpp
-#if 0
-  bool has_default_value = function_p->HasMetaData(*param_p->GetName());
+
+  // For Blueprintcallable functions, assume all arguments have defaults even if not specified
+  bool has_default_value = function_p->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Exec); // || function_p->HasMetaData(*param_p->GetName());
   if (has_default_value)
     {
     default_value = function_p->GetMetaData(*param_p->GetName());
@@ -1600,22 +1655,25 @@ FString FSkookumScriptGenerator::get_skookum_default_initializer(UFunction * fun
         case SkTypeID_Real:            default_value = TEXT("0.0"); break;
         case SkTypeID_Boolean:         default_value = TEXT("false"); break;
         case SkTypeID_String:          default_value = TEXT("\"\""); break;
-        case SkTypeID_Name:
+        case SkTypeID_Enum:            default_value = get_enum(param_p)->GetName() + TEXT(".@") + skookify_var_name(get_enum(param_p)->GetEnumName(0), false, true); break;
+        case SkTypeID_Name:            default_value = TEXT("Name!none"); break;
         case SkTypeID_Vector2:
         case SkTypeID_Vector3:
         case SkTypeID_Vector4:
         case SkTypeID_Rotation:
         case SkTypeID_RotationAngles:
         case SkTypeID_Transform:
-        case SkTypeID_Color:           default_value = ms_sk_type_id_names[type_id] + TEXT("!"); break;
+        case SkTypeID_Color:
+        case SkTypeID_List:
+        case SkTypeID_UStruct:         default_value = get_skookum_property_type_name(param_p) + TEXT("!"); break;
         case SkTypeID_UClass:
-        case SkTypeID_UObject:         default_value = skookify_class_name(Cast<UObjectPropertyBase>(param_p)->PropertyClass->GetName()) + TEXT("!null"); break;
+        case SkTypeID_UObject:         default_value = (param_p->GetName() == TEXT("WorldContextObject")) ? TEXT("@@world") : skookify_class_name(Cast<UObjectPropertyBase>(param_p)->PropertyClass->GetName()) + TEXT("!null"); break;
         }
       }
     else
       {
       // Remove variable assignments from default_value (e.g. "X=")
-      for (int32 pos = 0; pos < default_value.Len(); ++pos)
+      for (int32 pos = 0; pos < default_value.Len() - 1; ++pos)
         {
         if (FChar::IsAlpha(default_value[pos]) && default_value[pos + 1] == '=')
           {
@@ -1630,7 +1688,7 @@ FString FSkookumScriptGenerator::get_skookum_default_initializer(UFunction * fun
           {
           int32 npos = pos;
           while (npos < default_value.Len() && FChar::IsDigit(default_value[npos])) ++npos;
-          if (default_value[npos] == '.')
+          if (npos < default_value.Len() && default_value[npos] == '.')
             {
             ++npos;
             while (npos < default_value.Len() && FChar::IsDigit(default_value[npos])) ++npos;
@@ -1651,9 +1709,10 @@ FString FSkookumScriptGenerator::get_skookum_default_initializer(UFunction * fun
         {
         case SkTypeID_Integer:         break; // Leave as-is
         case SkTypeID_Real:            break; // Leave as-is
-        case SkTypeID_Boolean:         break; // Leave as-is
+        case SkTypeID_Boolean:         default_value = default_value.ToLower(); break;
         case SkTypeID_String:          default_value = TEXT("\"") + default_value + TEXT("\""); break;
         case SkTypeID_Name:            default_value = TEXT("Name!(\"") + default_value + TEXT("\")"); break;
+        case SkTypeID_Enum:            default_value = get_enum(param_p)->GetName() + TEXT(".@") + skookify_var_name(default_value, false, true); break;
         case SkTypeID_Vector2:         default_value = TEXT("Vector2!xy") + default_value; break;
         case SkTypeID_Vector3:         default_value = TEXT("Vector3!xyz(") + default_value + TEXT(")"); break;
         case SkTypeID_Vector4:         default_value = TEXT("Vector4!xyzw") + default_value; break;
@@ -1661,14 +1720,17 @@ FString FSkookumScriptGenerator::get_skookum_default_initializer(UFunction * fun
         case SkTypeID_RotationAngles:  default_value = TEXT("RotationAngles!yaw_pitch_roll(") + default_value + TEXT(")"); break;
         case SkTypeID_Transform:       break; // Not implemented yet - leave as-is for now
         case SkTypeID_Color:           default_value = TEXT("Color!rgba") + default_value; break;
-        case SkTypeID_UClass:          break; // Not implemented yet - leave as-is for now
-        case SkTypeID_UObject:         if (default_value == TEXT("WorldContext")) default_value = TEXT("@@world"); break;
+        case SkTypeID_UStruct:         if (default_value == TEXT("LatentInfo")) default_value = skookify_class_name(Cast<UStructProperty>(param_p)->Struct->GetName()) + TEXT("!"); break;
+        case SkTypeID_UClass:          default_value = skookify_class_name(default_value) + TEXT(".static_class"); break;
+        case SkTypeID_UObject:         if (default_value == TEXT("WorldContext") || default_value == TEXT("WorldContextObject") || param_p->GetName() == TEXT("WorldContextObject")) default_value = TEXT("@@world"); break;
         }
       }
 
+    check(!default_value.IsEmpty()); // Default value must be non-empty at this point
+
     default_value = TEXT(" : ") + default_value;
     }
-#endif
+
   return default_value;
   }
 

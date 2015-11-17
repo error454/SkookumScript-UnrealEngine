@@ -272,7 +272,15 @@ class SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
     template<typename _UserType>
     static SkInstance * new_instance(SkClass * class_p, const _UserType & user_data);
     static SkInstance * new_instance(SkClass * class_p);
+    static SkInstance * new_instance(SkClass * class_p, const void * user_data_p, uint32_t byte_size);
+    static SkInstance * new_instance_val(SkClass * class_p, const void * user_data_p, uint32_t byte_size);
+    static SkInstance * new_instance_ref(SkClass * class_p, const void * user_data_p, uint32_t byte_size);
+    static SkInstance * new_instance_uninitialized(SkClass * class_p, uint32_t byte_size, void ** user_data_pp);
+    static SkInstance * new_instance_uninitialized_val(SkClass * class_p, uint32_t byte_size, void ** user_data_pp);
+    static SkInstance * new_instance_uninitialized_ref(SkClass * class_p, uint32_t byte_size, void ** user_data_pp);
     static AObjReusePool<SkInstance> & get_pool();
+
+    static bool   is_data_stored_by_val(uint32_t byte_size) { return byte_size <= sizeof(tUserData); }
 
     // Callback functions used by SkClassBindingBase for SkClass::register_raw_pointer_func
     // Expert terrain!

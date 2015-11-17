@@ -15,6 +15,7 @@
 //=======================================================================================
 
 #include <AgogCore/AObjReusePool.hpp>
+#include <SkookumScript/SkDebug.hpp>
 
 
 //=======================================================================================
@@ -208,6 +209,74 @@ A_INLINE SkInstance * SkInstance::new_instance(SkClass * class_p)
   return instance_p;
   }
 
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type 
+// (stored either by value or reference depending on byte size)
+A_INLINE SkInstance * SkInstance::new_instance_uninitialized(SkClass * class_p, uint32_t byte_size, void ** user_data_pp)
+  {
+  SkInstance * instance_p = new_instance(class_p);
+  void * user_data_p = &instance_p->m_user_data;
+  if (byte_size > sizeof(tUserData))
+    {
+    user_data_p = AMemory::malloc(byte_size, "SkUserData");
+    *((void **)&instance_p->m_user_data) = user_data_p;
+    }
+  *user_data_pp = user_data_p;
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type (stored inside the instance)
+A_INLINE SkInstance * SkInstance::new_instance_uninitialized_val(SkClass * class_p, uint32_t byte_size, void ** user_data_pp)
+  {
+  SK_ASSERTX(byte_size <= sizeof(tUserData), "Data must fit inside m_user_data!");
+  SkInstance * instance_p = new_instance(class_p);
+  *user_data_pp = &instance_p->m_user_data;
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type (allocated from heap and stored by reference)
+A_INLINE SkInstance * SkInstance::new_instance_uninitialized_ref(SkClass * class_p, uint32_t byte_size, void ** user_data_pp)
+  {
+  SK_ASSERTX(byte_size > sizeof(tUserData), "Use new_instance_val instead!");
+  SkInstance * instance_p = new_instance(class_p);
+  void * user_data_p = AMemory::malloc(byte_size, "SkUserData");
+  *((void **)&instance_p->m_user_data) = user_data_p;
+  *user_data_pp = user_data_p;
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type with given data 
+// (stored either by value or reference depending on byte size)
+A_INLINE SkInstance * SkInstance::new_instance(SkClass * class_p, const void * user_data_p, uint32_t byte_size)
+  {
+  void * new_user_data_p;
+  SkInstance * instance_p = new_instance_uninitialized(class_p, byte_size, &new_user_data_p);
+  ::memcpy(new_user_data_p, user_data_p, byte_size);
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type with given data (stored inside the instance)
+A_INLINE SkInstance * SkInstance::new_instance_val(SkClass * class_p, const void * user_data_p, uint32_t byte_size)
+  {
+  void * new_user_data_p;
+  SkInstance * instance_p = new_instance_uninitialized_val(class_p, byte_size, &new_user_data_p);
+  ::memcpy(new_user_data_p, user_data_p, byte_size);
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+// Allocate (from pool) and construct a new SkInstance of given type with given data (allocated from heap and stored by reference)
+A_INLINE SkInstance * SkInstance::new_instance_ref(SkClass * class_p, const void * user_data_p, uint32_t byte_size)
+  {
+  void * new_user_data_p;
+  SkInstance * instance_p = new_instance_uninitialized_ref(class_p, byte_size, &new_user_data_p);
+  ::memcpy(new_user_data_p, user_data_p, byte_size);
+  return instance_p;
+  }
 
 //---------------------------------------------------------------------------------------
 // Returns dynamic reference pool. Pool created first call and reused on successive calls.

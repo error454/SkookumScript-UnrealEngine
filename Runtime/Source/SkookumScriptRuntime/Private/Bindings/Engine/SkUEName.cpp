@@ -23,6 +23,15 @@ namespace SkUEName_Impl
   {
 
   //---------------------------------------------------------------------------------------
+  // # Skookum:   Name@!none() Name
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_none(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    SkInstance * this_p = scope_p->get_this();
+    this_p->construct<SkUEName>(NAME_None);
+    }
+
+  //---------------------------------------------------------------------------------------
   // # Skookum:   Name@String() String
   // # Author(s): Markus Breyer
   static void mthd_String(SkInvokedMethod * scope_p, SkInstance ** result_pp)
@@ -48,26 +57,14 @@ namespace SkUEName_Impl
       }
     }
 
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Name@none() Name
-  // # Author(s): Markus Breyer
-  static void mthd_none(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-  {
-    // Do nothing if result not desired
-    if (result_pp)
-    {
-      *result_pp = SkUEName::new_instance(NAME_None);
-    }
-  }
-
 } // namespace
 
 //---------------------------------------------------------------------------------------
 void SkUEName::register_bindings()
   {
   tBindingBase::register_bindings("Name");
+  ms_class_p->register_method_func("!none", SkUEName_Impl::mthd_ctor_none, SkBindFlag_instance_no_rebind);
   ms_class_p->register_method_func(ASymbol_String, SkUEName_Impl::mthd_String, SkBindFlag_instance_no_rebind);
-  ms_class_p->register_method_func("none", SkUEName_Impl::mthd_none, SkBindFlag_class_no_rebind);
 
   // Hook up extra String methods
   SkString::ms_class_p->register_method_func("Name", SkUEName_Impl::mthd_String_to_Name);

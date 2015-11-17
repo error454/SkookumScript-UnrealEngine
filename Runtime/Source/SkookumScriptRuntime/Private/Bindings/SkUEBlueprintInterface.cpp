@@ -117,7 +117,7 @@ void SkUEBlueprintInterface::reexpose_class_recursively(SkClass * sk_class_p)
     const tSkClasses & sub_classes = sk_class_p->get_subclasses();
     for (uint32_t i = 0; i < sub_classes.get_length(); ++i)
       {
-      reexpose_class_recursively(sub_classes(i));
+      reexpose_class_recursively(sub_classes[i]);
       }
     }
   }
@@ -165,11 +165,11 @@ void SkUEBlueprintInterface::exec_method(FFrame & stack, void * const result_p, 
 
   // Fill invoked method's argument list
   const SkParamEntry * param_entry_array = function_entry.get_param_entry_array();
-  imethod.data_ensure_size(function_entry.m_num_params);
+  SK_ASSERTX(imethod.get_data().get_size() >= function_entry.m_num_params, a_str_format("Not enough space (%d) for %d arguments while invoking '%s@%s'!", imethod.get_data().get_size(), function_entry.m_num_params, function_entry.m_sk_class_p->get_name_cstr_dbg(), function_entry.m_invokable_name.as_cstr_dbg()));
   for (uint32_t i = 0; i < function_entry.m_num_params; ++i)
     {
     const SkParamEntry & param_entry = param_entry_array[i];
-    imethod.data_append_arg((*param_entry.m_fetcher_p)(stack));
+    imethod.data_append_arg((*param_entry.m_fetcher_p)(stack, param_entry));
     }
 
   // Done with stack - now increment the code ptr unless it is null
@@ -188,7 +188,7 @@ void SkUEBlueprintInterface::exec_method(FFrame & stack, void * const result_p, 
       static_cast<SkMethod *>(function_entry.m_sk_invokable_p)->SkMethod::invoke(&imethod, nullptr, &result_instance_p); // We know it's a method so call directly
       if (function_entry.m_result_getter)
         {
-        (*function_entry.m_result_getter)(result_p, result_instance_p);
+        (*function_entry.m_result_getter)(result_p, result_instance_p, function_entry.m_result_type);
         }
       }
 
@@ -242,7 +242,7 @@ void SkUEBlueprintInterface::exec_coroutine(FFrame & stack, void * const result_
   for (uint32_t i = 0; i < function_entry.m_num_params; ++i)
     {
     const SkParamEntry & param_entry = param_entry_array[i];
-    icoroutine_p->data_append_arg((*param_entry.m_fetcher_p)(stack));
+    icoroutine_p->data_append_arg((*param_entry.m_fetcher_p)(stack, param_entry));
     }
 
   // Done with stack - now increment the code ptr unless it is null
@@ -280,7 +280,7 @@ void SkUEBlueprintInterface::mthd_trigger_event(SkInvokedMethod * scope_p, SkIns
   for (uint32_t i = 0; i < event_entry.m_num_params; ++i)
     {
     const K2ParamEntry & param_entry = param_entry_array[i];
-    (*param_entry.m_getter_p)(k2_params_storage_p + param_entry.m_offset, scope_p->get_arg(i));
+    (*param_entry.m_getter_p)(k2_params_storage_p + param_entry.m_offset, scope_p->get_arg(i), param_entry);
     }
 
   // Invoke K2 script event with parameters
@@ -291,7 +291,7 @@ void SkUEBlueprintInterface::mthd_trigger_event(SkInvokedMethod * scope_p, SkIns
     event_entry.m_ue_function_to_invoke_p = actor_p->FindFunctionChecked(*ue_function_p->GetName());
     }
   // Check if this event is actually present in any Blueprint graph
-  SK_ASSERTX(event_entry.m_ue_function_to_invoke_p->Script.Num() > 0, a_str_format("Warning: Call to %S has no effect as no such Blueprint event node exists.", *ue_function_p->GetName()));
+  SK_ASSERTX(event_entry.m_ue_function_to_invoke_p->Script.Num() > 0, a_str_format("Warning: Call to '%S' on actor '%S' has no effect as no Blueprint event node named '%S' exists in any of its event graphs.", *ue_function_p->GetName(), *actor_p->GetName(), *ue_function_p->GetName()));
   actor_p->ProcessEvent(event_entry.m_ue_function_to_invoke_p.Get(), k2_params_storage_p);
 
   // No return value
@@ -307,9 +307,9 @@ bool SkUEBlueprintInterface::have_identical_signatures(const tSkParamList & para
   for (uint32_t i = 0; i < param_list.get_length(); ++i)
     {
     const TypedName & typed_name = param_array_p[i];
-    const SkParameterBase * param_p = param_list(i);
+    const SkParameterBase * param_p = param_list[i];
     if (typed_name.m_name != param_p->get_name()
-     || typed_name.m_type_p != param_p->get_expected_type())
+     || typed_name.m_sk_class_p != param_p->get_expected_type()->get_key_class())
       {
       return false;
       }
@@ -354,7 +354,7 @@ bool SkUEBlueprintInterface::try_update_binding_entry(UClass * ue_class_p, SkInv
         {
         FunctionEntry * function_entry_p = static_cast<FunctionEntry *>(binding_entry_p);
         if (!have_identical_signatures(param_list, function_entry_p->get_param_entry_array())
-         || function_entry_p->m_result_type_p != sk_invokable_p->get_params().get_result_class())
+         || function_entry_p->m_result_type.m_sk_class_p != sk_invokable_p->get_params().get_result_class()->get_key_class())
           {
           return false;
           }
@@ -435,13 +435,17 @@ int32_t SkUEBlueprintInterface::add_function_entry(UClass * ue_class_p, SkInvoka
   if (!ue_function_p) return -1;
 
   // Allocate binding entry
-  FunctionEntry * function_entry_p = new(AMemory::malloc(sizeof(FunctionEntry) + num_params * sizeof(SkParamEntry), "FunctionEntry")) FunctionEntry(sk_invokable_p, ue_function_p, num_params, params.get_result_class(), param_info_array_p[num_params].m_sk_value_getter_p);
+  const ParamInfo & return_info = param_info_array_p[num_params];
+  bool has_return = return_info.m_ue_param_p != nullptr;
+  FunctionEntry * function_entry_p = new(AMemory::malloc(sizeof(FunctionEntry) + num_params * sizeof(SkParamEntry), "FunctionEntry"))
+    FunctionEntry(sk_invokable_p, ue_function_p, num_params, params.get_result_class()->get_key_class(), has_return ? return_info.m_ue_param_p->GetSize() : 0, return_info.m_sk_value_getter_p);
 
   // Initialize parameters
   for (uint32_t i = 0; i < num_params; ++i)
     {
-    const SkParameterBase * input_param = param_list(i);
-    new (&function_entry_p->get_param_entry_array()[i]) SkParamEntry(input_param->get_name(), input_param->get_expected_type(), param_info_array_p[i].m_k2_param_fetcher_p);
+    const SkParameterBase * input_param = param_list[i];
+    const ParamInfo & param_info = param_info_array_p[i];
+    new (&function_entry_p->get_param_entry_array()[i]) SkParamEntry(input_param->get_name(), param_info.m_ue_param_p->GetSize(), input_param->get_expected_type()->get_key_class(), param_info_array_p[i].m_k2_param_fetcher_p);
     }
 
   // Store binding entry in array
@@ -476,7 +480,6 @@ int32_t SkUEBlueprintInterface::add_event_entry(UClass * ue_class_p, SkMethodBas
   if (!ue_function_p) return -1;
 
   // Bind Sk method
-  sk_method_p->set_user_data(binding_index);
   bind_event_method(sk_method_p);
 
   // Allocate binding entry
@@ -485,9 +488,9 @@ int32_t SkUEBlueprintInterface::add_event_entry(UClass * ue_class_p, SkMethodBas
   // Initialize parameters
   for (uint32_t i = 0; i < num_params; ++i)
     {
-    const SkParameterBase * input_param = param_list(i);
+    const SkParameterBase * input_param = param_list[i];
     const ParamInfo & param_info = param_info_array_p[i];
-    new (&event_entry_p->get_param_entry_array()[i]) K2ParamEntry(input_param->get_name(), input_param->get_expected_type(), param_info.m_sk_value_getter_p, static_cast<UProperty *>(param_info.m_ue_param_p)->GetOffset_ForUFunction());
+    new (&event_entry_p->get_param_entry_array()[i]) K2ParamEntry(input_param->get_name(), param_info.m_ue_param_p->GetSize(), input_param->get_expected_type()->get_key_class(), param_info.m_sk_value_getter_p, static_cast<UProperty *>(param_info.m_ue_param_p)->GetOffset_ForUFunction());
     }
 
   // Store binding entry in array
@@ -515,6 +518,9 @@ int32_t SkUEBlueprintInterface::store_binding_entry(BindingEntry * binding_entry
     {
     m_binding_entry_array.set_at(binding_index_to_use, binding_entry_p);
     }
+
+  // Remember binding index to invoke Blueprint events
+  binding_entry_p->m_sk_invokable_p->set_user_data(binding_index_to_use);
 
   return binding_index_to_use;
   }
@@ -629,7 +635,7 @@ UFunction * SkUEBlueprintInterface::build_ue_function(UClass * ue_class_p, SkInv
   // Handle input parameters (in reverse order so they get linked into the list in proper order)
   for (int32_t i = num_params - 1; i >= 0; --i)
     {
-    const SkParameterBase * input_param = param_list(i);
+    const SkParameterBase * input_param = param_list[i];
     if (!build_ue_param(ue_function_p, input_param->get_expected_type(), input_param->get_name_cstr(), out_param_info_array_p ? out_param_info_array_p + i : nullptr))
       {
       // If any parameters can not be mapped, skip building this entire function
@@ -718,7 +724,26 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
     }
   else
     {
-    //SK_ASSERTX(false, a_cstr_format("Class '%s' of parameter '%s' of method '%S.%S' being exported to Blueprints can not be mapped to a Blueprint-compatible type.", sk_parameter_class_p->get_key_class_name().as_cstr_dbg(), param_name.GetPlainANSIString(), *ue_function_p->GetOwnerClass()->GetName(), *ue_function_p->GetName()));
+    UStruct * ustruct_p = SkUEClassBindingHelper::get_static_ue_struct_from_sk_class(sk_parameter_class_p);
+    if (ustruct_p)
+      {
+      property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+      static_cast<UStructProperty *>(property_p)->Struct = CastChecked<UScriptStruct>(ustruct_p);
+      if (SkInstance::is_data_stored_by_val(ustruct_p->GetStructureSize()))
+        {
+        k2_param_fetcher_p = &fetch_k2_param_struct_val;
+        sk_value_getter_p = &get_sk_value_struct_val;
+        }
+      else
+        {
+        k2_param_fetcher_p = &fetch_k2_param_struct_ref;
+        sk_value_getter_p = &get_sk_value_struct_ref;
+        }
+      }
+    else
+      {
+      SK_ERRORX(a_cstr_format("Class '%s' of parameter '%s' of method '%S.%S' being exported to Blueprints can not be mapped to a Blueprint-compatible type.", sk_parameter_class_p->get_key_class_name().as_cstr_dbg(), param_name.GetPlainANSIString(), *ue_function_p->GetOwnerClass()->GetName(), *ue_function_p->GetName()));
+      }
     }
 
   // Add flags
@@ -752,7 +777,7 @@ void SkUEBlueprintInterface::bind_event_method(SkMethodBase * sk_method_p)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_boolean(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_boolean(FFrame & stack, const TypedName & typed_name)
   {
   UBoolProperty::TCppType value = UBoolProperty::GetDefaultPropertyValue();
   stack.StepCompiledIn<UBoolProperty>(&value);
@@ -761,7 +786,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_boolean(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_integer(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_integer(FFrame & stack, const TypedName & typed_name)
   {
   UIntProperty::TCppType value = UIntProperty::GetDefaultPropertyValue();
   stack.StepCompiledIn<UIntProperty>(&value);
@@ -770,7 +795,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_integer(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_real(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_real(FFrame & stack, const TypedName & typed_name)
   {
   UFloatProperty::TCppType value = UFloatProperty::GetDefaultPropertyValue();
   stack.StepCompiledIn<UFloatProperty>(&value);
@@ -779,7 +804,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_real(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_string(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_string(FFrame & stack, const TypedName & typed_name)
   {
   UStrProperty::TCppType value = UStrProperty::GetDefaultPropertyValue();
   stack.StepCompiledIn<UStrProperty>(&value);
@@ -788,7 +813,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_string(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector3(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector3(FFrame & stack, const TypedName & typed_name)
   {
   FVector value(ForceInitToZero);
   stack.StepCompiledIn<UStructProperty>(&value);
@@ -797,7 +822,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector3(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_rotation_angles(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_rotation_angles(FFrame & stack, const TypedName & typed_name)
   {
   FRotator value(ForceInitToZero);
   stack.StepCompiledIn<UStructProperty>(&value);
@@ -806,7 +831,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_rotation_angles(FFrame & sta
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_transform(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_transform(FFrame & stack, const TypedName & typed_name)
   {
   FTransform value;
   stack.StepCompiledIn<UStructProperty>(&value);
@@ -815,7 +840,27 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_transform(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-SkInstance * SkUEBlueprintInterface::fetch_k2_param_entity(FFrame & stack)
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_struct_val(FFrame & stack, const TypedName & typed_name)
+  {
+  void * user_data_p;
+  SkInstance * instance_p = SkInstance::new_instance_uninitialized_val(typed_name.m_sk_class_p, typed_name.m_byte_size, &user_data_p);
+  stack.StepCompiledIn<UStructProperty>(user_data_p);
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_struct_ref(FFrame & stack, const TypedName & typed_name)
+  {
+  void * user_data_p;
+  SkInstance * instance_p = SkInstance::new_instance_uninitialized_ref(typed_name.m_sk_class_p, typed_name.m_byte_size, &user_data_p);
+  stack.StepCompiledIn<UStructProperty>(user_data_p);
+  return instance_p;
+  }
+
+//---------------------------------------------------------------------------------------
+
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_entity(FFrame & stack, const TypedName & typed_name)
   {
   UObject * obj_p = nullptr;
   stack.StepCompiledIn<UObjectPropertyBase>(&obj_p);
@@ -824,7 +869,7 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_entity(FFrame & stack)
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_boolean(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_boolean(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((UBoolProperty::TCppType *)result_p) = value_p->as<SkBoolean>();
   return sizeof(UBoolProperty::TCppType);
@@ -832,7 +877,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_boolean(void * const result_p, SkI
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_integer(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_integer(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((UIntProperty::TCppType *)result_p) = value_p->as<SkInteger>();
   return sizeof(UIntProperty::TCppType);
@@ -840,7 +885,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_integer(void * const result_p, SkI
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_real(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_real(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((UFloatProperty::TCppType *)result_p) = value_p->as<SkReal>();
   return sizeof(UFloatProperty::TCppType);
@@ -848,7 +893,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_real(void * const result_p, SkInst
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_string(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_string(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((UStrProperty::TCppType *)result_p) = AStringToFString(value_p->as<SkString>());
   return sizeof(UStrProperty::TCppType);
@@ -856,7 +901,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_string(void * const result_p, SkIn
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_vector3(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_vector3(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((FVector *)result_p) = value_p->as<SkVector3>();
   return sizeof(FVector);
@@ -864,7 +909,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_vector3(void * const result_p, SkI
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_rotation_angles(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_rotation_angles(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((FRotator *)result_p) = value_p->as<SkRotationAngles>();
   return sizeof(FRotator);
@@ -872,7 +917,7 @@ uint32_t SkUEBlueprintInterface::get_sk_value_rotation_angles(void * const resul
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_transform(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_transform(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((FTransform *)result_p) = value_p->as<SkTransform>();
   return sizeof(FTransform);
@@ -880,7 +925,25 @@ uint32_t SkUEBlueprintInterface::get_sk_value_transform(void * const result_p, S
 
 //---------------------------------------------------------------------------------------
 
-uint32_t SkUEBlueprintInterface::get_sk_value_entity(void * const result_p, SkInstance * value_p)
+uint32_t SkUEBlueprintInterface::get_sk_value_struct_val(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
+  {
+  // Cast to uint32_t* hoping the compiler will get the hint and optimize the copy
+  ::memcpy(reinterpret_cast<uint32_t *>(result_p), reinterpret_cast<uint32_t *>(SkInstance::get_raw_pointer_val(value_p)), typed_name.m_byte_size);
+  return typed_name.m_byte_size;
+  }
+
+//---------------------------------------------------------------------------------------
+
+uint32_t SkUEBlueprintInterface::get_sk_value_struct_ref(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
+  {
+  // Cast to uint32_t* hoping the compiler will get the hint and optimize the copy
+  ::memcpy(reinterpret_cast<uint32_t *>(result_p), reinterpret_cast<uint32_t *>(SkInstance::get_raw_pointer_ref(value_p)), typed_name.m_byte_size);
+  return typed_name.m_byte_size;
+  }
+
+//---------------------------------------------------------------------------------------
+
+uint32_t SkUEBlueprintInterface::get_sk_value_entity(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((UObject **)result_p) = value_p->as<SkUEEntity>();
   return sizeof(UObject *);
