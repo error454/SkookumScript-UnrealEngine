@@ -69,7 +69,7 @@ public class AgogCore : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1856";
+      var buildNumber = "1897";
       var moduleName = "AgogCore";
 
       // Get local file path where the library is located
@@ -100,11 +100,19 @@ public class AgogCore : ModuleRules
       // Check if a newer custom built library exists that we want to use instead
       var builtLibDirPath = Path.Combine(ModuleDirectory, "Lib", platPathSuffix);
       var builtLibFilePath = Path.Combine(builtLibDirPath, libFileName);
-      if (File.Exists(builtLibFilePath) && (!File.Exists(libFilePath) || (File.GetLastWriteTime(builtLibFilePath) > File.GetLastWriteTime(libFilePath))))
+      if (File.Exists(builtLibFilePath))
       {
-        Log.TraceInformation("Using locally built AgogCore.");
-        libDirPath = builtLibDirPath;
-        libFilePath = builtLibFilePath;
+        // There might be leftovers from ancient versions of the plugin - make sure those are not used
+        if (File.GetLastWriteTime(builtLibFilePath) > new System.DateTime(2015, 11, 1))
+        {
+          Log.TraceInformation("Using locally built AgogCore.");
+          libDirPath = builtLibDirPath;
+          libFilePath = builtLibFilePath;
+        }
+        else
+        {
+          Log.TraceInformation("Using downloaded AgogCore.");
+        }
       }
       PublicLibraryPaths.Add(libDirPath);
       PublicAdditionalLibraries.Add(libFilePath);

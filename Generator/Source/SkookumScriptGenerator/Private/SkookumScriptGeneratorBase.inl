@@ -249,6 +249,7 @@ bool FSkookumScriptGeneratorBase::is_struct_type_supported(UStruct * struct_p)
   {
   UScriptStruct * script_struct = Cast<UScriptStruct>(struct_p);  
   return (script_struct && (script_struct->HasDefaults() || (script_struct->StructFlags & STRUCT_RequiredAPI)));
+  //return script_struct && !(script_struct->StructFlags & STRUCT_NoExport);
   }
 
 //---------------------------------------------------------------------------------------
@@ -280,6 +281,7 @@ FString FSkookumScriptGeneratorBase::skookify_class_name(const FString & name)
   {
   if (name == TEXT("Object")) return TEXT("Entity");
   if (name == TEXT("Class"))  return TEXT("EntityClass");
+  if (name == TEXT("Vector")) return TEXT("Vector3"); // These are the same class
   if (name == TEXT("Enum"))   return TEXT("Enum2"); // HACK to avoid collision with Skookum built-in Enum class
 
   // SkookumScript shortcuts for static function libraries as their names occur very frequently in code
@@ -459,6 +461,7 @@ FString FSkookumScriptGeneratorBase::get_skookum_class_path(UStruct * class_or_s
     }
 
   // Make array of the super classes
+  bool parent_to_sk_ustruct = !is_class;
   TArray<UObject *> super_class_stack;
   super_class_stack.Reserve(32);
   UStruct * super_p = class_or_struct_p;
@@ -471,11 +474,17 @@ FString FSkookumScriptGeneratorBase::get_skookum_class_path(UStruct * class_or_s
     #endif
     super_class_stack.Push(obj_p);
     m_used_classes.AddUnique(super_p); // All super classes are also considered used
+    // Turn `Vector` into built-in `Vector3`:
+    if (super_p->GetName() == TEXT("Vector"))
+      {
+      parent_to_sk_ustruct = false;
+      break;
+      }
     }
 
   // Build path
   int32 max_super_class_nesting = is_class ? FMath::Max(m_scripts_path_depth - 1, 0) : FMath::Max(m_scripts_path_depth - 2, 0);
-  FString class_path = m_scripts_path / (is_class ? TEXT("Object") : TEXT("Object/UStruct"));
+  FString class_path = m_scripts_path / (parent_to_sk_ustruct ? TEXT("Object/UStruct") : TEXT("Object"));
   for (int32 i = 0; i < max_super_class_nesting && super_class_stack.Num(); ++i)
     {
     class_path /= skookify_class_name(super_class_stack.Pop()->GetName());

@@ -343,8 +343,9 @@ actors
 // Yours Skookumly,
 // The Mad Computer Scientists at Agog Labs
 
-
-
-
+TestCharacter.instances_first.setHealth(42)
+Actor.named("COG_BuildingSetA_Tree_02").teleport_to(Vector3!xyz(100 0 188))
+Actor.named("SM_Boulder02_91").teleport_to(Vector3!xyz(100 0 288))
+Actor.named("SM_Boulder02_91").root_component.world_location_set(Vector3!xyz(0 0 188))
 
 

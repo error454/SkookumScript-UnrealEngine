@@ -293,6 +293,9 @@ void FSkookumScriptEditor::on_class_updated(SkClass * sk_class_p, UClass * ue_cl
       schema_p->ReconstructNode(*event_node_p, true);
       }
     }
+
+  // 4) Try recompiling any Blueprints that previously had errors
+  recompile_blueprints_with_errors();
   }
 
 //---------------------------------------------------------------------------------------
@@ -682,7 +685,7 @@ void FSkookumScriptEditor::generate_class_script_files(UClass * ue_class_p, bool
       {
       FString data_body = TEXT("\r\n");
 
-      // Figure out column width of variable types
+      // Figure out column width of variable types & names
       int32 max_type_length = 0;
       int32 max_name_length = 0;
       for (TFieldIterator<UProperty> property_it(ue_class_p, EFieldIteratorFlags::ExcludeSuper); property_it; ++property_it)
