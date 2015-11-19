@@ -8,8 +8,9 @@
 	"CreatedByURL" : "http://SkookumScript.com",
 	"DocsURL" : "http://skookumscript.com/docs/integrations/ue4plugin/",
 	"EngineVersion" : "4.10",
-	"Description" : "SkookumScript - the powerful text-based video game language with full IDE. This plugin generates script and C++ bindings from UE4 Blueprint meta-tags in C++ source to be used by the 'SkookumScript' plugin.",
+	"Description" : "This plugin is required by the 'SkookumScript' plugin to generate script files and C++ bindings from engine source code using the UE4 reflection system.",
 	"Category" : "Scripting",
+	"CanBeUsedWithUnrealHeaderTool": true,
 	"EnabledByDefault" : true,
 	"IsBetaVersion" : true,
 

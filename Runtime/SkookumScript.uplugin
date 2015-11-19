@@ -8,7 +8,7 @@
   "CreatedByURL" : "http://SkookumScript.com",
   "DocsURL" : "http://skookumscript.com/docs/integrations/ue4plugin/",
   "EngineVersion" : "4.10",
-  "Description" : "SkookumScript - the powerful text-based video game language with full IDE. Simple code. Amazing gameplay.",
+  "Description" : "The powerful text-based gameplay scripting language with full IDE. Use as a turbo-charged command console on *any* project, or author your entire gameplay!",
   "Category" : "Scripting",
   "EnabledByDefault" : true,
   "IsBetaVersion" : true,
