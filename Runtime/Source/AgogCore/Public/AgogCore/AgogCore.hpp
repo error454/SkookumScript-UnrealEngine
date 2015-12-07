@@ -60,7 +60,7 @@
       #define A_PLAT_PC32
     #endif
   #else
-    #error No known platform type is defined (A_PLAT_PC32, A_PLAT_PC64, A_PLAT_PS3, A_PLAT_PS4, A_PLAT_X360, A_PLAT_X_ONE, A_PLAT_WIIU, A_PLAT_iOS or A_PLAT_LINUX64)!
+    #error No known platform type is defined (A_PLAT_PC32, A_PLAT_PC64, A_PLAT_PS3, A_PLAT_PS4, A_PLAT_X360, A_PLAT_X_ONE, A_PLAT_WIIU, A_PLAT_iOS, A_PLAT_tvOS, A_PLAT_OSX or A_PLAT_LINUX64)!
   #endif
 #else
 #endif

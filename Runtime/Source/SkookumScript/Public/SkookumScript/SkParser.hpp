@@ -410,6 +410,7 @@ class SkParser : public AString
       Result_err_unexpected_parameter,        // The parameter list expected ',' or ')'.
       Result_err_unexpected_parameter_rargs,  // The parameter list did not expect an extra semi-colon ';'!  Return parameters already started.
       Result_err_unexpected_parameter_return, // A coroutine parameter list must not specify a primary return type - the return type InvokedCoroutine is always inferred.
+      Result_err_unexpected_parameter_binary, // Binary operator must have exactly one parameter
       Result_err_unexpected_query_identifier, // Query/predicate methods are not permitted in instantiation invocations.
       Result_err_unexpected_reserved,         // A reserved word/token may not change its binding - including identifiers (this, this_class, this_code, or nil), literals (true or false), primitives (loop), and statements (exit)
       Result_err_unexpected_return_args,      // Invocation argument list indicated that return arguments were to be used, but routine does not have return parameters.

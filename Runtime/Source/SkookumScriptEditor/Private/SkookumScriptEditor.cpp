@@ -42,11 +42,14 @@ protected:
   //---------------------------------------------------------------------------------------
   // ISkookumScriptRuntimeEditorInterface implementation
 
-  virtual void          on_class_updated(SkClass * sk_class_p, UClass * ue_class_p) override;
-  virtual UBlueprint *  load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p) override;
-  virtual int32         get_scripts_path_depth() const override;
+  virtual FString       ensure_temp_project(const TCHAR * generated_overlay_name_p) override;
+  virtual FString       make_project_editable() override;
+  virtual void          set_overlay_path(const FString & scripts_path, const FString & overlay_name) override; // E.g. ProjectName/Scripts/Project-Generated
+  virtual int32         get_overlay_path_depth() const override;
   virtual void          generate_all_class_script_files() override;
   virtual void          recompile_blueprints_with_errors() override;
+  virtual UBlueprint *  load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p) override;
+  virtual void          on_class_updated(UClass * ue_class_p) override;
 
   //---------------------------------------------------------------------------------------
   // Local implementation
@@ -77,8 +80,6 @@ protected:
 
   // Data members
 
-  bool                          m_is_skookum_project; // If the current project is a SkookumScript-enabled project
-
   TSharedPtr<IModuleInterface>  m_runtime_p;  // TSharedPtr holds on to the module so it can't go away while we need it
 
   FDelegateHandle               m_on_asset_loaded_handle;
@@ -94,6 +95,8 @@ protected:
 
   FString                       m_package_name_key;
   FString                       m_package_path_key;
+
+  const TCHAR *                 m_editable_ini_settings_p; // ini file settings to describe that a project is not editable
 
   TSharedPtr<FUICommandList>        m_button_commands;
 
@@ -122,13 +125,6 @@ void FSkookumScriptEditor::StartupModule()
   // Tell runtime that editor is present (needed even in commandlet mode as we might have to demand-load blueprints)
   get_runtime()->set_editor_interface(this);
 
-  // Set up scripts path and depth
-  m_scripts_path = FPaths::GameDir() / TEXT("Scripts/Project-Generated");
-  compute_scripts_path_depth(FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini"), TEXT("Project-Generated"));
-
-  // Determine if this is a Sk-enabled project
-  m_is_skookum_project = FPaths::DirectoryExists(FPaths::GameDir() / TEXT("Scripts"));
-
   // Clear contents of scripts folder for a fresh start
   // Won't work here if project has several maps using different blueprints
   //FString directory_to_delete(m_scripts_path / TEXT("Object"));
@@ -140,6 +136,9 @@ void FSkookumScriptEditor::StartupModule()
   // Label used to extract package path from Sk class meta file
   m_package_name_key = TEXT("// UE4 Package Name: \"");
   m_package_path_key = TEXT("// UE4 Package Path: \"");
+
+  // String to insert into/remove from Sk project ini file
+  m_editable_ini_settings_p = TEXT("Editable=false\r\nCanMakeEditable=true\r\n");
 
   if (IsRunningCommandlet())
     {
@@ -255,8 +254,233 @@ void FSkookumScriptEditor::ShutdownModule()
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
+// Make sure a temporary Sk project file/folder exists in the project's `Intermediate` folder
 
-void FSkookumScriptEditor::on_class_updated(SkClass * sk_class_p, UClass * ue_class_p)
+FString FSkookumScriptEditor::ensure_temp_project(const TCHAR * generated_overlay_name_p)
+  {
+  // Check temporary location (in `Intermediate` folder)
+  FString temp_root_path(FPaths::GameIntermediateDir() / TEXT("SkookumScript"));
+  FString temp_scripts_path(temp_root_path / TEXT("Scripts"));
+  FString project_path = temp_scripts_path / TEXT("Skookum-project.ini");
+  if (FPaths::FileExists(project_path))
+    {
+    set_overlay_path(temp_scripts_path, generated_overlay_name_p);
+    }
+  else
+    {
+    // If in neither folder, create new project in temporary location
+    // $Revisit MBreyer - read ini file from default_project_path and patch it up to carry over customizations
+    FString proj_ini = FString::Printf(TEXT("[Project]\r\nProjectName=%s\r\nStrictParse=true\r\nUseBuiltinActor=false\r\nCustomActorClass=Actor\r\nStartupMind=Master\r\n%s"), FApp::GetGameName(), m_editable_ini_settings_p);
+    proj_ini += TEXT("[Output]\r\nCompileManifest=false\r\nCompileTo=../Content/skookumscript/classes.sk-bin\r\n");
+    proj_ini += TEXT("[Script Overlays]\r\nOverlay1=*Core|Core\r\nOverlay2=-*Core-Sandbox|Core-Sandbox\r\nOverlay3=*VectorMath|VectorMath\r\nOverlay4=*Engine-Generated|Engine-Generated|3\r\nOverlay5=*Engine|Engine\r\nOverlay6=*Project-Generated|Project-Generated|3\r\n");
+    if (FFileHelper::SaveStringToFile(proj_ini, *project_path, FFileHelper::EEncodingOptions::ForceAnsi))
+      {
+      IFileManager::Get().MakeDirectory(*(temp_root_path / TEXT("Content/skookumscript")), true);
+      IFileManager::Get().MakeDirectory(*(temp_scripts_path / generated_overlay_name_p / TEXT("Object")), true);
+      set_overlay_path(temp_scripts_path, generated_overlay_name_p);
+      generate_all_class_script_files();
+      }
+    else
+      {
+      project_path.Empty();
+      }
+    }
+
+  return project_path;
+  }
+
+//---------------------------------------------------------------------------------------
+
+FString FSkookumScriptEditor::make_project_editable()
+  {
+  FString error_msg;
+
+  FString game_name(FApp::GetGameName());
+  if (game_name.IsEmpty())
+    {
+    error_msg = TEXT("Tried to make project editable but engine has no project loaded!");
+    }
+  else
+    {
+    // Check if maybe already editable - if so, silently do nothing
+    FString editable_scripts_path = FPaths::GameDir() / TEXT("Scripts");
+    FString editable_project_path(editable_scripts_path / TEXT("Skookum-project.ini"));
+    if (!FPaths::FileExists(editable_project_path))
+      {
+      // Check temporary location (in `Intermediate` folder)
+      FString temp_root_path(FPaths::GameIntermediateDir() / TEXT("SkookumScript"));
+      FString temp_scripts_path(temp_root_path / TEXT("Scripts"));
+      FString temp_project_path = temp_scripts_path / TEXT("Skookum-project.ini");
+      if (!FPaths::FileExists(temp_project_path))
+        {
+        error_msg = TEXT("Tried to make project editable but neither an editable nor a non-editable project was found!");
+        }
+      else
+        {
+        if (!IFileManager::Get().Move(*editable_scripts_path, *temp_scripts_path, true, true))
+          {
+          error_msg = TEXT("Failed moving project information from temporary to editable location!");
+          }
+        else
+          {
+          // Move compiled binaries for convenience
+          // We don't care if this succeeds
+          FString temp_binary_folder_path = temp_root_path / TEXT("Content/skookumscript");
+          FString editable_binary_folder_path = FPaths::GameDir() / TEXT("Content/skookumscript");
+          IFileManager::Get().Move(*editable_binary_folder_path, *temp_binary_folder_path, true, true);
+
+          // Change project packaging settings to include Sk binaries
+          UProjectPackagingSettings * packaging_settings_p = Cast<UProjectPackagingSettings>(UProjectPackagingSettings::StaticClass()->GetDefaultObject());
+          const TCHAR * binary_path_name_p = TEXT("skookumscript");
+          for (TArray<FDirectoryPath>::TConstIterator dir_path(packaging_settings_p->DirectoriesToAlwaysStageAsNonUFS); dir_path; ++dir_path)
+            {
+            if (dir_path->Path == binary_path_name_p)
+              {
+              binary_path_name_p = nullptr;
+              break;
+              }
+            }
+          if (binary_path_name_p)
+            {
+            FDirectoryPath binary_path;
+            binary_path.Path = binary_path_name_p;
+            packaging_settings_p->DirectoriesToAlwaysStageAsNonUFS.Add(binary_path);
+            FString config_file_name = FPaths::GameConfigDir() / TEXT("DefaultGame.ini");
+            if (ISourceControlModule::Get().IsEnabled())
+              {
+              SourceControlHelpers::CheckOutFile(config_file_name);
+              }
+            packaging_settings_p->SaveConfig(CPF_Config, *config_file_name);
+            }
+
+          // Create Project overlay folder
+          IFileManager::Get().MakeDirectory(*(editable_scripts_path / TEXT("Project/Object")), true);
+
+          // Change project to be editable
+          FString proj_ini;
+          verify(FFileHelper::LoadFileToString(proj_ini, *editable_project_path));
+          proj_ini = proj_ini.Replace(m_editable_ini_settings_p, TEXT("")); // Remove editable settings
+          proj_ini += TEXT("Overlay7=Project|Project\r\n"); // Create Project overlay definition
+          verify(FFileHelper::SaveStringToFile(proj_ini, *editable_project_path, FFileHelper::EEncodingOptions::ForceAnsi));
+          }
+        }
+      }
+    }
+
+  return error_msg;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FSkookumScriptEditor::set_overlay_path(const FString & scripts_path, const FString & overlay_name)
+  {
+  // Set up scripts path and depth
+  m_overlay_path = scripts_path / overlay_name;
+  compute_scripts_path_depth(scripts_path / TEXT("Skookum-project.ini"), overlay_name);
+  }
+
+//---------------------------------------------------------------------------------------
+
+int32 FSkookumScriptEditor::get_overlay_path_depth() const
+  {
+  return m_overlay_path_depth;
+  }
+
+//---------------------------------------------------------------------------------------
+// Generate SkookumScript class script files for all known blueprint assets
+void FSkookumScriptEditor::generate_all_class_script_files()
+  {
+  if (!m_overlay_path.IsEmpty())
+    {
+    TArray<UObject*> blueprint_array;
+    GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
+    for (UObject * obj_p : blueprint_array)
+      {
+      generate_class_script_files(static_cast<UBlueprint *>(obj_p)->GeneratedClass, true);
+      }
+
+    generate_used_class_script_files();
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Find blueprints that have compile errors and try recompiling them
+// (as errors might be due to SkookumScript not having been initialized at previous compile time
+void FSkookumScriptEditor::recompile_blueprints_with_errors()
+  {
+  TArray<UObject*> blueprint_array;
+  GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
+  for (UObject * obj_p : blueprint_array)
+    {
+    UBlueprint * blueprint_p = static_cast<UBlueprint *>(obj_p);
+    if (blueprint_p->Status == BS_Error)
+      {
+      FKismetEditorUtilities::CompileBlueprint(blueprint_p);
+      }
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Attempt to load blueprint with given qualified class path
+UBlueprint * FSkookumScriptEditor::load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p)
+  {
+  // Try to extract asset path from meta file of Sk class
+  FString full_class_path = m_overlay_path / class_path;
+  FString meta_file_path = full_class_path / TEXT("!Class.sk-meta");
+  FString meta_file_text;
+  *sk_class_deleted_p = false;
+  if (FFileHelper::LoadFileToString(meta_file_text, *meta_file_path))
+    {
+    // Found meta file - try to extract asset path contained in it
+    int32 package_path_begin_pos = meta_file_text.Find(m_package_name_key);
+    if (package_path_begin_pos >= 0)
+      {
+      package_path_begin_pos += m_package_name_key.Len();
+      int32 package_path_end_pos = meta_file_text.Find(TEXT("\""), ESearchCase::CaseSensitive, ESearchDir::FromStart, package_path_begin_pos);
+      if (package_path_end_pos > package_path_begin_pos)
+        {
+        // Successfully got the path of the package, so assemble with asset name and load the asset
+        FString package_path = meta_file_text.Mid(package_path_begin_pos, package_path_end_pos - package_path_begin_pos);
+        FString class_name = FPaths::GetCleanFilename(class_path);
+        // If there's a dot in the name, use portion right of it
+        int dot_pos = -1;
+        if (class_name.FindChar(TCHAR('.'), dot_pos))
+          {
+          class_name = class_name.Mid(dot_pos + 1);
+          }
+        FString asset_path = package_path + TEXT(".") + class_name;
+        UBlueprint * blueprint_p = LoadObject<UBlueprint>(nullptr, *asset_path);
+        if (!blueprint_p)
+          {
+          // Asset not found, ask the user what to do
+          FText title = FText::Format(FText::FromString(TEXT("Asset Not Found For {0}")), FText::FromString(class_name));
+          if (FMessageDialog::Open(
+            EAppMsgType::YesNo,
+            FText::Format(FText::FromString(
+              TEXT("Cannot find Blueprint asset belonging to SkookumScript class '{0}'. ")
+              TEXT("It was originally generated from the asset '{1}' but this asset appears to no longer exist. ")
+              TEXT("Maybe it was deleted or renamed. ")
+              TEXT("If you no longer need the SkookumScript class '{0}', you can fix this issue by deleting the class. ")
+              TEXT("Would you like to delete the SkookumScript class '{0}'?")), FText::FromString(class_name), FText::FromString(asset_path)),
+            &title) == EAppReturnType::Yes)
+            {
+            // User requested deletion, so nuke it
+            IFileManager::Get().DeleteDirectory(*full_class_path, false, true);
+            *sk_class_deleted_p = true;
+            get_runtime()->on_class_scripts_changed_by_editor(class_name, ISkookumScriptRuntime::ChangeType_deleted);
+            }
+          }
+        return blueprint_p;
+        }
+      }
+    }
+
+  return nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FSkookumScriptEditor::on_class_updated(UClass * ue_class_p)
   {
   // 1) Refresh actions (in Blueprint editor drop down menu)
   FBlueprintActionDatabase::Get().RefreshClassActions(ue_class_p);
@@ -298,104 +522,6 @@ void FSkookumScriptEditor::on_class_updated(SkClass * sk_class_p, UClass * ue_cl
   recompile_blueprints_with_errors();
   }
 
-//---------------------------------------------------------------------------------------
-// Attempt to load blueprint with given qualified class path
-UBlueprint * FSkookumScriptEditor::load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p)
-  {
-  // Try to extract asset path from meta file of Sk class
-  FString full_class_path = m_scripts_path / class_path;
-  FString meta_file_path = full_class_path / TEXT("!Class.sk-meta");
-  FString meta_file_text;
-  *sk_class_deleted_p = false;
-  if (FFileHelper::LoadFileToString(meta_file_text, *meta_file_path))
-    {
-    // Found meta file - try to extract asset path contained in it
-    int32 package_path_begin_pos = meta_file_text.Find(m_package_name_key);
-    if (package_path_begin_pos >= 0)
-      {
-      package_path_begin_pos += m_package_name_key.Len();
-      int32 package_path_end_pos = meta_file_text.Find(TEXT("\""), ESearchCase::CaseSensitive, ESearchDir::FromStart, package_path_begin_pos);
-      if (package_path_end_pos > package_path_begin_pos)
-        {
-        // Successfully got the path of the package, so assemble with asset name and load the asset
-        FString package_path = meta_file_text.Mid(package_path_begin_pos, package_path_end_pos - package_path_begin_pos);
-        FString class_name = FPaths::GetCleanFilename(class_path);
-        // If there's a dot in the name, use portion right of it
-        int dot_pos = -1;
-        if (class_name.FindChar(TCHAR('.'), dot_pos))
-          {
-          class_name = class_name.Mid(dot_pos + 1);
-          }
-        FString asset_path = package_path + TEXT(".") + class_name;
-        UBlueprint * blueprint_p = LoadObject<UBlueprint>(nullptr, *asset_path);
-        if (!blueprint_p)
-          {
-          // Asset not found, ask the user what to do          
-          if (FMessageDialog::Open(
-            EAppMsgType::YesNo,
-            FText::Format(FText::FromString(
-              TEXT("Cannot find Blueprint asset belonging to SkookumScript class '{0}'. ")
-              TEXT("It was originally generated from the asset '{1}' but this asset appears to no longer exist. ")
-              TEXT("Maybe it was deleted or renamed. ")
-              TEXT("If you no longer need the SkookumScript class '{0}', you can fix this issue by deleting the class. ")
-              TEXT("Would you like to delete the SkookumScript class '{0}'?")), FText::FromString(class_name), FText::FromString(asset_path)),
-            &FText::Format(FText::FromString(TEXT("Asset Not Found For {0}")), FText::FromString(class_name))) == EAppReturnType::Yes)
-            {
-            // User requested deletion, so nuke it
-            IFileManager::Get().DeleteDirectory(*full_class_path, false, true);
-            *sk_class_deleted_p = true;
-            get_runtime()->on_class_scripts_changed_by_editor(class_name, ISkookumScriptRuntime::ChangeType_deleted);
-            }
-          }
-        return blueprint_p;
-        }
-      }
-    }
-
-  return nullptr;
-  }
-
-//---------------------------------------------------------------------------------------
-//
-int32 FSkookumScriptEditor::get_scripts_path_depth() const
-  {
-  return m_scripts_path_depth;
-  }
-
-//---------------------------------------------------------------------------------------
-// Generate SkookumScript class script files for all known blueprint assets
-void FSkookumScriptEditor::generate_all_class_script_files()
-  {
-  if (m_is_skookum_project)
-    {
-    TArray<UObject*> blueprint_array;
-    GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
-    for (UObject * obj_p : blueprint_array)
-      {
-      generate_class_script_files(static_cast<UBlueprint *>(obj_p)->GeneratedClass, true);
-      }
-
-    generate_used_class_script_files();
-    }
-  }
-
-//---------------------------------------------------------------------------------------
-// Find blueprints that have compile errors and try recompiling them
-// (as errors might be due to SkookumScript not having been initialized at previous compile time
-void FSkookumScriptEditor::recompile_blueprints_with_errors()
-  {
-  TArray<UObject*> blueprint_array;
-  GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
-  for (UObject * obj_p : blueprint_array)
-    {
-    UBlueprint * blueprint_p = static_cast<UBlueprint *>(obj_p);
-    if (blueprint_p->Status == BS_Error)
-      {
-      FKismetEditorUtilities::CompileBlueprint(blueprint_p);
-      }
-    }
-  }
-
 //=======================================================================================
 // FSkookumScriptEditor implementation
 //=======================================================================================
@@ -410,7 +536,7 @@ void FSkookumScriptEditor::on_asset_loaded(UObject * new_object_p)
     // Register callback so we know when this Blueprint has been compiled
     blueprint_p->OnCompiled().AddRaw(this, &FSkookumScriptEditor::on_blueprint_compiled);
 
-    if (m_is_skookum_project)
+    if (!m_overlay_path.IsEmpty())
       {
       // And generate script files
       generate_class_script_files(blueprint_p->GeneratedClass, true);
@@ -423,7 +549,7 @@ void FSkookumScriptEditor::on_asset_loaded(UObject * new_object_p)
 //
 void FSkookumScriptEditor::on_object_modified(UObject * obj_p)
   {
-  if (m_is_skookum_project)
+  if (!m_overlay_path.IsEmpty())
     {
     // Is this a blueprint?
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
@@ -450,7 +576,7 @@ void FSkookumScriptEditor::on_assets_deleted(const TArray<UClass*> & deleted_ass
 //
 void FSkookumScriptEditor::on_asset_post_import(UFactory * factory_p, UObject * obj_p)
   {
-  if (m_is_skookum_project)
+  if (!m_overlay_path.IsEmpty())
     {
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
     if (blueprint_p)
@@ -473,7 +599,7 @@ void FSkookumScriptEditor::on_asset_renamed(const FAssetData & asset_data, const
   {
   static FName s_blueprint_class_name(TEXT("Blueprint"));
 
-  if (m_is_skookum_project && asset_data.AssetClass == s_blueprint_class_name)
+  if (!m_overlay_path.IsEmpty() && asset_data.AssetClass == s_blueprint_class_name)
     {
     UBlueprint * blueprint_p = FindObjectChecked<UBlueprint>(ANY_PACKAGE, *asset_data.AssetName.GetPlainNameString());
     if (blueprint_p)
@@ -487,7 +613,7 @@ void FSkookumScriptEditor::on_asset_renamed(const FAssetData & asset_data, const
 //
 void FSkookumScriptEditor::on_in_memory_asset_created(UObject * obj_p)
   {
-  if (m_is_skookum_project)
+  if (!m_overlay_path.IsEmpty())
     {
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
     if (blueprint_p)
@@ -502,7 +628,7 @@ void FSkookumScriptEditor::on_in_memory_asset_created(UObject * obj_p)
 //
 void FSkookumScriptEditor::on_in_memory_asset_deleted(UObject * obj_p)
   {
-  if (m_is_skookum_project)
+  if (!m_overlay_path.IsEmpty())
     {
     UBlueprint * blueprint_p = Cast<UBlueprint>(obj_p);
     if (blueprint_p)
@@ -528,7 +654,7 @@ void FSkookumScriptEditor::on_map_opened(const FString & file_name, bool as_temp
 void FSkookumScriptEditor::on_blueprint_compiled(UBlueprint * blueprint_p)
   {
   // Re-generate script files for this class as things might have changed
-  if (m_is_skookum_project)
+  if (!m_overlay_path.IsEmpty())
     {
     generate_class_script_files(blueprint_p->GeneratedClass, true);
     }
@@ -588,23 +714,25 @@ void FSkookumScriptEditor::on_blueprint_compiled(UBlueprint * blueprint_p)
 
       if (has_skookum_default_constructor && !has_constructor_node)
         {
+        FText title = FText::Format(FText::FromString(TEXT("SkookumScript default constructor never called in '{0}'")), FText::FromString(blueprint_p->GetName()));
         FMessageDialog::Open(
           EAppMsgType::Ok,
           FText::Format(FText::FromString(
           TEXT("The SkookumScript class '{0}' has a default constructor but the blueprint has neither a SkookumScript component nor is the default constructor invoked somewhere in an event graph. ")
           TEXT("That means the default constructor will never be called. ")
           TEXT("To fix this issue, either add a SkookumScript component to the Blueprint, or invoke the default constructor explicitely in its event graph.")), FText::FromString(blueprint_p->GetName())),
-          &FText::Format(FText::FromString(TEXT("SkookumScript default constructor never called in '{0}'")), FText::FromString(blueprint_p->GetName())));
+          &title);
         }
       else if (has_skookum_destructor && !has_destructor_node) // `else if` here so we won't show both dialogs, one is enough
         {
+        FText title = FText::Format(FText::FromString(TEXT("SkookumScript destructor never called in '{0}'")), FText::FromString(blueprint_p->GetName()));
         FMessageDialog::Open(
           EAppMsgType::Ok,
           FText::Format(FText::FromString(
           TEXT("The SkookumScript class '{0}' has a destructor but the blueprint has neither a SkookumScript component nor is the destructor invoked somewhere in an event graph. ")
           TEXT("That means the destructor will never be called. ")
           TEXT("To fix this issue, either add a SkookumScript component to the Blueprint, or invoke the destructor explicitely in its event graph.")), FText::FromString(blueprint_p->GetName())),
-          &FText::Format(FText::FromString(TEXT("SkookumScript destructor never called in '{0}'")), FText::FromString(blueprint_p->GetName())));
+          &title);
         }
       }
     }
@@ -650,7 +778,7 @@ bool FSkookumScriptEditor::is_property_type_supported_and_known(UProperty * var_
 
 void FSkookumScriptEditor::generate_class_script_files(UClass * ue_class_p, bool generate_data)
   {
-  check(m_is_skookum_project);
+  check(!m_overlay_path.IsEmpty());
 
 #if !PLATFORM_EXCEPTIONS_DISABLED
   try
@@ -886,4 +1014,7 @@ void FSkookumScriptEditor::on_skookum_button_clicked()
 
   // Bring up IDE and navigate to selected class/method/coroutine
   get_runtime()->show_ide(focus_class_name, focus_member_name, false, false);
+
+  // Request recompilation if there have previously been errors
+  get_runtime()->freshen_compiled_binaries_if_have_errors();
   }

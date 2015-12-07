@@ -140,6 +140,46 @@ A_INLINE AString operator+(
   return AStringRef::pool_new(buffer_p, length_str + 1u, size, 0u, true, false);
   }
 
+//---------------------------------------------------------------------------------------
+// Add/plus operator - concatenate cstr_p and str to form a new string.
+// Returns:    New concatenated string
+A_INLINE AString operator+(
+  const char *    cstr_p,
+  const AString & str
+  )
+  {
+  // This is a AString friend function
+
+  uint32_t length_str = str.m_str_ref_p->m_length;
+  uint32_t length_cstr = uint32_t(::strlen(cstr_p));
+  uint32_t length_new = length_str + length_cstr;
+  uint32_t size = AStringRef::request_char_count(length_new);
+  char *   buffer_p = AStringRef::alloc_buffer(size);
+
+  ::memcpy(buffer_p, cstr_p, size_t(length_cstr));
+  ::memcpy(buffer_p + length_cstr, str.m_str_ref_p->m_cstr_p, size_t(length_str + 1u));  // +1 to include null character
+
+  return AStringRef::pool_new(buffer_p, length_new, size, 0u, true, false);
+  }
+
+//---------------------------------------------------------------------------------------
+// Concatenation:  ch + string  NOTE:  This is a friend function.
+// Returns:     New concatenated string
+A_INLINE AString operator+(
+  char            ch,
+  const AString & str
+  )
+  {
+  uint32_t length_str = str.m_str_ref_p->m_length;
+  uint32_t size = AStringRef::request_char_count(length_str + 1u);
+  char *   buffer_p = AStringRef::alloc_buffer(size);
+
+  buffer_p[0] = ch;
+  ::memcpy(buffer_p + 1, str.m_str_ref_p->m_cstr_p, size_t(length_str + 1u));  // +1 to include null character
+
+  return AStringRef::pool_new(buffer_p, length_str + 1u, size, 0u, true, false);
+  }
+
 
 //#######################################################################################
 // AStrArgs Class

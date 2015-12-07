@@ -235,7 +235,6 @@
 const uint32_t ASymbolId_null               = ASymbol_id_null;
 
   // Class Names
-const uint32_t ASymbolId_Actor              = 0x85b479fd;
 const uint32_t ASymbolId_Boolean            = 0x4538b1f4;
 const uint32_t ASymbolId_Class              = 0x2c8a369b;
 const uint32_t ASymbolId_Closure            = 0x87bab44d;

@@ -176,11 +176,11 @@ void FSkookumScriptGenerator::Initialize(const FString & root_local_path, const 
   m_runtime_plugin_root_path = include_base;
 
   // Set up output path for scripts
-  m_scripts_path = IFileManager::Get().ConvertToAbsolutePathForExternalAppForWrite(*(include_base / TEXT("../../Scripts/Engine-Generated")));
-  FSkookumScriptGeneratorBase::compute_scripts_path_depth(m_scripts_path / TEXT("../Skookum-project-default.ini"), TEXT("Engine-Generated"));
+  m_overlay_path = IFileManager::Get().ConvertToAbsolutePathForExternalAppForWrite(*(include_base / TEXT("../../Scripts/Engine-Generated")));
+  compute_scripts_path_depth(m_overlay_path / TEXT("../Skookum-project-default.ini"), TEXT("Engine-Generated"));
 
   // Clear contents of scripts folder for a fresh start
-  FString directory_to_delete(m_scripts_path / TEXT("Object"));
+  FString directory_to_delete(m_overlay_path / TEXT("Object"));
   IFileManager::Get().DeleteDirectory(*directory_to_delete, false, true);
 
   // Fetch from ini file which classes to skip during script generation
@@ -266,16 +266,21 @@ void FSkookumScriptGenerator::FinishExport()
       }
     }
 
-  // Export all enums
-  obj_array.Reset();
-  GetObjectsOfClass(UEnum::StaticClass(), obj_array, false, RF_ClassDefaultObject | RF_PendingKill);
-  for (auto obj_p : obj_array)
-    {
-    if (m_class_packages.Contains(obj_p->GetOuter()))
+  #if 0
+    // This does currently not work for enums that are within WITH_EDITOR or WITH_EDITORONLY_DATA blocks
+    // as we cannot detect from the UEnum if that's the case, causing compile errors in cooked builds
+
+    // Export all enums
+    obj_array.Reset();
+    GetObjectsOfClass(UEnum::StaticClass(), obj_array, false, RF_ClassDefaultObject | RF_PendingKill);
+    for (auto obj_p : obj_array)
       {
-      generate_enum(static_cast<UEnum *>(obj_p));
+      if (m_class_packages.Contains(obj_p->GetOuter()))
+        {
+        generate_enum(static_cast<UEnum *>(obj_p));
+        }
       }
-    }
+  #endif
 #endif
 
   // Now remove all exported classes from the used classes list and see if anything is left
@@ -479,7 +484,6 @@ void FSkookumScriptGenerator::generate_class_binding_file(UStruct * class_or_str
 
   enum eScope { Scope_instance, Scope_class }; // 0 = instance, 1 = static bindings
   TArray<MethodBinding> bindings[2]; // eScope
-  MethodBinding binding;
 
   FString generated_code;
   generated_code += FString::Printf(TEXT("\r\nnamespace SkUE%s_Impl\r\n  {\r\n\r\n"), *skookum_class_name);
@@ -487,6 +491,8 @@ void FSkookumScriptGenerator::generate_class_binding_file(UStruct * class_or_str
   UClass * class_p = Cast<UClass>(class_or_struct_p);
   if (class_p)
     {
+    MethodBinding binding;
+      
     // Export all functions
     for (TFieldIterator<UFunction> func_it(class_or_struct_p); func_it; ++func_it)
       {
@@ -603,7 +609,7 @@ void FSkookumScriptGenerator::generate_enum(UEnum * enum_p)
 void FSkookumScriptGenerator::generate_enum_script_files(UEnum * enum_p)
   {
   FString enum_type_name = enum_p->GetName();
-  FString enum_path = m_scripts_path / TEXT("Object/Enum") / enum_type_name;
+  FString enum_path = m_overlay_path / TEXT("Object/Enum") / enum_type_name;
 
   // Class meta information
   FString meta_file_path = enum_path / TEXT("!Class.sk-meta");

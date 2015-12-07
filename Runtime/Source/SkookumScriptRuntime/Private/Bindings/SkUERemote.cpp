@@ -12,7 +12,7 @@
 // Includes
 //=======================================================================================
 
-#include "SkookumScriptRuntimePrivatePCH.h"
+#include "../SkookumScriptRuntimePrivatePCH.h"
 #include "SkUERemote.hpp"
 #include "SkUERuntime.hpp"
 #include "Bindings/SkUEBlueprintInterface.hpp"
@@ -44,8 +44,9 @@ namespace
 SkUERemote::SkUERemote() :
   m_socket_p(nullptr),
   m_data_idx(ADef_uint32),
-  m_editor_interface_p(nullptr),
-  m_load_compiled_binaries_requested(false)
+  m_load_compiled_binaries_requested(false),
+  m_compiled_binaries_have_errors(false),
+  m_editor_interface_p(nullptr)
   {
   }
 
@@ -313,6 +314,29 @@ void SkUERemote::on_cmd_send(const ADatum & datum)
   }
 
 //---------------------------------------------------------------------------------------
+// Make this editable and tell IDE about it
+void SkUERemote::on_cmd_make_editable()
+  {
+  SkProjectInfo project_info;
+
+  FString error_msg(TEXT("Can't make project editable!"));
+  #if WITH_EDITORONLY_DATA
+    if (m_editor_interface_p)
+      {
+      error_msg = m_editor_interface_p->make_project_editable();
+      }
+  #endif
+  if (error_msg.IsEmpty())
+    {
+    get_project_info(&project_info);
+    SkookumRuntimeBase::ms_singleton_p->on_binary_hierarchy_path_changed();
+    }
+
+  // Send result back
+  cmd_make_editable_reply(FStringToAString(error_msg), project_info);
+  }
+
+//---------------------------------------------------------------------------------------
 void SkUERemote::on_cmd_freshen_compiled_reply(eCompiledState state)
   {
   // Call base class
@@ -320,6 +344,7 @@ void SkUERemote::on_cmd_freshen_compiled_reply(eCompiledState state)
 
   // Trigger load of binaries
   m_load_compiled_binaries_requested = (state == CompiledState_fresh);
+  m_compiled_binaries_have_errors = (state == CompiledState_errors);
   }
 
 //---------------------------------------------------------------------------------------
@@ -330,7 +355,7 @@ void SkUERemote::on_class_updated(SkClass * class_p)
     UClass * uclass_p = SkUEBlueprintInterface::get()->reexpose_class(class_p);
     if (m_editor_interface_p && uclass_p)
       {
-      m_editor_interface_p->on_class_updated(class_p, uclass_p);
+      m_editor_interface_p->on_class_updated(uclass_p);
       }
   #endif
   }
@@ -416,27 +441,56 @@ bool SkUERemote::spawn_remote_ide()
 
 
 //---------------------------------------------------------------------------------------
-AString SkUERemote::get_project_path()
+void SkUERemote::get_project_info(SkProjectInfo * out_project_info_p)
   {
-  // Look for specific SkookumScript project in game/project folder.
-  FString game_name(FApp::GetGameName());
+  // Get platform id string
+  out_project_info_p->m_platform_id = FStringToAString(UGameplayStatics::GetPlatformName());
 
-  if (game_name.IsEmpty())
+  // Get engine id string
+  out_project_info_p->m_engine_id.ensure_size(20);
+  out_project_info_p->m_engine_id.format("UE%d.%d.%d-%s", ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION, BUILT_FROM_CHANGELIST ? "Installed" : "Compiled");
+
+  // Get game name
+  out_project_info_p->m_project_name = FStringToAString(FApp::GetGameName());
+
+  // Name of generated scripts overlay
+  TCHAR const * const generated_overlay_name_p = TEXT("Project-Generated");
+
+  // Look for default SkookumScript project file in engine folder.
+  FString default_project_path(FPaths::EnginePluginsDir() / TEXT("SkookumScript/Runtime/Scripts/Skookum-project-default.ini"));
+  SK_ASSERTX(FPaths::FileExists(default_project_path), a_str_format("Cannot find default project settings file '%S'!", *default_project_path));
+  out_project_info_p->m_default_project_path = FStringToAString(FPaths::ConvertRelativePathToFull(default_project_path));
+
+  // Check if we have loaded any game
+  if (!out_project_info_p->m_project_name.is_empty())
     {
-    // Use default project
-    return AString::ms_empty;
+    // Look for specific SkookumScript project in game/project folder.
+    // 1) Check permanent location
+    FString project_path(FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini"));
+    if (FPaths::FileExists(project_path))
+      {
+      #if WITH_EDITORONLY_DATA
+        if (m_editor_interface_p)
+          {
+          m_editor_interface_p->set_overlay_path(FPaths::GetPath(project_path), generated_overlay_name_p);
+          }
+      #endif
+      }
+    else
+      {
+      project_path.Empty();
+      #if WITH_EDITORONLY_DATA
+        if (m_editor_interface_p)
+          {
+          // 2) Check/create temp location
+          project_path = m_editor_interface_p->ensure_temp_project(generated_overlay_name_p);
+          SK_ASSERTX(!project_path.IsEmpty(), a_str_format("Could not generated project file '%S' for project '%s'!", *project_path, out_project_info_p->m_project_name.as_cstr()));
+          }
+      #endif
+      }
+
+    out_project_info_p->m_project_path = FStringToAString(FPaths::ConvertRelativePathToFull(project_path));
     }
-
-  FString project_path(
-    FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini"));
-
-  if (!FPaths::FileExists(project_path))
-    {
-    // Use default project
-    return AString::ms_empty;
-    }
-
-  return FStringToAString(FPaths::ConvertRelativePathToFull(project_path));
   }
 
 
