@@ -42,8 +42,8 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
     // Overridden from IModuleInterface
 
     virtual void    StartupModule() override;
-    virtual void    PostLoadCallback() override;
-    virtual void    PreUnloadCallback() override;
+    //virtual void    PostLoadCallback() override;
+    //virtual void    PreUnloadCallback() override;
     virtual void    ShutdownModule() override;
 
     // Overridden from ISkookumScriptRuntime
@@ -59,6 +59,7 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
       virtual void  on_editor_map_opened() override;
       virtual void  on_class_scripts_changed_by_editor(const FString & class_name, eChangeType change_type) override;
       virtual void  show_ide(const FString & focus_class_name, const FString & focus_member_name, bool is_data_member, bool is_class_member) override;
+      virtual void  freshen_compiled_binaries_if_have_errors() override;
 
       virtual bool  is_static_class_known_to_skookum(UClass * class_p) const override;
       virtual bool  is_static_struct_known_to_skookum(UStruct * struct_p) const override;
@@ -414,13 +415,6 @@ namespace Skookum
       // Unreal uses its own actor class
       s_values.m_use_builtin_actor = false; 
       s_values.m_custom_actor_class_name = "Actor";
-
-      // Get platform name
-      s_values.m_platform_id_string = FStringToAString(UGameplayStatics::GetPlatformName());
-
-      // Get engine name
-      s_values.m_engine_id_string.ensure_size(20);
-      s_values.m_engine_id_string.format("UE%d.%d.%d-%s", ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION, ENGINE_PATCH_VERSION, BUILT_FROM_CHANGELIST ? "Installed" : "Compiled");
       }
 
     return s_values;
@@ -432,10 +426,10 @@ namespace Skookum
 //---------------------------------------------------------------------------------------
 FSkookumScriptRuntime::FSkookumScriptRuntime()
   : m_game_world_p(nullptr)
-  , m_editor_world_p(nullptr)
 #ifdef SKOOKUM_REMOTE_UNREAL
   , m_freshen_binaries_requested(WITH_EDITORONLY_DATA) // With cooked data, load binaries immediately and do not freshen
 #endif
+  , m_editor_world_p(nullptr)
   {
   //m_runtime.set_compiled_path("Scripts" SK_BITS_ID "\\");
   }
@@ -445,6 +439,14 @@ FSkookumScriptRuntime::FSkookumScriptRuntime()
 // variables are initialized, of course.)
 void FSkookumScriptRuntime::StartupModule()
   {
+  // In cooked builds, stay inert when there's no compiled binaries
+  #if !WITH_EDITORONLY_DATA
+    if (!m_runtime.is_binary_hierarchy_existing())
+      {
+      return;
+      }
+  #endif
+
   A_DPRINT(A_SOURCE_STR " Starting up SkookumScript plug-in modules\n");
 
   // Note that FWorldDelegates::OnPostWorldCreation has world_p->WorldType set to None
@@ -480,10 +482,12 @@ void FSkookumScriptRuntime::StartupModule()
 
 //---------------------------------------------------------------------------------------
 // Called after the module has been reloaded
+/*
 void FSkookumScriptRuntime::PostLoadCallback()
   {
   A_DPRINT(A_SOURCE_STR " SkookumScript - loaded.\n");
   }
+*/
 
 //---------------------------------------------------------------------------------------
 void FSkookumScriptRuntime::on_world_init_pre(UWorld * world_p, const UWorld::InitializationValues init_vals)
@@ -577,16 +581,26 @@ void FSkookumScriptRuntime::on_world_cleanup(UWorld * world_p, bool session_ende
 
 //---------------------------------------------------------------------------------------
 // Called before the module has been unloaded
+/*
 void FSkookumScriptRuntime::PreUnloadCallback()
   {
   A_DPRINT(A_SOURCE_STR " SkookumScript - about to unload.\n");
   }
+*/
 
 //---------------------------------------------------------------------------------------
 // This function may be called during shutdown to clean up your module.  For modules that
 // support dynamic reloading, we call this function before unloading the module.
 void FSkookumScriptRuntime::ShutdownModule()
   {
+  // In cooked builds, stay inert when there's no compiled binaries
+  #if !WITH_EDITORONLY_DATA
+    if (!m_runtime.is_binary_hierarchy_existing())
+      {
+      return;
+      }
+  #endif
+
   A_DPRINT(A_SOURCE_STR " Shutting down SkookumScript plug-in modules\n");
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -662,7 +676,8 @@ void FSkookumScriptRuntime::tick_remote()
     m_remote_client.process_incoming();
 
     // Re-load compiled binaries?
-    if (m_remote_client.is_load_compiled_binaries_requested())
+    // If the game is not currently running, delay until it's not
+    if (m_remote_client.is_load_compiled_binaries_requested() && !m_game_world_p)
       {
       // Load the Skookum class hierarchy scripts in compiled binary form
       bool is_first_time = !is_skookum_initialized();
@@ -750,9 +765,18 @@ void FSkookumScriptRuntime::on_editor_map_opened()
         {
         // At this point, wait if necessary to make sure we are connected
         m_remote_client.ensure_connected(0.0);
-        // Kick off re-compilation of the binaries
-        m_remote_client.cmd_compiled_state(true);
-        m_freshen_binaries_requested = false; // Request satisfied
+        if (m_remote_client.is_authenticated())
+          {
+          // Kick off re-compilation of the binaries
+          m_remote_client.cmd_compiled_state(true);
+          m_freshen_binaries_requested = false; // Request satisfied
+          }
+        else
+          {
+          // If no remote connection, attempt to load binaries at this point
+          bool success_b = m_runtime.load_compiled_scripts();
+          SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+          }
         }
     #else
       // If no remote connection, load binaries at this point
@@ -790,6 +814,18 @@ void FSkookumScriptRuntime::show_ide(const FString & focus_class_name, const FSt
     ASymbol focus_class_name_sym(ASymbol::create_existing(FStringToAString(focus_class_name_ide)));
     ASymbol focus_member_name_sym(ASymbol::create_existing(FStringToAString(focus_member_name_ide)));
     m_remote_client.cmd_show(AFlag_on, focus_class_name_sym, focus_member_name_sym, is_data_member, is_class_member);
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+// 
+void FSkookumScriptRuntime::freshen_compiled_binaries_if_have_errors()
+  {
+  #ifdef SKOOKUM_REMOTE_UNREAL
+    if (m_remote_client.is_compiled_binaries_have_errors())
+      {
+      m_freshen_binaries_requested = true;
+      }
   #endif
   }
 

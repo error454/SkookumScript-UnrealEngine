@@ -22,6 +22,9 @@ namespace UnrealBuildTool.Rules
         case UnrealTargetPlatform.Win64:
           Definitions.Add("WIN32_LEAN_AND_MEAN");
           break;
+        case UnrealTargetPlatform.Mac:
+          Definitions.Add("A_PLAT_OSX");
+          break;
         case UnrealTargetPlatform.IOS:
           Definitions.Add("A_PLAT_iOS");
           break;

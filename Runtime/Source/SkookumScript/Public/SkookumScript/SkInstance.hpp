@@ -248,7 +248,9 @@ class SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
     SkInvokedBase * caller_p = nullptr
     );
 
-    // Coroutine Invocation
+    // Coroutine related
+
+      virtual void         clear_coroutines();
 
       SkInvokedCoroutine * coroutine_call(const ASymbol & coroutine_name, SkInstance ** args_pp, uint32_t arg_count, bool immediate = true, f32 update_interval = SkCall_interval_always, SkInvokedBase * caller_p = nullptr, SkMind * updater_p = nullptr);
       SkInvokedCoroutine * coroutine_call(const ASymbol & coroutine_name, SkInstance * arg_p = nullptr, bool immediate = true, f32 update_interval = SkCall_interval_always, SkInvokedBase * caller_p = nullptr, SkMind * updater_p = nullptr);

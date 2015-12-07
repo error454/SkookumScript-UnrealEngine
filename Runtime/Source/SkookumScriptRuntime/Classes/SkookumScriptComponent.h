@@ -49,10 +49,6 @@ class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent,
     // Gets our SkookumScript instance
     SkInstance * get_sk_instance() const { return m_instance_p; }
 
-    // Create/delete the sk instance of all SkookumScript components out there
-    static void create_registered_sk_instances();
-    static void delete_registered_sk_instances();
-
     // Begin UActorComponent interface
 
       virtual void OnRegister() override;
@@ -68,11 +64,6 @@ class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent,
 
     // Keep the SkookumScript instance belonging to this actor around
     AIdPtr<SkInstance> m_instance_p;
-
-  private:
-
-    // Global list of all SkookumScript components
-    static AList<USkookumScriptComponent> ms_registered_skookumscript_components;
 
   };  // USkookumScriptComponent
 

@@ -15,6 +15,7 @@ public class SkookumScript : ModuleRules
     
     string platPathSuffix = Target.Platform.ToString();
     string libPathExt = ".a";
+    string libNamePrefix = "lib";
     bool useDebugCRT = BuildConfiguration.bDebugBuildsActuallyUseDebugCRT;
     
     switch (Target.Platform)
@@ -23,13 +24,20 @@ public class SkookumScript : ModuleRules
       bPlatformAllowed = true;
       platPathSuffix = Path.Combine("Win32", WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2015 ? "VS2015" : "VS2013");
       libPathExt = ".lib";
+      libNamePrefix = "";
       Definitions.Add("WIN32_LEAN_AND_MEAN");
       break;
     case UnrealTargetPlatform.Win64:
       bPlatformAllowed = true;
       platPathSuffix = Path.Combine("Win64", WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2015 ? "VS2015" : "VS2013");
       libPathExt = ".lib";
+      libNamePrefix = "";
       Definitions.Add("WIN32_LEAN_AND_MEAN");
+      break;
+    case UnrealTargetPlatform.Mac:
+      bPlatformAllowed = true;
+      Definitions.Add("A_PLAT_OSX");
+      useDebugCRT = true;
       break;
     case UnrealTargetPlatform.IOS:
       bPlatformAllowed = true;
@@ -70,11 +78,11 @@ public class SkookumScript : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1897";
+      var buildNumber = "1956";
       var moduleName = "SkookumScript";
 
       // Get local file path where the library is located
-      var libFileName = moduleName + libNameSuffix + libPathExt;
+      var libFileName = libNamePrefix + moduleName + libNameSuffix + libPathExt;
       var libDirPath = Path.Combine(ModuleDirectory, "..", "..", "Intermediate", "Lib", buildNumber, platPathSuffix);
       var libFilePath = Path.Combine(libDirPath, libFileName);
       if (!File.Exists(libFilePath))

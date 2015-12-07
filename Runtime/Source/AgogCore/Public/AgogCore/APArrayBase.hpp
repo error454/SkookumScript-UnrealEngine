@@ -668,6 +668,8 @@ void APArrayBase<_ElementType>::as_binary_elems(
   void ** binary_pp
   ) const
   {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_elems_length());
+
   // n bytes - element binary }- repeating
   _ElementType ** elems_pp     = m_array_p;
   _ElementType ** elems_end_pp = elems_pp + m_count;
@@ -698,6 +700,8 @@ inline void APArrayBase<_ElementType>::as_binary(
   void ** binary_pp
   ) const
   {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_length());
+
   // 4 bytes - element count
   uint32_t count = m_count;
   A_BYTE_STREAM_OUT32(binary_pp, &count);

@@ -48,6 +48,7 @@ class SkUERemote : public SkookumRemoteRuntimeBase
 
     bool                      is_load_compiled_binaries_requested() const { return m_load_compiled_binaries_requested; }
     void                      clear_load_compiled_binaries_requested()    { m_load_compiled_binaries_requested = false; }
+    bool                      is_compiled_binaries_have_errors() const    { return m_compiled_binaries_have_errors; }
 
     //---------------------------------------------------------------------------------------
     // Determines amount of time elapsed time in seconds (from some consistent start time at
@@ -61,14 +62,10 @@ class SkUERemote : public SkookumRemoteRuntimeBase
     virtual double get_elapsed_seconds() override;
 
     //---------------------------------------------------------------------------------------
-    // Supply path for current project settings file (specific script overlays, etc. stored
-    // in .ini file). If an empty path is returned then the default/core scripts are used
-    // without any project specific scripts.
-    // 
-    // Returns: path to project file
+    // Supply information about current project
     // 
     // See: SkookumRemoteRuntimeBase::cmd_compiled_state()
-    virtual AString get_project_path() override;
+    virtual void get_project_info(SkProjectInfo * out_project_info_p) override;
 
     //---------------------------------------------------------------------------------------
     // Brute force spawn of remote IDE. Called when connect attempts don't work and it is
@@ -101,21 +98,23 @@ class SkUERemote : public SkookumRemoteRuntimeBase
   // Events
 
     virtual void              on_cmd_send(const ADatum & datum) override;
+    virtual void              on_cmd_make_editable() override;
     virtual void              on_cmd_freshen_compiled_reply(eCompiledState state) override;
     virtual void              on_class_updated(SkClass * class_p) override;
 
   // Data Members
 
-    FSocket *   m_socket_p;
+    FSocket *     m_socket_p;
 
     // Datum that is filled when data is received
-    ADatum      m_data_in;
+    ADatum        m_data_in;
 
     // Data byte index point - ADef_uint32 when not in progress
-    uint32_t    m_data_idx;
+    uint32_t      m_data_idx;
 
     // Binaries have been successfully compiled and are ready to load
-    bool        m_load_compiled_binaries_requested;
+    bool          m_load_compiled_binaries_requested;
+    bool          m_compiled_binaries_have_errors;
 
     // Editor interface so we can notify it about interesting events
     ISkookumScriptRuntimeEditorInterface * m_editor_interface_p;

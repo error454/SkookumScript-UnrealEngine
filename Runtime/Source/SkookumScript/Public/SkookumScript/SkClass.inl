@@ -99,12 +99,7 @@ A_INLINE SkMethodBase * SkMetaClass::find_method(const ASymbol & method_name, bo
 // Author(s):   Conan Reis
 A_INLINE SkMethodBase * SkMetaClass::find_method_inherited(const ASymbol & method_name, bool * is_class_member_p) const
   {
-  if (is_class_member_p)
-    {
-    *is_class_member_p = true;
-    }
-
-  return m_class_info_p->find_class_method_inherited(method_name);
+  return m_class_info_p->find_class_method_inherited(method_name, is_class_member_p);
   }
 
 //---------------------------------------------------------------------------------------
@@ -479,12 +474,15 @@ A_INLINE bool SkClass::is_coroutine_registered(const ASymbol & coroutine_name) c
 // initializes them to nil
 // 
 // Returns:   an instance of this class
-// Notes:     This will not work for the 'Boolean' class.
 // Modifiers: virtual - override for custom behaviour
 // Author(s): Conan Reis
 A_INLINE SkInstance * SkClass::new_instance()
   {
-  if (m_total_data_count)
+  if (is_mind_class())
+    {
+    return new_mind_instance();
+    }
+  else if (m_total_data_count)
     {
     return SkDataInstance::new_instance(this);
     }
@@ -658,17 +656,31 @@ A_INLINE SkMethodBase * SkClass::find_instance_method_inherited(const ASymbol & 
 // See:        find_instance_method_scoped_inherited(method_qual), find_instance_method_inherited(method_name)
 // Notes:      Any returned class method must have a metaclass as a receiver.
 // Author(s):   Conan Reis
-A_INLINE SkMethodBase * SkClass::find_class_method_inherited(const ASymbol & method_name) const
+A_INLINE SkMethodBase * SkClass::find_class_method_inherited(const ASymbol & method_name, bool * is_class_member_p) const
   {
+  bool is_class_member = true;
   SkMethodBase * method_p = m_class_methods.get(method_name);
+  if (!method_p)
+    { 
+    if (m_superclass_p)
+      {
+      method_p = m_superclass_p->find_class_method_inherited(method_name, &is_class_member);
+      }
+    else
+      {
+      // Note that instance methods of "Object" are also valid for any class instance.
+      // If we have no super class, we must be the `Object` class
+      method_p = m_methods.get(method_name);
+      is_class_member = !method_p;
+      }
+    }
 
-  // Note that instance methods of "Object" are also valid for any class instance.
+  if (is_class_member_p)
+    {
+    *is_class_member_p = is_class_member;
+    }
 
-  return method_p
-    ? method_p
-    : (m_superclass_p
-      ? m_superclass_p->find_class_method_inherited(method_name)
-      : SkBrain::ms_object_class_p->m_methods.get(method_name));
+  return method_p;
   }
 
 //---------------------------------------------------------------------------------------
@@ -683,8 +695,7 @@ A_INLINE SkMethodBase * SkClass::find_method_inherited(const ASymbol & method_na
   SkMethodBase * method_p = find_instance_method_inherited(method_name);
   if (!method_p)
     {
-    method_p = find_class_method_inherited(method_name);
-    is_class_member = (method_p != nullptr);
+    method_p = find_class_method_inherited(method_name, &is_class_member);
     }
 
   if (is_class_member_p)

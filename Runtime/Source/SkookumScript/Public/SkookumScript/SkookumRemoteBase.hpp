@@ -79,6 +79,27 @@ const uint32_t SkRemote_version_byte_size       = 9u;   // command(4) + version(
 const uint32_t SkRemote_version_reply_byte_size = 13u;  // command(4) + version(1) + authorization(4) + client_flags(4)
 
 //---------------------------------------------------------------------------------------
+// Information about the current project that gets transmitted during authentication
+struct SkProjectInfo
+  {
+  // Data members
+  AString m_engine_id;                      // String representing the type and version of the engine connected to the IDE, e.g. "Unreal Engine 4.10.1"
+  AString m_platform_id;                    // Platform the engine is running on, e.g. "Windows"
+  AString m_project_name;                   // Name of project (in case the project ini file cannot be found)
+  AString m_project_path;                   // Path to current project ini file
+  AString m_default_project_path;           // Path to current default project ini file belonging to the above project ini file (used to resolve overlay paths)
+
+  // Constructors
+  SkProjectInfo() {}
+  SkProjectInfo(const void ** binary_pp) { assign_binary(binary_pp); }
+
+  // Serialization methods
+  uint32_t as_binary_length() const;
+  void     as_binary(void ** binary_pp) const;
+  void     assign_binary(const void ** binary_pp);
+  };
+
+//---------------------------------------------------------------------------------------
 // Skookum remote IDE communication commands that are common to both the Skookum client
 // environment and the server IDE.
 class SkookumRemoteBase
@@ -104,6 +125,11 @@ class SkookumRemoteBase
 
         Command_show,                    // R->I cmd_show() - Show/hide/toggle Skookum IDE
         Command_disconnect,              // I->R cmd_disconnect() - Some socket implementations cannot detect or do not have an event for disconnection of a socket so explicitly tell runtim that IDE is disconnecting.
+
+      // Project management
+
+        Command_make_editable,           // I->R cmd_make_editable() - Ask RT to make necessary modifications to project to allow editing
+        Command_make_editable_reply,     // R->I cmd_make_editable_reply() - Inform IDE about new project settings
 
       // Invocation (REPL)
 

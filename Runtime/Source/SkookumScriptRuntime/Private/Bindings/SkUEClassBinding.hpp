@@ -303,7 +303,7 @@ class SkUEClassBindingStructPod : public SkUEClassBindingStruct<_BindingClass,_D
   {
   public:
 
-  #ifdef A_PLAT_iOS
+  #if defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
   #endif
@@ -312,7 +312,7 @@ class SkUEClassBindingStructPod : public SkUEClassBindingStruct<_BindingClass,_D
     static void mthd_ctor_copy(SkInvokedMethod * scope_p, SkInstance ** result_pp) { ::memcpy(&scope_p->this_as<_BindingClass>(), &scope_p->get_arg<_BindingClass>(SkArg_1), sizeof(typename _BindingClass::tDataType)); }
     static void mthd_op_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp) { ::memcpy(&scope_p->this_as<_BindingClass>(), &scope_p->get_arg<_BindingClass>(SkArg_1), sizeof(typename _BindingClass::tDataType)); }
 
-  #ifdef A_PLAT_iOS
+  #if defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
     #pragma clang diagnostic pop
   #endif
   };

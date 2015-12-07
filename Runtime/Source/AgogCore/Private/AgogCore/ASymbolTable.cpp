@@ -161,6 +161,8 @@ void ASymbolTable::validate() const
 // Author(s):   Conan Reis
 void ASymbolTable::as_binary(void ** binary_pp) const
   {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_length());
+
   // $Revisit - CReis This could be written so that the strings are saved off in their own
   // single contiguous chunk which could be loaded and referenced persistently on load.
   // Before this is done - a large number of symbols already populate the symbol table and
@@ -212,7 +214,7 @@ void ASymbolTable::as_binary(void ** binary_pp) const
 uint32_t ASymbolTable::as_binary_length() const
   {
   uint32_t      length        = m_sym_refs.get_length();
-  uint32_t      binary_length = 8u + (5u * length); // symbol_length(4) + symbol_length * (sym_id(4) + string_length(1))
+  uint32_t      binary_length = 4u + (5u * length); // symbol_length(4) + symbol_length * (sym_id(4) + string_length(1))
   ASymbolRef ** syms_pp       = m_sym_refs.get_array(); 
   ASymbolRef ** syms_end_pp   = syms_pp + length;
 

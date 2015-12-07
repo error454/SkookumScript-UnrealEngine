@@ -85,6 +85,7 @@ class SkookumRuntimeBase
     // Binary Serialization / Loading Overrides
 
       virtual bool             is_binary_hierarchy_existing() = 0;
+      virtual void             on_binary_hierarchy_path_changed() = 0;
       virtual SkBinaryHandle * get_binary_hierarchy() = 0;
       virtual SkBinaryHandle * get_binary_class_group(const SkClass & cls) = 0;
 

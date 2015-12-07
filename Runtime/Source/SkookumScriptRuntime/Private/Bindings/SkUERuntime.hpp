@@ -56,6 +56,7 @@ class SkUERuntime : public SkookumRuntimeBase
       // Binary Serialization / Loading Overrides
 
         virtual bool             is_binary_hierarchy_existing() override;
+        virtual void             on_binary_hierarchy_path_changed() override;
         virtual SkBinaryHandle * get_binary_hierarchy() override;
         virtual SkBinaryHandle * get_binary_class_group(const SkClass & cls) override;
         virtual void             release_binary(SkBinaryHandle * handle_p) override;

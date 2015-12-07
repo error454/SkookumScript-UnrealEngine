@@ -56,14 +56,10 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
     virtual double get_elapsed_seconds() = 0;
 
     //---------------------------------------------------------------------------------------
-    // Supply path for current project settings file (specific script overlays, etc. stored
-    // in .ini file). If an empty path is returned then the default/core scripts are used
-    // without any project specific scripts.
-    // 
-    // Returns: path to project file
+    // Supply information about current project
     // 
     // See: SkookumRemoteRuntimeBase::cmd_compiled_state()
-    virtual AString get_project_path() = 0;
+    virtual void get_project_info(SkProjectInfo * out_project_info_p) = 0;
 
     //---------------------------------------------------------------------------------------
     // Brute force spawn of remote IDE. Called when connect attempts don't work and it is
@@ -98,6 +94,7 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
     void cmd_version_reply(uint8_t server_version, uint32_t authenticate_seed);
     void cmd_compiled_state(bool freshen);
     void cmd_show(eAFlag show_flag, ASymbol focus_class_name = ASymbol::ms_null, ASymbol focus_member_name = ASymbol::ms_null, bool is_data_member = false, bool focus_member_class_scope = false);
+    void cmd_make_editable_reply(const AString & error_msg, const SkProjectInfo & project_info);
     bool cmd_recompile_classes(SkClass * class_p, bool recurse, bool wait_reply = true);
     void cmd_ready_to_debug();
     void cmd_breakpoint_hit(const SkBreakPoint & bp);
@@ -113,6 +110,7 @@ class SkookumRemoteRuntimeBase : public SkookumRemoteBase
   // Events
 
     void         on_cmd_authenticate();
+    virtual void on_cmd_make_editable();
     void         on_cmd_debug_preferences(const void ** binary_pp);
     virtual void on_cmd_freshen_compiled_reply(eCompiledState state);
     void         on_cmd_hierarchy_update(const void ** binary_pp);

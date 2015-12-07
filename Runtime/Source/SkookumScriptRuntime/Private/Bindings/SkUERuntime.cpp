@@ -147,14 +147,12 @@ void SkUERuntime::on_bind_routines()
 
   SkUEBindings::register_all_bindings();
   m_blueprint_interface.reexpose_all(); // Hook up Blueprint functions and events for static classes
-  USkookumScriptComponent::create_registered_sk_instances(); // Re-populate all SkookumScript components with an SkInstance
   }
 
 //---------------------------------------------------------------------------------------
 // Override to run cleanup code before SkookumScript deinitializes its session
 void SkUERuntime::on_pre_deinitialize_session()
   {
-  USkookumScriptComponent::delete_registered_sk_instances(); // Frees up all instances used by SkookumScript components
   }
 
 //---------------------------------------------------------------------------------------
@@ -177,15 +175,35 @@ const FString & SkUERuntime::get_compiled_path() const
 // #Author(s): Markus Breyer
 bool SkUERuntime::content_file_exists(const TCHAR * file_name_p, FString * folder_path_p) const
   {
-  // First check if it exists in the game content folder
-  FString folder_path = FPaths::GameContentDir() / TEXT("skookumscript") /*TEXT(SK_BITS_ID)*/;
-  if (!FPaths::FileExists(folder_path / file_name_p))
+  FString folder_path;
+
+  // Check if we got a game
+  FString game_name(FApp::GetGameName());
+  if (game_name.IsEmpty())
     {
-    // If not found in game, look in engine content folder
+    // No game, look for default project binaries
     folder_path = FPaths::EngineContentDir() / TEXT("skookumscript") /*TEXT(SK_BITS_ID)*/;
     if (!FPaths::FileExists(folder_path / file_name_p))
       {
       return false;
+      }
+    }
+  else
+    {
+    // We have a game, so first check if it exists in the game content folder
+    folder_path = FPaths::GameContentDir() / TEXT("skookumscript") /*TEXT(SK_BITS_ID)*/;
+    if (!FPaths::FileExists(folder_path / file_name_p))
+      {
+      #if WITH_EDITORONLY_DATA
+        // If not found in game, check in temp location
+        folder_path = FPaths::GameIntermediateDir() / TEXT("SkookumScript/Content/skookumscript");
+        if (!FPaths::FileExists(folder_path / file_name_p))
+          {
+          return false;
+          }
+      #else
+        return false;
+      #endif
       }
     }
 
@@ -273,6 +291,13 @@ bool SkUERuntime::is_binary_hierarchy_existing()
   get_compiled_path();
 
   return m_compiled_file_b;
+  }
+
+//---------------------------------------------------------------------------------------
+// Get notified that the compiled binaries moved to a new location
+void SkUERuntime::on_binary_hierarchy_path_changed()
+  {
+  m_compiled_file_b = false;
   }
 
 //---------------------------------------------------------------------------------------

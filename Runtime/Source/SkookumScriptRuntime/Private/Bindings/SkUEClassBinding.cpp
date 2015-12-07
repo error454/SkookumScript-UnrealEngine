@@ -180,16 +180,18 @@ void SkUEClassBindingHelper::resolve_raw_data(tSkTypedNameRawArray & raw_data, S
       }
     else
       {
+      // In cooked builds, unused classes might have been optimized out
+      // In commandlet mode, SkookumScript code is never run
       #if WITH_EDITORONLY_DATA
-        SK_ERRORX(a_str_format("Class '%s' has raw data but no known class mapping to UE4 for resolving.", class_p->get_name_cstr_dbg()));
-      #else
-        // In cooked builds, unused classes might have been optimized out, so don't worry now unless actually trying to use it
-        // Mark all variables as invalid
-        for (auto var_p : raw_data)
-          {
-          var_p->m_raw_data_info = SkRawDataInfo_Invalid;
-          }
+        SK_ASSERTX(IsRunningCommandlet(), a_str_format("Class '%s' has raw data but no known class mapping to UE4 for resolving.", class_p->get_name_cstr_dbg()));
       #endif
+
+      // Don't worry now, defer error until data is actually being used
+      // Mark all variables as invalid
+      for (auto var_p : raw_data)
+        {
+        var_p->m_raw_data_info = SkRawDataInfo_Invalid;
+        }
       }
     }
   }
@@ -660,7 +662,7 @@ UClass * SkUEClassBindingHelper::add_dynamic_class_mapping(SkClassDescBase * sk_
     if (editor_interface_p)
       {
       bool class_deleted = false;
-      blueprint_p = editor_interface_p->load_blueprint_asset(AStringToFString(sk_class_desc_p->get_key_class()->get_class_path_str(editor_interface_p->get_scripts_path_depth())), &class_deleted);
+      blueprint_p = editor_interface_p->load_blueprint_asset(AStringToFString(sk_class_desc_p->get_key_class()->get_class_path_str(editor_interface_p->get_overlay_path_depth())), &class_deleted);
       if (class_deleted)
         {
         // Make class inert until we reloaded a new binary without the class

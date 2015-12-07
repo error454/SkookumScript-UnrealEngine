@@ -87,6 +87,8 @@ typedef AVCompactSortedLogical<SkNamedIndexed, ASymbol> tSkIndexedNames;
 // Author(s):   Conan Reis
 inline void SkNamedIndexed::as_binary(void ** binary_pp) const
   {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, SkNamedIndexed::as_binary_length());
+
   // 4 bytes - name id
   m_name.as_binary(binary_pp);
 

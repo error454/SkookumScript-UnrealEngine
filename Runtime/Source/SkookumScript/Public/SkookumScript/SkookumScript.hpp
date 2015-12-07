@@ -122,12 +122,6 @@ struct SkookumVals
     // check for 'true', set any desired custom values, and then set to 'false'.
     bool m_using_defaults;
 
-    // A string describing the engine SkookumScript is hooked up to, e.g. "Unreal Engine 4.7.6"
-    AString m_engine_id_string;
-
-    // A string describing the platform/device SkookumScript is running on, e.g. "Windows"
-    AString m_platform_id_string;
-
     // If to use the built-in actor class. Otherwise you have to implement your own.
     bool m_use_builtin_actor;
 
@@ -233,12 +227,13 @@ enum eSkInvokeType
   SkInvokeType_method_on_instance       = 2,  // Invoke an instance method on an instance
   SkInvokeType_method_on_class          = 3,  // Invoke a class method on a class
   SkInvokeType_method_on_instance_class = 4,  // Invoke a class method on an instance
-  SkInvokeType_method_boolean_and       = 5,  // Invoke the instance method `and`  on an instance
-  SkInvokeType_method_boolean_or        = 6,  // Invoke the instance method `or`   on an instance
-  SkInvokeType_method_boolean_nand      = 7,  // Invoke the instance method `nand` on an instance
-  SkInvokeType_method_boolean_nor       = 8,  // Invoke the instance method `nor`  on an instance
-  SkInvokeType_method_assert            = 9,  // Special invocation for asserts so we can examine the given expression
-  SkInvokeType_method_assert_no_leak    = 10, // Same plus also allow for examination of memory usage before and after
+  SkInvokeType_method_on_class_instance = 5,  // Invoke an instance method on a class instance (= meta class)
+  SkInvokeType_method_boolean_and       = 6,  // Invoke the instance method `and`  on an instance
+  SkInvokeType_method_boolean_or        = 7,  // Invoke the instance method `or`   on an instance
+  SkInvokeType_method_boolean_nand      = 8,  // Invoke the instance method `nand` on an instance
+  SkInvokeType_method_boolean_nor       = 9,  // Invoke the instance method `nor`  on an instance
+  SkInvokeType_method_assert            = 10, // Special invocation for asserts so we can examine the given expression
+  SkInvokeType_method_assert_no_leak    = 11, // Same plus also allow for examination of memory usage before and after
   };
 
 //---------------------------------------------------------------------------------------

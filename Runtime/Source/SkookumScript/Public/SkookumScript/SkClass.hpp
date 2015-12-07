@@ -296,15 +296,16 @@ class SkClass : public SkClassUnaryBase, public ANamed
       Flag_demand_load_lock = 1 << 2,  // Once loaded do not allow it to be unloaded
       Flag_demand_unload    = 1 << 3,  // Deferred unload - unload when next possible to do so
       
-      Flag_is_actor         = 1 << 4,  // For fast lookup if this class is derived from actor
+      Flag_is_mind          = 1 << 4,  // For fast lookup if this class is derived from SkMind
+      Flag_is_actor         = 1 << 5,  // For fast lookup if this class is derived from the (custom or built-in) actor class
 
       // Object id flags - look-up/validate for this class - i.e. Class@'name'
-        Flag_object_id_lookup = 1 << 5,
+        Flag_object_id_lookup = 1 << 6,
 
         // Validation flags - use masks below
-          Flag_object_id_parse_any   = 1 << 6,
-          Flag_object_id_parse_list  = 1 << 7,
-          Flag_object_id_parse_defer = 1 << 8,
+          Flag_object_id_parse_any   = 1 << 7,
+          Flag_object_id_parse_list  = 1 << 8,
+          Flag_object_id_parse_defer = 1 << 9,
 
         // Object id validation setting (masks):
           // Accept none during compile [used to temporarily disable object ids]
@@ -510,6 +511,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
       SkClass *                  get_class_depth_at(uint32_t depth) const;
       AString                    get_class_path_str(int32_t scripts_path_depth) const;
       bool                       is_actor_class() const                 { return (m_flags & Flag_is_actor) != 0; }
+      bool                       is_mind_class() const                  { return (m_flags & Flag_is_mind) != 0; }
       bool                       is_class(const SkClass & cls) const;
       bool                       is_subclass(const SkClass & superclass) const;
       bool                       is_superclass(const SkClass & subclass) const;
@@ -557,12 +559,13 @@ class SkClass : public SkClassUnaryBase, public ANamed
         const tSkMethodTable & get_instance_methods() const                                  { return m_methods; }
         bool                   is_instance_method_valid(const ASymbol & method_name) const   { return (m_methods.get(method_name) != nullptr); }
         virtual SkInstance *   new_instance();
+        SkInstance *           new_mind_instance();
 
       // Class Methods
 
         void                   append_class_method(SkMethodBase * method_p);
-        SkMethodBase *         find_class_method(const ASymbol & method_name) const                  { return m_class_methods.get(method_name); }
-        SkMethodBase *         find_class_method_inherited(const ASymbol & method_name) const;
+        SkMethodBase *         find_class_method(const ASymbol & method_name) const                 { return m_class_methods.get(method_name); }
+        SkMethodBase *         find_class_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
         SkMethodBase *         find_class_method_overridden(const ASymbol & method_name) const;
         const tSkMethodTable & get_class_methods() const                                            { return m_class_methods; }
         void                   invoke_class_ctor();

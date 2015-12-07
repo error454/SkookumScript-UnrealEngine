@@ -13,7 +13,5 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Kismet2/SClassPickerDialog.h"
 
-#include <SkookumScript/SkClass.hpp>
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSkookumScriptEditor, Log, All);
 

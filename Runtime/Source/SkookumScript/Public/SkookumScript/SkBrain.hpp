@@ -108,6 +108,10 @@ class SkBrain
 
       static SkInstance * ms_nil_p;  // The single instance of the None object
 
+    // Name of actor class
+
+      static ASymbol ms_actor_class_name;
+
     // File management members
 
       // Checksums for tracking changes on the source folders and files that define the
@@ -125,6 +129,8 @@ class SkBrain
 
       static void     as_binary(void ** binary_pp);
       static uint32_t as_binary_length();
+
+      static void     compact();
 
     #endif // (SKOOKUM & SK_COMPILED_OUT)
 
@@ -152,7 +158,8 @@ class SkBrain
     // Initialization
 
     static void register_bind_atomics_func(void (*bind_atomics_f)());
-    static void initialize_pre_load(uint32_t ensure_class_count);
+    static void initialize_pre_load();
+    static void initialize_core_classes(uint32_t ensure_class_count);
     static void initialize_after_classes_known(const ASymbol & startup_class_name);
     static void initialize_post_load();
     static void initialize_classes();

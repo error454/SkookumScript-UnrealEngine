@@ -35,7 +35,7 @@
 
 
 //=======================================================================================
-// Alignment functions / macros
+// Misc functions / macros
 //=======================================================================================
 
 #define A_ENDIAN_LITTLE         0
@@ -56,6 +56,48 @@
   #endif
 #endif
 
+// Enable to sanity check binary size while writing binaries to disk
+// DO NOT CHECK IN IN ENABLED STATE!
+#define A_SANITY_CHECK_BINARY_SIZE 0
+
+#if A_SANITY_CHECK_BINARY_SIZE
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4297) // function assumed not to throw an exception but does
+#endif
+
+// This class remembers the desired binary size and verifies correctness on exit
+class AScopedBinarySizeSanityCheck
+  {
+  public:
+    AScopedBinarySizeSanityCheck(void ** binary_pp, uint32_t expected_size) : m_binary_pp(binary_pp), m_binary_begin_p(*binary_pp), m_expected_size(expected_size) {}
+    ~AScopedBinarySizeSanityCheck() 
+      { 
+      ptrdiff_t actual_size = (uint8_t *)*m_binary_pp - (uint8_t *)m_binary_begin_p;
+      A_ASSERTX(actual_size == (ptrdiff_t)m_expected_size, "Incorrect binary size detected!");
+      }
+
+  protected:
+    void **   m_binary_pp;
+    void *    m_binary_begin_p;
+    uint32_t  m_expected_size;
+  };
+
+#ifdef _MSC_VER
+#pragma warning(default : 4297) // function assumed not to throw an exception but does
+#endif
+
+#define A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, expected_size) AScopedBinarySizeSanityCheck binary_size_sanity_checker(binary_pp, expected_size)
+
+#else
+
+#define A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, expected_size)
+
+#endif
+
+//=======================================================================================
+// Streaming functions/macros
+//=======================================================================================
 
 //---------------------------------------------------------------------------------------
 // Returns a 32-bit unsigned integer in host endian form from 'source_pp'
