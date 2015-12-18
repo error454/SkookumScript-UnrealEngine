@@ -77,7 +77,7 @@ public class AgogCore : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "1956";
+      var buildNumber = "2020";
       var moduleName = "AgogCore";
 
       // Get local file path where the library is located

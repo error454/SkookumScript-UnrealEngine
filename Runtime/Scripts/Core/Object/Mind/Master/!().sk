@@ -6,8 +6,5 @@
 
   [
   Debug.println("Member: Master.!() - Mind instance constructor called.")
-
-  // Call default starting point when engine runtime is present - i.e. not in IDE
-  branch[_startup] when Debug.engine_present?
   ]
 

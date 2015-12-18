@@ -233,7 +233,7 @@ class SkookumRemoteBase
     bool         is_symbol_db_remote() const                      { return this && ((m_remote_flags & SkRemoteFlag_symbol_db) != 0u); }
     virtual void disconnect();
 
-    virtual bool is_class_ctor_called() const;
+    virtual bool should_class_ctors_be_called() const;
     
   // Commands
 

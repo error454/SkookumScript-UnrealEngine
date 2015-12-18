@@ -33,6 +33,42 @@ namespace SkVector2_Impl
     }
 
   //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector2@!axis_x() Vector2
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector2>(1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector2@!axis_x_neg() Vector2
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector2>(-1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector2@!axis_y() Vector2
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector2>(0.0f, 1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector2@!axis_y_neg() Vector2
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector2>(0.0f, -1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
   // # Skookum:   Vector2@String() String
   // # Author(s): Markus Breyer
   static void mthd_String(SkInvokedMethod * scope_p, SkInstance ** result_pp)
@@ -188,74 +224,15 @@ namespace SkVector2_Impl
     }
 
   //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector2@x() Real
+  // # Skookum:   Vector2@set(Real x, Real y) Vector2
   // # Author(s): Markus Breyer
-  static void mthd_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector2>().X);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector2@y() Real
-  // # Author(s): Markus Breyer
-  static void mthd_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector2>().Y);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector2@xy_set(Real x, Real y) Vector2
-  // # Author(s): Markus Breyer
-  static void mthd_xy_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+  static void mthd_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
     SkInstance * this_p = scope_p->get_this();
     FVector2D & vec = this_p->as<SkVector2>();
 
     vec.X = scope_p->get_arg<SkReal>(SkArg_1);
     vec.Y = scope_p->get_arg<SkReal>(SkArg_2);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector2@x_set(Real x) Vector2
-  // # Author(s): Markus Breyer
-  static void mthd_x_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector2>().X = scope_p->get_arg<SkReal>(SkArg_1);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector2@y_set(Real y) Vector2
-  // # Author(s): Markus Breyer
-  static void mthd_y_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector2>().Y = scope_p->get_arg<SkReal>(SkArg_1);
-
 
     // Return this if result desired
     if (result_pp)
@@ -430,6 +407,10 @@ namespace SkVector2_Impl
   static const SkClass::MethodInitializerFunc methods_i[] =
     {
       { "!xy",              mthd_ctor_xy },
+      { "!axis_x",          mthd_ctor_axis_x },
+      { "!axis_x_neg",      mthd_ctor_axis_x_neg },
+      { "!axis_y",          mthd_ctor_axis_y },
+      { "!axis_y_neg",      mthd_ctor_axis_y_neg },
 
       { "String",           mthd_String },
 
@@ -444,11 +425,7 @@ namespace SkVector2_Impl
       { "divide",           mthd_op_divide },
       { "divide_assign",    mthd_op_divide_assign },
 
-      { "x",                mthd_x },
-      { "y",                mthd_y },
-      { "xy_set",           mthd_xy_set },
-      { "x_set",            mthd_x_set },
-      { "y_set",            mthd_y_set },
+      { "set",              mthd_set },
       { "zero?",            mthd_zeroQ },
       { "zero",             mthd_zero },
 
@@ -473,4 +450,7 @@ void SkVector2::register_bindings()
   tBindingBase::register_bindings("Vector2");
 
   ms_class_p->register_method_func_bulk(SkVector2_Impl::methods_i, A_COUNT_OF(SkVector2_Impl::methods_i), SkBindFlag_instance_no_rebind);
+
+  ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector2>);
+  SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Vector2D"));
   }

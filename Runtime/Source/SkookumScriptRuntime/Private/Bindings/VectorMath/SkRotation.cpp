@@ -102,4 +102,7 @@ void SkRotation::register_bindings()
   tBindingBase::register_bindings("Rotation");
 
   ms_class_p->register_method_func_bulk(SkRotation_Impl::methods_i, A_COUNT_OF(SkRotation_Impl::methods_i), SkBindFlag_instance_no_rebind);
+
+  ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkRotation>);
+  SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Quat"));
   }

@@ -115,17 +115,53 @@ SkInstance * SkUEClassBindingHelper::get_actor_component_instance(AActor * actor
 
 //---------------------------------------------------------------------------------------
 // Resolve the raw data info of each raw data member of the given class
-void SkUEClassBindingHelper::resolve_raw_data(tSkTypedNameRawArray & raw_data, SkClass * class_p)
+void SkUEClassBindingHelper::resolve_raw_data(SkClass * class_p, UStruct * ue_struct_or_class_p)
   {
-  // First check if it's a class
-  UClass * ue_class_p = get_ue_class_from_sk_class(class_p);
-  UStruct * ue_struct_or_class_p = ue_class_p;
-  if (!ue_struct_or_class_p)
+  // This loop assumes that the data members of the Sk class were created from this very UE4 class
+  // I.e. that therefore, except for unsupported properties, they must be in the same order
+  // So all we should have to do is loop forward and skip the occasional non-exported UE4 property
+  UProperty * ue_var_p = nullptr;
+  ASymbol ue_var_name;
+  TFieldIterator<UProperty> property_it(ue_struct_or_class_p, EFieldIteratorFlags::ExcludeSuper);
+  tSkTypedNameRawArray & raw_data = class_p->get_instance_data_raw_for_resolving();
+  for (auto var_p : raw_data)
     {
-    // Not a class, must be a struct then
-    ue_struct_or_class_p = get_static_ue_struct_from_sk_class(class_p);
-    }
+    // Skip variable if already resolved
+    if (var_p->m_raw_data_info != SkRawDataInfo_Invalid)
+      { 
+      continue;
+      }
 
+    // Try to find it in the UE4 reflection data
+    while (property_it)
+      {
+      ue_var_p = *property_it;
+      ue_var_name = ASymbol::create_existing(FStringToAString(FSkookumScriptGeneratorBase::skookify_var_name(ue_var_p->GetName(), ue_var_p->IsA(UBoolProperty::StaticClass()), true)));
+      ++property_it;
+      if (var_p->get_name() == ue_var_name) break;
+      }
+
+    // Store raw data info in the raw data member object
+    if (var_p->get_name() == ue_var_name)
+      {
+      var_p->m_raw_data_info = compute_raw_data_info(ue_var_p);
+      }
+    else
+      {
+      // Oops didn't find matching variable
+      // This is probably due to an unsaved blueprint variable change in the UE4 editor during the previous session
+      // If this is the case, a recompile would have been triggered when this class was loaded by get_ue_class_from_sk_class()
+      // Which means binaries would be recompiled and reloaded once more, fixing this issue
+      // So make sure this assumption is true
+      SK_ASSERTX(FModuleManager::Get().GetModulePtr<ISkookumScriptRuntime>("SkookumScriptRuntime")->is_freshen_binaries_pending(), a_str_format("Sk Variable '%s.%s' not found in UE4 reflection data.", class_p->get_name_cstr_dbg(), var_p->get_name_cstr()));
+      }
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Resolve the raw data info of each raw data member of the given class
+void SkUEClassBindingHelper::resolve_raw_data(SkClass * class_p)
+  {
   // By default, inherit raw pointer and accessor functions from super class
   SkClass * super_class_p = class_p->get_superclass();
   if (super_class_p)
@@ -140,61 +176,56 @@ void SkUEClassBindingHelper::resolve_raw_data(tSkTypedNameRawArray & raw_data, S
       }
     }
 
-  // Resolve raw data
-  if (!raw_data.is_empty())
+  // First check if it's a class
+  UStruct * ue_struct_or_class_p = get_ue_class_from_sk_class(class_p);
+  if (!ue_struct_or_class_p)
     {
-    if (ue_struct_or_class_p)
-      {
-      // This loop assumes that the data members of the Sk class were created from this very UE4 class
-      // I.e. that therefore, except for unsupported properties, they must be in the same order
-      // So all we should have to do is loop forward and skip the occasional non-exported UE4 property
-      UProperty * ue_var_p = nullptr;
-      ASymbol ue_var_name;
-      TFieldIterator<UProperty> property_it(ue_struct_or_class_p, EFieldIteratorFlags::ExcludeSuper);
-      for (auto var_p : raw_data)
+    // Not a class, must be a struct then
+    ue_struct_or_class_p = get_static_ue_struct_from_sk_class(class_p);
+    }
+
+  if (ue_struct_or_class_p)
+    {
+    // Resolve raw data
+    resolve_raw_data(class_p, ue_struct_or_class_p);
+    }
+  else
+    {
+    // In cooked builds, don't bother as unused classes might have been optimized out
+    #if WITH_EDITORONLY_DATA
+
+      // Potentially report error
+      tSkTypedNameRawArray & raw_data = class_p->get_instance_data_raw_for_resolving();
+      if (!raw_data.is_empty())
         {
-        while (property_it)
+        // Check if maybe all variables are already resolved
+        bool all_resolved = true;
+        for (auto var_p : raw_data)
           {
-          ue_var_p = *property_it;
-          ue_var_name = ASymbol::create_existing(FStringToAString(FSkookumScriptGeneratorBase::skookify_var_name(ue_var_p->GetName(), ue_var_p->IsA(UBoolProperty::StaticClass()), true)));
-          ++property_it;
-          if (var_p->get_name() == ue_var_name) break;
+          if (var_p->m_raw_data_info == SkRawDataInfo_Invalid)
+            {
+            all_resolved = false;
+            break;
+            }
           }
 
-        // Store raw data info in the raw data member object
-        if (var_p->get_name() == ue_var_name)
-          {
-          var_p->m_raw_data_info = compute_raw_data_info(ue_var_p);
-          }
-        else
-          {
-          // Oops didn't find matching variable
-          // This is probably due to an unsaved blueprint variable change in the UE4 editor during the previous session
-          // If this is the case, a recompile would have been triggered when this class was loaded by get_ue_class_from_sk_class()
-          // Which means binaries would be recompiled and reloaded once more, fixing this issue
-          // So make sure this assumption is true
-          SK_ASSERTX(FModuleManager::Get().GetModulePtr<ISkookumScriptRuntime>("SkookumScriptRuntime")->is_freshen_binaries_pending(), a_str_format("Sk Variable '%s.%s' not found in UE4 reflection data.", class_p->get_name_cstr_dbg(), var_p->get_name_cstr()));
-          var_p->m_raw_data_info = SkRawDataInfo_Invalid;
-          }
+        // In commandlet mode, SkookumScript code is never run
+        // If all resolved already, no problem either
+        SK_ASSERTX(all_resolved || IsRunningCommandlet(), a_str_format("Class '%s' has raw data but no known class mapping to UE4 for resolving.", class_p->get_name_cstr_dbg()));
         }
-      }
-    else
-      {
-      // In cooked builds, unused classes might have been optimized out
-      // In commandlet mode, SkookumScript code is never run
-      #if WITH_EDITORONLY_DATA
-        SK_ASSERTX(IsRunningCommandlet(), a_str_format("Class '%s' has raw data but no known class mapping to UE4 for resolving.", class_p->get_name_cstr_dbg()));
-      #endif
 
-      // Don't worry now, defer error until data is actually being used
-      // Mark all variables as invalid
-      for (auto var_p : raw_data)
-        {
-        var_p->m_raw_data_info = SkRawDataInfo_Invalid;
-        }
-      }
+    #endif
     }
   }
+
+//---------------------------------------------------------------------------------------
+
+void SkUEClassBindingHelper::resolve_raw_data_struct(SkClass * class_p, const TCHAR * ue_struct_name_p)
+  {
+  resolve_raw_data(class_p, FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), ue_struct_name_p, false));
+  }
+
+//---------------------------------------------------------------------------------------
 
 tSkRawDataInfo SkUEClassBindingHelper::compute_raw_data_info(UProperty * ue_var_p)
   {

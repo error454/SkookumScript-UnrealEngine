@@ -178,6 +178,12 @@ class SkBrain
 
     static APArrayFree<AFunctionBase> * get_bind_funcs();
 
+    #if (SKOOKUM & SK_DEBUG)
+
+      static void ensure_invokables_registered(SkClass ** ignore_classes_pp = nullptr, uint32_t ignore_count = 0u);
+      static void ensure_raw_accessors_registered(SkClass ** ignore_classes_pp = nullptr, uint32_t ignore_count = 0u);
+
+    #endif
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Class Data Members

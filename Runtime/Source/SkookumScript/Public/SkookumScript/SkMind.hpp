@@ -134,10 +134,9 @@ class SkMind : public SkClassBindingAbstract<SkMind>, public SkDataInstance, pub
 
  // Class Methods
 
-    static SkMind *              find(const ASymbol & actor_name);
     static const AList<SkMind> & get_updating_minds()    { return ms_minds_to_update; }
     static void                  update_all();
-
+    static void                  clear_all_coroutines();
 
  // SkookumScript Bindings
 

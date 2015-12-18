@@ -45,93 +45,6 @@ namespace SkTransform_Impl
     }
 
   //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@position() Vector
-  // # Author(s): Markus Breyer
-  static void mthd_position(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkVector3::new_instance(scope_p->this_as<SkTransform>().GetLocation());
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@position_set(Vector pos) Transform
-  // # Author(s): Markus Breyer
-  static void mthd_position_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkTransform>().SetLocation(scope_p->get_arg<SkVector3>(SkArg_1));
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@rotation() Rotation
-  // # Author(s): Markus Breyer
-  static void mthd_rotation(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkRotation::new_instance(scope_p->this_as<SkTransform>().GetRotation());
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@rotation_set(Rotation rot) Transform
-  // # Author(s): Markus Breyer
-  static void mthd_rotation_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkTransform>().SetRotation(scope_p->get_arg<SkRotation>(SkArg_1));
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@scale() Vector
-  // # Author(s): Markus Breyer
-  static void mthd_scale(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkVector3::new_instance(scope_p->this_as<SkTransform>().GetScale3D());
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Transform@scale_set(Vector scale) Transform
-  // # Author(s): Markus Breyer
-  static void mthd_scale_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkTransform>().SetScale3D(scope_p->get_arg<SkVector3>(SkArg_1));
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
   // # Skookum:   Transform@identity() Transform
   // # Author(s): Markus Breyer
   static void mthd_identity(SkInvokedMethod * scope_p, SkInstance ** result_pp)
@@ -154,14 +67,6 @@ namespace SkTransform_Impl
   static const SkClass::MethodInitializerFunc methods_i[] =
     {
       { "String",       mthd_String },
-
-      { "position",     mthd_position },
-      { "position_set", mthd_position_set },
-      { "rotation",     mthd_rotation },
-      { "rotation_set", mthd_rotation_set },
-      { "scale",        mthd_scale },
-      { "scale_set",    mthd_scale_set },
-
       { "identity",     mthd_identity },
     };
 
@@ -174,4 +79,12 @@ void SkTransform::register_bindings()
   tBindingBase::register_bindings("Transform");
 
   ms_class_p->register_method_func_bulk(SkTransform_Impl::methods_i, A_COUNT_OF(SkTransform_Impl::methods_i), SkBindFlag_instance_no_rebind);
+
+  ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkTransform>);
+
+  // Handle special case here - in UE4, the scale variable is called "Scale3D" while in Sk, we decided to call it just "scale"
+  UStruct * ue_struct_p = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Transform"), false);
+  UProperty * ue_scale_var_p = FindObjectChecked<UProperty>(ue_struct_p, TEXT("Scale3D"), false);
+  ms_class_p->resolve_raw_data("@scale", SkUEClassBindingHelper::compute_raw_data_info(ue_scale_var_p));
+  SkUEClassBindingHelper::resolve_raw_data(ms_class_p, ue_struct_p); // Resolve the remaining raw data members as usual
   }

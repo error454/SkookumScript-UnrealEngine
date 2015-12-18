@@ -66,7 +66,9 @@ class SkUEClassBindingHelper
     static SkInstance *   get_actor_component_instance(AActor * actor_p); // Return SkInstance of an actor's SkookumScriptComponent if present, nullptr otherwise
 
     static tSkRawDataInfo compute_raw_data_info(UProperty * ue_var_p);
-    static void           resolve_raw_data(tSkTypedNameRawArray & raw_data, SkClass * class_p);
+    static void           resolve_raw_data(SkClass * class_p);
+    static void           resolve_raw_data(SkClass * class_p, UStruct * ue_struct_or_class_p);
+    static void           resolve_raw_data_struct(SkClass * class_p, const TCHAR * ue_struct_name_p);
 
     static void *         get_raw_pointer_entity(SkInstance * obj_p);
     static SkInstance *   access_raw_data_entity(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p);

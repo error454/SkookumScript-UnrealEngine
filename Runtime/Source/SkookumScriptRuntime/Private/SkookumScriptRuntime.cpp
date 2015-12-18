@@ -510,6 +510,7 @@ void FSkookumScriptRuntime::on_world_init_pre(UWorld * world_p, const UWorld::In
       if (is_skookum_initialized())
         {
         SkUEClassBindingHelper::set_world(world_p);
+        SkookumScript::initialize_instances();
         }
       m_game_tick_handle = world_p->OnTickDispatch().AddRaw(this, &FSkookumScriptRuntime::tick_game);
       }
@@ -562,6 +563,7 @@ void FSkookumScriptRuntime::on_world_cleanup(UWorld * world_p, bool session_ende
         A_DPRINT(
           "SkookumScript resetting session...\n"
           "  cleaning up...\n");
+        SkookumScript::deinitialize_instances();
         SkookumScript::deinitialize_session();
         SkookumScript::initialize_session();
         A_DPRINT("  ...done!\n\n");
@@ -601,7 +603,9 @@ void FSkookumScriptRuntime::ShutdownModule()
       }
   #endif
 
-  A_DPRINT(A_SOURCE_STR " Shutting down SkookumScript plug-in modules\n");
+  // Printing during shutdown will re-launch IDE in case it has been closed prior to UE4
+  // So quick fix is to just not print during shutdown
+  //A_DPRINT(A_SOURCE_STR " Shutting down SkookumScript plug-in modules\n");
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Clean up SkookumScript
@@ -676,7 +680,7 @@ void FSkookumScriptRuntime::tick_remote()
     m_remote_client.process_incoming();
 
     // Re-load compiled binaries?
-    // If the game is not currently running, delay until it's not
+    // If the game is currently running, delay until it's not
     if (m_remote_client.is_load_compiled_binaries_requested() && !m_game_world_p)
       {
       // Load the Skookum class hierarchy scripts in compiled binary form
@@ -698,6 +702,12 @@ void FSkookumScriptRuntime::tick_remote()
 
         // Set world pointer variable now that SkookumScript is initialized
         SkUEClassBindingHelper::set_world(m_game_world_p);
+
+        // Set up instances if game is already running
+        if (m_game_world_p)
+          {
+          SkookumScript::initialize_instances();
+          }
         }
       }
     }

@@ -1,0 +1,6 @@
+
+&raw Rotation !@rotation
+&raw Vector3  !@translation
+&raw Vector3  !@scale
+
+
