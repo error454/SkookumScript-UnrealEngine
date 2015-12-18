@@ -199,6 +199,7 @@ class ASymbol;
 class SkClassDescBase;
 class SkClass;
 class SkMind;
+class SkInstance;
 
 
 // Constant indicating that the interval should be as often as possible - i.e. every call
@@ -333,15 +334,19 @@ class SkookumScript
     static bool is_flags_set(uint32_t flag);
 
     static void register_bind_atomics_func(void (*bind_atomics_f)());
+    static void pools_reserve();
+
     static void initialize_pre_load();
     static void initialize_post_load();
-    static void initialize_session(bool create_master_mind = true);
+    static void initialize_session();
+    static void initialize_instances(bool create_master_mind = true);
 
-    static void pools_reserve();
+    static void deinitialize_instances();
     static void deinitialize_session();
     static void deinitialize();
 
-    static SkMind * get_master_mind()                                          { return ms_master_mind_p; }
+    static SkMind *     get_master_mind()                                     { return ms_master_mind_p; }
+    static SkInstance * get_master_mind_or_meta_class();
 
 
     // Update methods (in order of preference) - just use most convenient version once an update

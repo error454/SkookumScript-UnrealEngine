@@ -19,6 +19,7 @@
 //=======================================================================================
 
 #include <AgogCore/AgogCore.hpp>
+#include <AgogCore/ABinaryParse.hpp>
 #include <AgogCore/AMemory.hpp>
 #include <string.h>      // Uses: memcpy()
 
@@ -75,8 +76,12 @@ class AVCompactArrayBase
 
   // Converter methods
 
+    void     as_binary_elems(void ** binary_pp) const;
     void     as_binary(void ** binary_pp) const;
+    void     as_binary8(void ** binary_pp) const;
+    uint32_t as_binary_elems_length() const;
     uint32_t as_binary_length() const;
+    uint32_t as_binary_length8() const;
     uint32_t get_size_buffer_bytes() const;
     uint32_t track_memory(AMemoryStats * mem_stats_p) const;
 
@@ -813,33 +818,30 @@ inline void AVCompactArrayBase<_ElementType>::apply_method(
   }
 
 //---------------------------------------------------------------------------------------
-// Fills memory pointed to by ppBinary with the information needed to
-//             create the element binaries and increments the memory address to just past
-//             the last byte written.
+// Fills memory pointed to by binary_pp with the binary information needed to
+//             recreate the elements and increments the memory address to just past
+//             the last byte written.  Does not store element count.
 // Arg         binary_pp - Pointer to address to fill and increment.  Its size *must* be
 //             large enough to fit all the binary data.  Use the get_binary_length()
 //             method to determine the size needed prior to passing ppBinary to this
 //             method.
-// See:        as_binary_length()
-// Notes:      Used in combination with as_binary_length().
+// See:        as_binary_elems_length(), as_binary(), as_binary8()
+// Notes:      Used in combination with as_binary_elems_length().
 //
 //             Binary composition:
-//               4 bytes - number of Elements
-//               n bytes - Element binary }- Repeating
+//               n bytes - element binary }- repeating
 // Author(s):   Conan Reis
 template<class _ElementType>
-void AVCompactArrayBase<_ElementType>::as_binary(
+void AVCompactArrayBase<_ElementType>::as_binary_elems(
   void ** binary_pp
   ) const
   {
-  _ElementType * elems_p     = m_array_p;
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_elems_length());
+
+  // n bytes - element binary }- repeating
+  _ElementType * elems_p = m_array_p;
   _ElementType * elems_end_p = elems_p + m_count;
 
-  // 4 bytes - number of elements
-  **(uint32_t **)binary_pp = m_count;
-  (*(uint32_t **)binary_pp)++;
-
-  // n bytes - Element binary }- Repeating
   for (; elems_p < elems_end_p; elems_p++)
     {
     elems_p->as_binary(binary_pp);
@@ -847,29 +849,128 @@ void AVCompactArrayBase<_ElementType>::as_binary(
   }
 
 //---------------------------------------------------------------------------------------
-// Returns length of binary version of itself in bytes.
+// Fills memory pointed to by binary_pp with the binary information needed to
+//             recreate the elements and increments the memory address to just past
+//             the last byte written.  Uses 32-bits to store element count.
+// Arg         binary_pp - Pointer to address to fill and increment.  Its size *must* be
+//             large enough to fit all the binary data.  Use the get_binary_length()
+//             method to determine the size needed prior to passing ppBinary to this
+//             method.
+// See:        as_binary_length(), as_binary8(), as_binary_length8()
+// Notes:      Used in combination with as_binary_length().
+//
+//             Binary composition:
+//               4 bytes - element count
+//               n bytes - element binary }- repeating
+// Author(s):   Conan Reis
+template<class _ElementType>
+inline void AVCompactArrayBase<_ElementType>::as_binary(
+  void ** binary_pp
+  ) const
+  {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_length());
+
+  // 4 bytes - element count
+  uint32_t count = m_count;
+  A_BYTE_STREAM_OUT32(binary_pp, &count);
+
+  if (count)
+    {
+    // n bytes - element binary }- repeating
+    as_binary_elems(binary_pp);
+    }
+  }
+
+//---------------------------------------------------------------------------------------
+// Fills memory pointed to by binary_pp with the information needed to
+//             create the element binaries and increments the memory address to just past
+//             the last byte written.  Uses 8-bits to store element count.
+// Arg         binary_pp - Pointer to address to fill and increment.  Its size *must* be
+//             large enough to fit all the binary data.  Use the get_binary_length()
+//             method to determine the size needed prior to passing ppBinary to this
+//             method.
+// See:        as_binary_length8(), as_binary(), as_binary_length()
+// Notes:      Used in combination with as_binary_length8().
+//
+//             Binary composition:
+//               1 byte  - element count
+//               n bytes - element binary }- repeating
+// Author(s):   Conan Reis
+template<class _ElementType>
+inline void AVCompactArrayBase<_ElementType>::as_binary8(
+  void ** binary_pp
+  ) const
+  {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_length8());
+
+  // 1 byte - elements
+  uint8_t count = uint8_t(m_count);
+  A_BYTE_STREAM_OUT8(binary_pp, &count);
+
+  // n bytes - element binary }- repeating
+  as_binary_elems(binary_pp);
+  }
+
+//---------------------------------------------------------------------------------------
+// Returns length of binary version of itself in bytes.  Does not store
+//             element count.
 // Returns:    length of binary version of itself in bytes
-// See:        as_binary()
+// See:        as_binary_elems(), as_binary(), as_binary8(), as_binary_length8()
+// Notes:      Used in combination with as_binary_elems()
+//
+//             Binary composition:
+//               4 bytes - element count
+//               n bytes - element binary }- repeating
+// Author(s):   Conan Reis
+template<class _ElementType>
+inline uint32_t AVCompactArrayBase<_ElementType>::as_binary_elems_length() const
+  {
+  uint32_t bytes = 0u;
+
+  // n bytes - Element binary }- Repeating
+  _ElementType * elems_p = m_array_p;
+  _ElementType * elems_end_p = elems_p + m_count;
+
+  for (; elems_p < elems_end_p; elems_p++)
+    {
+    bytes += elems_p->as_binary_length();
+    }
+
+  return bytes;
+  }
+
+//---------------------------------------------------------------------------------------
+// Returns length of binary version of itself in bytes.  Uses 32-bits for
+//             element count.
+// Returns:    length of binary version of itself in bytes
+// See:        as_binary(), as_binary8(), as_binary_length8()
 // Notes:      Used in combination with as_binary()
 //
 //             Binary composition:
-//               4 bytes - number of Elements
-//               n bytes - Element binary }- Repeating
+//               4 bytes - element count
+//               n bytes - element binary }- repeating
 // Author(s):   Conan Reis
 template<class _ElementType>
 uint32_t AVCompactArrayBase<_ElementType>::as_binary_length() const
   {
-  uint32_t       length      = 4u;  // Number of elements
-  _ElementType * elems_p     = m_array_p;
-  _ElementType * elems_end_p = elems_p + m_count;
+  return 4u + as_binary_elems_length();
+  }
 
-  // n bytes - Element binary }- Repeating
-  for (; elems_p < elems_end_p; elems_p++)
-    {
-    length += elems_p->as_binary_length();
-    }
-
-  return length;
+//---------------------------------------------------------------------------------------
+// Returns length of binary version of itself in bytes.  Uses 8-bits for
+//             element count.
+// Returns:    length of binary version of itself in bytes
+// See:        as_binary8(), as_binary(), as_binary_length()
+// Notes:      Used in combination with as_binary8()
+//
+//             Binary composition:
+//               1 byte  - element count
+//               n bytes - element binary }- repeating
+// Author(s):   Conan Reis
+template<class _ElementType>
+uint32_t AVCompactArrayBase<_ElementType>::as_binary_length8() const
+  {
+  return 1u + as_binary_elems_length();
   }
 
 //---------------------------------------------------------------------------------------
@@ -939,8 +1040,8 @@ inline AVCompactArrayBase<_ElementType>::AVCompactArrayBase(
 template<class _ElementType>
 inline _ElementType * AVCompactArrayBase<_ElementType>::alloc_array(uint32_t count)
   {
-  _ElementType * buffer_p = (_ElementType *)AMemory::malloc(
-    sizeof(_ElementType) * count, "AVCompactArray");
+  _ElementType * buffer_p = count ? (_ElementType *)AMemory::malloc(
+    sizeof(_ElementType) * count, "AVCompactArray") : nullptr;
 
   A_VERIFY_MEMORY(!count || (buffer_p != nullptr), tAVCompactArrayBase);
 

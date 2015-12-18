@@ -107,7 +107,6 @@ template<
   // Converter Methods
 
     explicit AVCompactArray(uint32_t elem_count, ...);
-    explicit AVCompactArray(const _ElementType ** elems_p, uint32_t elem_count);
     explicit AVCompactArray(const _ElementType * elems_p, uint32_t elem_count);
     //explicit AVCompactArray(const ADatum & datum);
     //AString   as_string() const;
@@ -299,10 +298,10 @@ inline AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray()
 // Author(s):    Conan Reis
 template<class _ElementType, class _KeyType, class _CompareClass>
 inline AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(const tAVCompactArray & array) :
-  AVCompactArrayBase<_ElementType>(array.m_count, tAVCompactArrayBase::alloc_array(array.m_count, "AVCompactArrayBase.AVCompactArrayBase"))
+  AVCompactArrayBase<_ElementType>(array.m_count, tAVCompactArrayBase::alloc_array(array.m_count))
   {
   // $Note - CReis The GCC compiler cannot resolve inherited members without "this->" or "SourceClass::" prefixing them.
-  ::memcpy(this->m_array_p, array.m_array_p, this->m_count * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p, array.m_array_p, this->m_count * sizeof(_ElementType));
   }
 
 //---------------------------------------------------------------------------------------
@@ -359,11 +358,11 @@ AVCompactArray<_ElementType, _KeyType, _CompareClass> & AVCompactArray<_ElementT
   if (length > this->m_count)
     {
     tAVCompactArrayBase::free_array(this->m_array_p);
-    this->m_array_p = tAVCompactArrayBase::alloc_array(this->m_count,"AVCompactArray.operator=");
+    this->m_array_p = tAVCompactArrayBase::alloc_array(this->m_count);
     }
 
   this->m_count = length;
-  ::memcpy(this->m_array_p, array.m_array_p, length * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p, array.m_array_p, length * sizeof(_ElementType));
 
   return *this;
   }
@@ -397,7 +396,7 @@ AVCompactArray<_ElementType, _KeyType, _CompareClass> & AVCompactArray<_ElementT
     this->m_array_p = tAVCompactArrayBase::alloc_array(length);
     }
 
-  ::memcpy(this->m_array_p, array.get_array(), length * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p, array.get_array(), length * sizeof(_ElementType));
 
   return *this;
   }
@@ -461,45 +460,14 @@ AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(
 // Author(s):    Conan Reis
 template<class _ElementType, class _KeyType, class _CompareClass>
 AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(
-  const _ElementType ** elems_p,
+  const _ElementType *  elems_p,
   uint32_t              elem_count
   ) :
   tAVCompactArrayBase(elem_count)
   {
   this->m_count   = elem_count;
-  this->m_array_p = tAVCompactArrayBase::alloc_array(elem_count, "");
-  ::memcpy(this->m_array_p, elems_p, elem_count * sizeof(_ElementType *));
-  }
-
-//---------------------------------------------------------------------------------------
-//  Constructor (for pre-existing arrays of elements)
-// Returns:     itself
-// Arg          elems_p - array of elements of type _ElementType.
-// Arg          elem_count - number of elements in elems_p
-//              Note, this argument is unsigned to help differentiate it from the
-//              variable length element argument constructor.
-// See:         AVCompactArray<_ElementType>(elem_count, ...)
-// Author(s):    Conan Reis
-template<class _ElementType, class _KeyType, class _CompareClass>
-AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(
-  const _ElementType * elems_p,
-  uint32_t             elem_count
-  ) :
-  tAVCompactArrayBase(elem_count, nullptr)
-  {
-  if (elem_count)
-    {
-    uint32_t        pos      = 0u;
-    _ElementType ** array_pp = tAVCompactArrayBase::alloc_array(elem_count, "");
-
-    while(pos < elem_count)
-      {
-      array_pp[pos] = const_cast<_ElementType *>(&elems_p[pos]);
-      pos++;
-      }
-
-    this->m_array_p = array_pp;
-    }
+  this->m_array_p = tAVCompactArrayBase::alloc_array(elem_count);
+  ::memcpy(this->m_array_p, elems_p, elem_count * sizeof(_ElementType));
   }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -545,7 +513,7 @@ void AVCompactArray<_ElementType, _KeyType, _CompareClass>::append(const _Elemen
   _ElementType *  old_array_p = this->m_array_p;
 
   this->m_array_p = tAVCompactArrayBase::alloc_array(length + 1u);
-  ::memcpy(this->m_array_p, old_array_p, length * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p, old_array_p, length * sizeof(_ElementType));
   tAVCompactArrayBase::free_array(old_array_p);
 
   this->m_array_p[length] = elem;  // insert element
@@ -583,7 +551,7 @@ inline void AVCompactArray<_ElementType, _KeyType, _CompareClass>::append_all(co
   uint32_t length = array.get_length();
 
   this->ensure_size(this->m_count + length);
-  ::memcpy(this->m_array_p + this->m_count, array.get_array(), length * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p + this->m_count, array.get_array(), length * sizeof(_ElementType));
   this->m_count += length;
   }
 
@@ -617,7 +585,7 @@ void AVCompactArray<_ElementType, _KeyType, _CompareClass>::append_all(
     APARRAY2_BOUNDS_CHECK_SPAN(array, pos, elem_count);
 
     this->ensure_size(this->m_count + elem_count);
-    ::memcpy(this->m_array_p + this->m_count, array.m_array_p + pos, elem_count * sizeof(_ElementType *));
+    ::memcpy(this->m_array_p + this->m_count, array.m_array_p + pos, elem_count * sizeof(_ElementType));
     this->m_count += elem_count;
     }
   }
@@ -635,7 +603,7 @@ inline void AVCompactArray<_ElementType, _KeyType, _CompareClass>::append_all(
   )
   {
   this->ensure_size(this->m_count + elem_count);
-  ::memcpy(this->m_array_p + this->m_count, elems_p, elem_count * sizeof(_ElementType *));
+  ::memcpy(this->m_array_p + this->m_count, elems_p, elem_count * sizeof(_ElementType));
   this->m_count += elem_count;
   }
 
@@ -801,7 +769,7 @@ bool AVCompactArray<_ElementType, _KeyType, _CompareClass>::free(
     {
     delete this->m_array_p[find_pos];
     this->m_count--;           // new length of array
-    ::memmove(this->m_array_p + find_pos, this->m_array_p + find_pos + 1u, (this->m_count - find_pos) * sizeof(_ElementType *));
+    ::memmove(this->m_array_p + find_pos, this->m_array_p + find_pos + 1u, (this->m_count - find_pos) * sizeof(_ElementType));
 
     if (find_pos_p)
       {
@@ -857,7 +825,7 @@ uint32_t AVCompactArray<_ElementType, _KeyType, _CompareClass>::free_all(
         {
         delete *array_p;
         this->m_count--;     // new length of array
-        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType *));
+        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType));
         array_end_p--;  // since an element is removed
         num_freed++;
         }
@@ -1065,7 +1033,7 @@ _ElementType * AVCompactArray<_ElementType, _KeyType, _CompareClass>::pop(
     _ElementType * elem_p = this->m_array_p[find_pos];
 
     this->m_count--;           // new length of array
-    ::memmove(&this->m_array_p[find_pos], &this->m_array_p[find_pos + 1], (this->m_count - find_pos) * sizeof(_ElementType *));
+    ::memmove(&this->m_array_p[find_pos], &this->m_array_p[find_pos + 1], (this->m_count - find_pos) * sizeof(_ElementType));
 
     if (find_pos_p)
       {
@@ -1110,10 +1078,10 @@ void AVCompactArray<_ElementType, _KeyType, _CompareClass>::pop_all(
     APCOMPACTARRAY_BOUNDS_CHECK_SPAN(pos, elem_count);
 
     collected_p->ensure_size(collected_p->m_count + elem_count);
-    ::memcpy(collected_p->m_array_p + collected_p->m_count, this->m_array_p + pos, elem_count * sizeof(_ElementType *));
+    ::memcpy(collected_p->m_array_p + collected_p->m_count, this->m_array_p + pos, elem_count * sizeof(_ElementType));
     collected_p->m_count += elem_count;
     this->m_count        -= elem_count;
-    ::memmove(this->m_array_p + pos, this->m_array_p + pos + elem_count, (this->m_count - pos) * sizeof(_ElementType *));
+    ::memmove(this->m_array_p + pos, this->m_array_p + pos + elem_count, (this->m_count - pos) * sizeof(_ElementType));
     }
   }
 
@@ -1164,7 +1132,7 @@ uint32_t AVCompactArray<_ElementType, _KeyType, _CompareClass>::pop_all(
         collected_p->append(**array_p);
         pop_count++;
         this->m_count--;     // new length of array
-        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType *));
+        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType));
         array_end_p--;  // since an element is removed
         }
       else
@@ -1232,7 +1200,7 @@ uint32_t AVCompactArray<_ElementType, _KeyType, _CompareClass>::pop_all_all(
           collected_p->append(**array_p);
           pop_count++;
           this->m_count--;     // new length of array
-          ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType *));
+          ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType));
           array_end_p--;  // since an element is removed
           }
         else
@@ -1284,7 +1252,7 @@ bool AVCompactArray<_ElementType, _KeyType, _CompareClass>::remove(
   if (find(key, instance, &find_pos, start_pos, end_pos))
     {
     this->m_count--;           // new length of array
-    ::memmove(this->m_array_p + find_pos, this->m_array_p + find_pos + 1, (this->m_count - find_pos) * sizeof(_ElementType *));
+    ::memmove(this->m_array_p + find_pos, this->m_array_p + find_pos + 1, (this->m_count - find_pos) * sizeof(_ElementType));
 
     if (find_pos_p)
       {
@@ -1339,7 +1307,7 @@ uint32_t AVCompactArray<_ElementType, _KeyType, _CompareClass>::remove_all(
       if (_CompareClass::equals(key, **array_p))
         {
         this->m_count--;     // new length of array
-        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType *));
+        ::memmove(array_p, array_p + 1, size_t(array_end_p - array_p) * sizeof(_ElementType));
         array_end_p--;  // since an element is removed
         num_removed++;
         }
@@ -1459,7 +1427,7 @@ inline void AVCompactArray<_ElementType, _KeyType, _CompareClass>::rotate_down()
     {
     _ElementType * elem_p = *this->m_array_p;
 
-    ::memmove(this->m_array_p, this->m_array_p + 1u, (this->m_count - 1u) * sizeof(_ElementType *));
+    ::memmove(this->m_array_p, this->m_array_p + 1u, (this->m_count - 1u) * sizeof(_ElementType));
     this->m_array_p[this->m_count - 1u] = elem_p;
     }
   }
@@ -1480,7 +1448,7 @@ inline void AVCompactArray<_ElementType, _KeyType, _CompareClass>::rotate_up()
     {
     _ElementType * elem_p = this->m_array_p[this->m_count - 1u];
 
-    ::memmove(this->m_array_p + 1u, this->m_array_p, (this->m_count - 1u) * sizeof(_ElementType *));
+    ::memmove(this->m_array_p + 1u, this->m_array_p, (this->m_count - 1u) * sizeof(_ElementType));
     *this->m_array_p = elem_p;
     }
   }
@@ -1565,7 +1533,7 @@ inline void AVCompactArray<_ElementType, _KeyType, _CompareClass>::sort(
 
     APCOMPACTARRAY_BOUNDS_CHECK_RANGE(start_pos, end_pos);
 
-    qsort(this->m_array_p + start_pos, end_pos - start_pos + 1, sizeof(_ElementType *), sort_compare);
+    qsort(this->m_array_p + start_pos, end_pos - start_pos + 1, sizeof(_ElementType), sort_compare);
     }
   }
 
@@ -2211,13 +2179,13 @@ inline AVCompactArrayFree<_ElementType, _KeyType, _CompareClass>::AVCompactArray
   if (buffer_size)
     {
     this->m_count   = buffer_size;
-	this->m_array_p = (elems_p) ? const_cast<_ElementType **>(elems_p) : tAVCompactArrayBase::alloc_array(buffer_size,"AVCompactArrayFree.AVCompactArrayFree");
+	this->m_array_p = (elems_p) ? const_cast<_ElementType **>(elems_p) : tAVCompactArrayBase::alloc_array(buffer_size);
     }
   else
     {
     this->m_count    = elem_count;
-    this->m_array_p = tAVCompactArrayBase::alloc_array(elem_count,"AVCompactArrayFree.AVCompactArrayFree");
-    ::memcpy(this->m_array_p, elems_p, elem_count * sizeof(_ElementType *));
+    this->m_array_p = tAVCompactArrayBase::alloc_array(elem_count);
+    ::memcpy(this->m_array_p, elems_p, elem_count * sizeof(_ElementType));
     }
   }
 

@@ -34,7 +34,7 @@ A_INLINE SkParser::Args::Args() :
   m_start_pos(0u),
   m_end_pos(0u),
   m_result(SkParser::Result_ok),
-  m_type_p(nullptr)
+  m_expr_type(nullptr)
   {
   // Note that some of the "out" data is left undefined
   }
@@ -53,7 +53,7 @@ A_INLINE SkParser::Args::Args(
   m_start_pos(start_pos),
   m_end_pos(0u),
   m_result(SkParser::Result_ok),
-  m_type_p(nullptr)
+  m_expr_type(nullptr)
   {
   // Note that some of the "out" data is left undefined
   }
@@ -71,7 +71,7 @@ A_INLINE SkParser::Args::Args(const Args & args) :
   m_start_pos(args.m_start_pos),
   m_end_pos(args.m_end_pos),
   m_result(args.m_result),
-  m_type_p(args.m_type_p)
+  m_expr_type(args.m_expr_type)
   {
   }
 
@@ -89,7 +89,7 @@ A_INLINE SkParser::Args & SkParser::Args::operator=(const Args & args)
   m_start_pos      = args.m_start_pos;
   m_end_pos        = args.m_end_pos;
   m_result         = args.m_result;
-  m_type_p         = args.m_type_p;
+  m_expr_type      = args.m_expr_type;
   m_desired_type_p = args.m_desired_type_p;
 
   return *this;
@@ -106,7 +106,7 @@ A_INLINE SkParser::Args & SkParser::Args::reset()
   m_idx_probe      = 0u;
   m_idx_probe_func = nullptr;
   m_start_pos      = 0u;
-  m_type_p         = nullptr;
+  m_expr_type      = nullptr;
   m_desired_type_p = nullptr;
 
   // Note that some of the "out" data is left unmodified
@@ -126,7 +126,7 @@ A_INLINE SkParser::Args & SkParser::Args::reset(uint32_t start_pos)
   m_idx_probe      = 0u;
   m_idx_probe_func = nullptr;
   m_start_pos      = start_pos;
-  m_type_p         = nullptr;
+  m_expr_type      = nullptr;
   m_desired_type_p = nullptr;
 
   // Note that some of the "out" data is left unmodified

@@ -59,6 +59,7 @@ enum eSkExprType
   SkExprType_identifier_raw_member,    // SkIdentifierRawMember @value
   SkExprType_identifier_class_member,  // SkIdentifierClassMember @@random
   SkExprType_raw_member_assignment,    // SkRawMemberAssignment @bob := value
+  SkExprType_raw_member_invocation,    // SkRawMemberModifyingInvocation @bob.negate()
   SkExprType_object_id,                // SkObjectId  MyClass@'some_name'
   SkExprType_literal,                  // SkLiteral (Boolean, Character, Integer, Real, String, Symbol, Class, nil, this, this_class, this_code)
   SkExprType_literal_list,             // SkLiteralList {elem1, elem2}

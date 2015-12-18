@@ -87,7 +87,7 @@ struct SkTypedNameRaw : SkTypedName
   // Common Methods
 
   SkTypedNameRaw() : m_raw_data_info(SkRawDataInfo_Invalid) {}
-  SkTypedNameRaw(const ASymbol & name, const SkClassDescBase * type_p) : SkTypedName(name, type_p), m_raw_data_info(0) {}
+  SkTypedNameRaw(const ASymbol & name, const SkClassDescBase * type_p) : SkTypedName(name, type_p), m_raw_data_info(SkRawDataInfo_Invalid) {}
 
   #if (SKOOKUM & SK_COMPILED_IN)
     SkTypedNameRaw(const void ** binary_pp) : SkTypedName(binary_pp) {}

@@ -123,20 +123,20 @@ Vector3!xyz(1 2 3)
 // Adds two vectors
 Vector3!xyz(1 2 3) + Vector3!xyz(2 3 4)
 
-// A handy class constant (static data member) of Vector3
-Vector3.@@direction_up
+// A handy constructor of Vector3 creating a vector facing up (positive z direction)
+Vector3!up
 
 // Creates a set of Euler angles to specify a rotation
 RotationAngles!yaw_pitch_roll(60 0 0)
 
 // A transform has a position, a rotation and a scale:
-Transform!position_rotation_scale(
+Transform!translation_rotation_scale(
   Vector3!xyz(1 2 3)
   RotationAngles!yaw_pitch_roll(60 0 0).Rotation
   Vector3!xyz(1 1 1))
   
 // We've got colors, too
-Color.@@yellow
+Color!yellow
 
 
 // ==============================
@@ -156,11 +156,14 @@ Pawn.instances%_boom
 // implemented! Use your mouse previous and next buttons or
 // Alt+<- Alt+-> to navigate back and fourth in the history.
 
-// The currently active World
+// The currently active game world (or nil if the game is not running)
 @@world
 
 // Is the game running?
 not @@world.nil?
+
+// List of levels of the game world
+@@world.@levels
 
 // Get the player pawn
 player_pawn
@@ -172,7 +175,7 @@ Pawn.named("RoboChar1")._path_to_actor(player_pawn)
 Actor.named("RoboChar1").transform
 
 // Play explosion sound at a given actor location
-Actor.named("TargetPoint1")._play_sound("/Game/StarterContent/Audio/Explosion01.Explosion01")
+Actor.named("TargetPoint1")._play_sound("/Game/ScriptLoaded/Audio/Explosion01.Explosion01")
 
 // Draw text above player
 player_pawn._draw_text("Play me!")
@@ -315,14 +318,11 @@ Enemy.instances.any._boom
 
 robo_reset  // Reset the robots
 
-player_pawn.transform
-
-[3.0 + 4.5] / 3.5
-
+// Send robots on sentry duty
 _sentry_duty
-_sentry_duty(false)
-sentry_action
 
+// Stop the sentry duty
+_sentry_duty(false)
 
 //------------------------------------------
 // Some more random examples!
@@ -342,9 +342,4 @@ actors
 // Enjoy!!
 // Yours Skookumly,
 // The Mad Computer Scientists at Agog Labs
-
-
-
-
-
 

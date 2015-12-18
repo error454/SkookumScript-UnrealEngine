@@ -60,6 +60,78 @@ namespace SkVector4_Impl
     }
 
   //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_x() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(1.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_x_neg() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(-1.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_y() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, 1.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_y_neg() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, -1.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_z() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_z(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, 0.0f, 1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_z_neg() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_z_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, 0.0f, -1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_z() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_w(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector4@!axis_z_neg() Vector4
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_w_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector4>(0.0f, 0.0f, 0.0f, -1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
   // # Skookum:   Vector4@String() String
   // # Author(s): Markus Breyer
   static void mthd_String(SkInvokedMethod * scope_p, SkInstance ** result_pp)
@@ -215,57 +287,9 @@ namespace SkVector4_Impl
     }
 
   //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@x() Real
+  // # Skookum:   Vector4@set(Real x, Real y, Real z, Real w) Vector4
   // # Author(s): Markus Breyer
-  static void mthd_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector4>().X);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@y() Real
-  // # Author(s): Markus Breyer
-  static void mthd_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector4>().Y);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@z() Real
-  // # Author(s): Markus Breyer
-  static void mthd_z(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector4>().Z);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@w() Real
-  // # Author(s): Markus Breyer
-  static void mthd_w(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector4>().W);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@xyzw_set(Real x, Real y, Real z, Real w) Vector4
-  // # Author(s): Markus Breyer
-  static void mthd_xyzw_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+  static void mthd_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
     SkInstance * this_p = scope_p->get_this();
     FVector4 & vec = this_p->as<SkVector4>();
@@ -274,75 +298,6 @@ namespace SkVector4_Impl
     vec.Y = scope_p->get_arg<SkReal>(SkArg_2);
     vec.Z = scope_p->get_arg<SkReal>(SkArg_3);
     vec.W = scope_p->get_arg<SkReal>(SkArg_4);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@x_set(Real x) Vector4
-  // # Author(s): Markus Breyer
-  static void mthd_x_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector4>().X = scope_p->get_arg<SkReal>(SkArg_1);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@y_set(Real y) Vector4
-  // # Author(s): Markus Breyer
-  static void mthd_y_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector4>().Y = scope_p->get_arg<SkReal>(SkArg_1);
-
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@z_set(Real z) Vector4
-  // # Author(s): Markus Breyer
-  static void mthd_z_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector4>().Z = scope_p->get_arg<SkReal>(SkArg_1);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector4@w_set(Real w) Vector4
-  // # Author(s): Markus Breyer
-  static void mthd_w_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector4>().W = scope_p->get_arg<SkReal>(SkArg_1);
 
     // Return this if result desired
     if (result_pp)
@@ -510,6 +465,14 @@ namespace SkVector4_Impl
       { "!xyzw",            mthd_ctor_xyzw },
       { "!xyz",             mthd_ctor_xyz },
       { "!xy",              mthd_ctor_xy },
+      { "!axis_x",          mthd_ctor_axis_x },
+      { "!axis_x_neg",      mthd_ctor_axis_x_neg },
+      { "!axis_y",          mthd_ctor_axis_y },
+      { "!axis_y_neg",      mthd_ctor_axis_y_neg },
+      { "!axis_z",          mthd_ctor_axis_z },
+      { "!axis_z_neg",      mthd_ctor_axis_z_neg },
+      { "!axis_w",          mthd_ctor_axis_w },
+      { "!axis_w_neg",      mthd_ctor_axis_w_neg },
 
       { "String",           mthd_String },
 
@@ -524,15 +487,7 @@ namespace SkVector4_Impl
       { "divide",           mthd_op_divide },
       { "divide_assign",    mthd_op_divide_assign },
 
-      { "x",                mthd_x },
-      { "y",                mthd_y },
-      { "z",                mthd_z },
-      { "w",                mthd_w },
-      { "xyzw_set",         mthd_xyzw_set },
-      { "x_set",            mthd_x_set },
-      { "y_set",            mthd_y_set },
-      { "z_set",            mthd_z_set },
-      { "w_set",            mthd_w_set },
+      { "set",              mthd_set },
       { "zero?",            mthd_zeroQ },
       { "zero",             mthd_zero },
 
@@ -555,4 +510,7 @@ void SkVector4::register_bindings()
   tBindingBase::register_bindings("Vector4");
 
   ms_class_p->register_method_func_bulk(SkVector4_Impl::methods_i, A_COUNT_OF(SkVector4_Impl::methods_i), SkBindFlag_instance_no_rebind);
+
+  ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector4>);
+  SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Vector4"));
   }

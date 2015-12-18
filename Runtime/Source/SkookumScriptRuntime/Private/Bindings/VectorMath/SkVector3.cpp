@@ -48,6 +48,60 @@ namespace SkVector3_Impl
     }
 
   //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_x() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(1.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_x_neg() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_x_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(-1.0f, 0.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_y() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(0.0f, 1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_y_neg() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_y_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(0.0f, -1.0f, 0.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_z() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_z(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(0.0f, 0.0f, 1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   Vector3@!axis_z_neg() Vector3
+  // # Author(s): Markus Breyer
+  static void mthd_ctor_axis_z_neg(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Results are ignored for constructors
+    scope_p->get_this()->construct<SkVector3>(0.0f, 0.0f, -1.0f);
+    }
+
+  //---------------------------------------------------------------------------------------
   // # Skookum:   Vector3@String() String
   // # Author(s): Markus Breyer
   static void mthd_String(SkInvokedMethod * scope_p, SkInstance ** result_pp)
@@ -263,45 +317,9 @@ namespace SkVector3_Impl
     }
 
   //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@x() Real
+  // # Skookum:   Vector3@set(Real x, Real y, Real z) Vector3
   // # Author(s): Markus Breyer
-  static void mthd_x(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector3>().X);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@y() Real
-  // # Author(s): Markus Breyer
-  static void mthd_y(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector3>().Y);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@z() Real
-  // # Author(s): Markus Breyer
-  static void mthd_z(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    // Do nothing if result not desired
-    if (result_pp)
-      {
-      *result_pp = SkReal::new_instance(scope_p->this_as<SkVector3>().Z);
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@xyz_set(Real x, Real y, Real z) Vector3
-  // # Author(s): Markus Breyer
-  static void mthd_xyz_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+  static void mthd_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
     SkInstance * this_p = scope_p->get_this();
     FVector & vec = this_p->as<SkVector3>();
@@ -309,58 +327,6 @@ namespace SkVector3_Impl
     vec.X = scope_p->get_arg<SkReal>(SkArg_1);
     vec.Y = scope_p->get_arg<SkReal>(SkArg_2);
     vec.Z = scope_p->get_arg<SkReal>(SkArg_3);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@x_set(Real x) Vector3
-  // # Author(s): Markus Breyer
-  static void mthd_x_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector3>().X = scope_p->get_arg<SkReal>(SkArg_1);
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@y_set(Real y) Vector3
-  // # Author(s): Markus Breyer
-  static void mthd_y_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector3>().Y = scope_p->get_arg<SkReal>(SkArg_1);
-
-
-    // Return this if result desired
-    if (result_pp)
-      {
-      this_p->reference();
-      *result_pp = this_p;
-      }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // # Skookum:   Vector3@z_set(Real z) Vector3
-  // # Author(s): Markus Breyer
-  static void mthd_z_set(SkInvokedMethod * scope_p, SkInstance ** result_pp)
-    {
-    SkInstance * this_p = scope_p->get_this();
-
-    this_p->as<SkVector3>().Z = scope_p->get_arg<SkReal>(SkArg_1);
 
     // Return this if result desired
     if (result_pp)
@@ -534,6 +500,18 @@ namespace SkVector3_Impl
     {
       { "!xyz",             mthd_ctor_xyz },
       { "!xy",              mthd_ctor_xy },
+      { "!axis_x",          mthd_ctor_axis_x },
+      { "!axis_x_neg",      mthd_ctor_axis_x_neg },
+      { "!axis_y",          mthd_ctor_axis_y },
+      { "!axis_y_neg",      mthd_ctor_axis_y_neg },
+      { "!axis_z",          mthd_ctor_axis_z },
+      { "!axis_z_neg",      mthd_ctor_axis_z_neg },
+      { "!forward",         mthd_ctor_axis_x },
+      { "!backward",        mthd_ctor_axis_x_neg },
+      { "!right",           mthd_ctor_axis_y },
+      { "!left",            mthd_ctor_axis_y_neg },
+      { "!up",              mthd_ctor_axis_z },
+      { "!down",            mthd_ctor_axis_z_neg },
 
       { "String",           mthd_String },
 
@@ -553,13 +531,7 @@ namespace SkVector3_Impl
       { "transform_by",     mthd_transform_by },
       { "untransform_by",   mthd_untransform_by },
 
-      { "x",                mthd_x },
-      { "y",                mthd_y },
-      { "z",                mthd_z },
-      { "xyz_set",          mthd_xyz_set },
-      { "x_set",            mthd_x_set },
-      { "y_set",            mthd_y_set },
-      { "z_set",            mthd_z_set },
+      { "set",              mthd_set },
       { "zero?",            mthd_zeroQ },
       { "zero",             mthd_zero },
 
@@ -582,4 +554,7 @@ void SkVector3::register_bindings()
   tBindingBase::register_bindings("Vector3");
 
   ms_class_p->register_method_func_bulk(SkVector3_Impl::methods_i, A_COUNT_OF(SkVector3_Impl::methods_i), SkBindFlag_instance_no_rebind);
+
+  ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector3>);
+  SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Vector"));
   }

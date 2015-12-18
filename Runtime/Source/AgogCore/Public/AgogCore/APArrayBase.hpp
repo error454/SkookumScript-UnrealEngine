@@ -733,6 +733,8 @@ inline void APArrayBase<_ElementType>::as_binary8(
   void ** binary_pp
   ) const
   {
+  A_SCOPED_BINARY_SIZE_SANITY_CHECK(binary_pp, as_binary_length8());
+
   // 1 byte - elements
   uint8_t count = uint8_t(m_count);
   A_BYTE_STREAM_OUT8(binary_pp, &count);
@@ -969,7 +971,7 @@ inline APArrayBase<_ElementType>::APArrayBase(
 template<class _ElementType>
 inline _ElementType ** APArrayBase<_ElementType>::alloc_array(uint32_t needed)
   {
-  _ElementType ** buffer_p = ( _ElementType **)AMemory::malloc(sizeof(_ElementType*) * needed, "APArrayBase.buffer");
+  _ElementType ** buffer_p = needed ? (_ElementType **)AMemory::malloc(sizeof(_ElementType*) * needed, "APArrayBase.buffer") : nullptr;
 
   A_VERIFY_MEMORY(!needed || (buffer_p != nullptr), tAPArrayBase);
 

@@ -48,6 +48,17 @@ typedef APArrayLogical<SkTypedNameRaw, ASymbol>      tSkTypedNameRawArray;
 //typedef APSortedLogical<SkTypedNameIndexed, ASymbol> tSkTypedNamesIndexed;
 typedef APArrayLogical<SkInvokableBase, ASymbol>     tSkVTable; // Virtual method table
 
+//---------------------------------------------------------------------------------------
+// Helper struct when finding inaccessible raw members
+struct SkRawMemberRecord
+  {
+  SK_NEW_OPERATORS(SkRawMemberRecord);
+
+  SkClass *         m_class_p;
+  SkTypedNameRaw *  m_raw_member_p;
+  
+  SkRawMemberRecord(SkClass * class_p, SkTypedNameRaw * raw_member_p) : m_class_p(class_p), m_raw_member_p(raw_member_p) {}
+  };
 
 //---------------------------------------------------------------------------------------
 // Used when binding a member to a class:
@@ -101,7 +112,7 @@ enum eSkBindFlag
 
 //---------------------------------------------------------------------------------------
 // Function to resolve the m_raw_data_info member of all raw data members of this class
-typedef void (*tSkRawResolveFunc)(tSkTypedNameRawArray & data_raw, SkClass * class_p);
+typedef void (*tSkRawResolveFunc)(SkClass * class_p);
 
 //---------------------------------------------------------------------------------------
 // Function to get/set raw data of this class type
@@ -520,8 +531,6 @@ class SkClass : public SkClassUnaryBase, public ANamed
       void                       iterate_recurse(AFunctionArgBase<SkClass *> * apply_class_p, eAHierarchy hierarchy = AHierarchy__all);
       SkClass *                  next_class(SkClass * root_p) const;
       SkClass *                  next_sibling() const;
-      void                       resolve_raw_data();
-      void                       resolve_raw_data_recurse();
 
 
     // Method Methods
@@ -603,6 +612,10 @@ class SkClass : public SkClassUnaryBase, public ANamed
       SkTypedNameRaw *          get_instance_data_type_raw(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       SkTypedName *             get_class_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       uint32_t                  get_inherited_instance_data_count() const;
+      bool                      resolve_raw_data(const ASymbol & name, tSkRawDataInfo raw_data_info);
+      bool                      resolve_raw_data(const char * name_p, tSkRawDataInfo raw_data_info);
+      void                      resolve_raw_data();
+      void                      resolve_raw_data_recurse();
 
       // Instance Methods
 
@@ -613,6 +626,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
 
         SkTypedNameRaw *              append_instance_data_raw(const ASymbol & name, SkClassDescBase * type_p, eSubclass subclasses = Subclass_recurse);
         const tSkTypedNameRawArray &  get_instance_data_raw() const { return m_data_raw; }
+        tSkTypedNameRawArray &        get_instance_data_raw_for_resolving() { return m_data_raw; }
         uint32_t                      compute_total_raw_data_count() const;
 
         #if (SKOOKUM & SK_COMPILED_IN)
@@ -672,6 +686,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
 
       #if (SKOOKUM & SK_DEBUG)
         virtual void find_unregistered_atomics(APArray<SkInvokableBase> * atomics_p);
+        virtual void find_inaccessible_raw_members(APArray<SkRawMemberRecord> * raw_members_p);
       #endif
 
 

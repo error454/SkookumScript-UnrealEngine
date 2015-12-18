@@ -111,7 +111,9 @@ void SkUERuntime::shutdown()
   SK_ASSERTX(!SkookumScript::is_flag_set(SkookumScript::Flag_updating), "Attempting to shut down SkookumScript while it is in the middle of an update.");
   SK_ASSERTX(m_is_initialized, "Tried to shut down SkUERuntime without prior initialization.");
 
-  A_DPRINT("\nSkookumScript shutting down.\n");
+  // Printing during shutdown will re-launch IDE in case it has been closed prior to UE4
+  // So quick fix is to just not print during shutdown
+  //A_DPRINT("\nSkookumScript shutting down.\n");
 
   #ifdef SKOOKUM_REMOTE_UNREAL
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -803,10 +803,7 @@ void FSkookumScriptEditor::generate_class_script_files(UClass * ue_class_p, bool
         }
       }
 
-    if (!FFileHelper::SaveStringToFile(meta_body, *meta_file_path, ms_script_file_encoding))
-      {
-      FError::Throwf(TEXT("Could not save file: %s"), *meta_file_path);
-      }
+    save_text_file_if_changed(*meta_file_path, meta_body);
 
     // Create raw data member file
     if (generate_data)
@@ -848,7 +845,9 @@ void FSkookumScriptEditor::generate_class_script_files(UClass * ue_class_p, bool
       FString data_file_path = class_path / TEXT("!Data.sk");
       if (save_text_file_if_changed(*data_file_path, data_body))
         {
-        flush_saved_text_files();
+        //tSourceControlCheckoutFunc checkout_f = ISourceControlModule::Get().IsEnabled() ? &SourceControlHelpers::CheckOutFile : nullptr;
+        tSourceControlCheckoutFunc checkout_f = nullptr; // Leaving this disabled for now as it might be bothersome
+        flush_saved_text_files(checkout_f);
         get_runtime()->on_class_scripts_changed_by_editor(class_name, change_type);
         }
       }

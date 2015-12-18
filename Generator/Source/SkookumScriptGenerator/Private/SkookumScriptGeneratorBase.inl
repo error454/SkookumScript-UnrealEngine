@@ -47,12 +47,14 @@ class FSkookumScriptGeneratorBase
       SkTypeID__Count
       };
 
+    typedef bool (*tSourceControlCheckoutFunc)(const FString & file_path);
+
     //---------------------------------------------------------------------------------------
     // Methods
 
     bool                  compute_scripts_path_depth(FString project_ini_file_path, const FString & overlay_name);
     bool                  save_text_file_if_changed(const FString & file_path, const FString & new_file_contents); // Helper to change a file only if needed
-    void                  flush_saved_text_files(); // Puts generated files into place after all code generation is done
+    void                  flush_saved_text_files(tSourceControlCheckoutFunc checkout_f = nullptr); // Puts generated files into place after all code generation is done
 
     static bool           is_property_type_supported(UProperty * property_p);
     static bool           is_struct_type_supported(UStruct * struct_p);
@@ -212,15 +214,20 @@ bool FSkookumScriptGeneratorBase::save_text_file_if_changed(const FString & file
 
 //---------------------------------------------------------------------------------------
 
-void FSkookumScriptGeneratorBase::flush_saved_text_files()
+void FSkookumScriptGeneratorBase::flush_saved_text_files(tSourceControlCheckoutFunc checkout_f)
   {
-  // Rename temp headers
+  // Rename temp files
   for (auto & temp_file_path : m_temp_file_paths)
     {
     FString file_path = temp_file_path.Replace(TEXT(".tmp"), TEXT(""));
     if (!IFileManager::Get().Move(*file_path, *temp_file_path, true, true))
       {
       FError::Throwf(TEXT("Couldn't write file '%s'"), *file_path);
+      }
+    // If source control function provided, make sure file is checked out from source control
+    if (checkout_f)
+      {
+      (*checkout_f)(file_path);
       }
     }
 

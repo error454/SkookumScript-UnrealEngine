@@ -459,6 +459,7 @@ class SkParser : public AString
       Result_err_context_deferred,            // Only immediate statements were found where deferred statements (such as coroutines) are expected.
       Result_err_context_concurrent_redundant,  // A concurrent block (sync or race) should have at least two deferred expressions or running concurrently is redundant.
       Result_err_context_side_effect,         // An expression has a side effect when none is allowed
+      Result_err_context_raw_access,          // An expression has raw access when that's not supported
 
       // Type errors
       Result_err_typecheck_return_type,       // * The primary return class type of the code block was not compatible with the return class type of the method (as specified by its parameters).
@@ -543,6 +544,34 @@ class SkParser : public AString
       StatementTiming_concurrent = 1
       };
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Type of a parsed expression
+    // Carries type pointer plus extra information 
+    class ExprType
+      {
+      public:
+        ExprType(SkClassDescBase * type_p = nullptr, bool is_raw_access = false) : m_type_p(type_p), m_is_raw_access(is_raw_access) {}
+        ExprType(const ExprType & other, const SkClassDescBase * obj_scope_p) : m_type_p(other.m_type_p->as_finalized_generic(*obj_scope_p)), m_is_raw_access(other.m_is_raw_access) {}
+
+        SkClassDescBase * get_type() const        { return m_type_p; }
+        operator SkClassDescBase * () const       { return m_type_p; }
+        SkClassDescBase & operator * () const     { return *m_type_p; }
+        SkClassDescBase * operator -> () const    { return m_type_p; }
+        bool              is_raw_access() const   { return m_is_raw_access; }
+
+        void              set(SkClassDescBase * type_p, bool is_raw_access = false)  { m_type_p = type_p; m_is_raw_access = is_raw_access; }
+        void              operator = (SkClassDescBase * type_p)                      { m_type_p = type_p; m_is_raw_access = false; }
+        void              clear_raw_access()                                         { m_is_raw_access = false; }
+
+      private:
+        // Expression type information
+        SkClassDescBase * m_type_p;
+
+        // Means that this expression uses `&raw` access
+        // which has certain limitations (can not generically be assumed to be writable, 
+        // except in certain special cases like assignment operators)
+        bool m_is_raw_access;
+      };
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Used by SkParser::Args.m_flags below.
@@ -643,7 +672,7 @@ class SkParser : public AString
           // has already been through the preparse phase (Flag_preparse is not set and
           // Flag_type_check is set).
           // [This is occasionally used as IN data internally too.]
-          SkClassDescBase * m_type_p;
+          ExprType m_expr_type;
 
           // Whether resulting expression/statement just parsed was immediate (method) or
           // durational (coroutine) - see `eSkInvokeTime` and `m_desired_exec_time`
@@ -947,7 +976,7 @@ class SkParser : public AString
         SkIdentifierLocal *  parse_data_accessor(Args & args, SkExpressionBase * owner_p) const;
         SkExpressionBase *   parse_expression_string(Args & args, SkExpressionBase * receiver_p) const;
         SkInvokeCascade *    parse_invoke_cascade(Args & args, SkExpressionBase * receiver_p) const;
-        SkExpressionBase *   parse_invoke_instantiate(Args & args, SkExpressionBase * receiver_p) const;
+        SkExpressionBase *   parse_invoke_instantiate(Args & args, SkExpressionBase * receiver_p, bool * is_raw_data_pass_through_copy_p) const;
         SkInvokeSync *       parse_invoke_apply(Args & args, SkExpressionBase * receiver_p) const;
         SkInvokeRace *       parse_invoke_race(Args & args, SkExpressionBase * receiver_p) const;
         SkExpressionBase *   parse_invoke_operator(Args & args, SkExpressionBase * receiver_p) const;

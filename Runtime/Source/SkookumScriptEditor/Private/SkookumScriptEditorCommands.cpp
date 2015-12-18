@@ -13,7 +13,7 @@ void FSkookumScriptEditorCommands::RegisterCommands()
   {
   #define LOCTEXT_NAMESPACE "SkookumScript"
 
-    UI_COMMAND(m_skookum_button, "Skookum IDE", "Show in Skookum IDE", EUserInterfaceActionType::Button, FInputGesture());
+    UI_COMMAND(m_skookum_button, "Skookum IDE", "Show in Skookum IDE", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Alt, EKeys::Tilde));
 
   #undef LOCTEXT_NAMESPACE
   }
