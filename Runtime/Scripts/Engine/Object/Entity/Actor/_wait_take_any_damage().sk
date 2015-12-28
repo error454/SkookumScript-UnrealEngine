@@ -1,0 +1,15 @@
+//---------------------------------------------------------------------------------------
+// Wait for an `TakeAnyDamage` event to occur on this actor
+// Set the return parameters accordingly
+//
+// IMPORTANT: Do not use this coroutine if several of the events you are interested in
+// can potentially occur within the same frame!
+// In that case use _on_take_any_damage_do or _on_take_any_damage_do_until instead.
+//
+// See: _on_take_any_damage_do, _on_take_any_damage_do_until
+//---------------------------------------------------------------------------------------
+
+(; Real damage, DamageType damage_type, Controller instigated_by, Actor damage_causer)
+  [
+  _on_take_any_damage_do_until(^[true]; damage, damage_type, instigated_by, damage_causer)
+  ]
