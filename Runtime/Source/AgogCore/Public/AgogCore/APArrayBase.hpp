@@ -111,8 +111,8 @@ class APArrayBase
 
     void apply_method(void (_ElementType::* method_m)(), uint32_t pos = 0u, uint32_t elem_count = ALength_remainder) const;
     void apply_method(void (_ElementType::* method_m)() const, uint32_t pos = 0u, uint32_t elem_count = ALength_remainder) const;
-    bool find_equiv(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder) const;
-    bool find_equiv_reverse(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder) const;
+    bool find_equiv(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder) const;
+    bool find_equiv_reverse(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder) const;
 
     // Binary Serialization Methods
 
@@ -831,9 +831,9 @@ uint32_t APArrayBase<_ElementType>::as_binary_length8() const
 template<class _ElementType>
 bool APArrayBase<_ElementType>::find_equiv(
   const _ElementType & elem,
-  uint *               find_pos_p, // = nullptr
-  uint                 start_pos,  // = 0u
-  uint                 end_pos     // = ALength_remainder
+  uint32_t *           find_pos_p, // = nullptr
+  uint32_t             start_pos,  // = 0u
+  uint32_t             end_pos     // = ALength_remainder
   ) const
   {
   if (m_count)  // if not empty
@@ -894,9 +894,9 @@ bool APArrayBase<_ElementType>::find_equiv(
 template<class _ElementType>
 bool APArrayBase<_ElementType>::find_equiv_reverse(
   const _ElementType & elem,
-  uint *               find_pos_p, // = nullptr
-  uint                 start_pos,  // = 0u
-  uint                 end_pos     // = ALength_remainder
+  uint32_t *           find_pos_p, // = nullptr
+  uint32_t             start_pos,  // = 0u
+  uint32_t             end_pos     // = ALength_remainder
   ) const
   {
   if (m_count)  // if not empty

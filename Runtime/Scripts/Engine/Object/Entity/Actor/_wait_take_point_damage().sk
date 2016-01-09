@@ -1,0 +1,15 @@
+//---------------------------------------------------------------------------------------
+// Wait for an `TakePointDamage` event to occur on this actor
+// Set the return parameters accordingly
+//
+// IMPORTANT: Do not use this coroutine if several of the events you are interested in
+// can potentially occur within the same frame!
+// In that case use _on_take_point_damage_do or _on_take_point_damage_do_until instead.
+//
+// See: _on_take_point_damage_do, _on_take_point_damage_do_until
+//---------------------------------------------------------------------------------------
+
+(; Real damage, Controller instigated_by, Vector3 hit_location, PrimitiveComponent hit_component, Name bone_name, Vector3 shot_from_direction, DamageType damage_type, Actor damage_causer)
+  [
+  _on_take_point_damage_do_until(^[true]; damage, instigated_by, hit_location, hit_component, bone_name, shot_from_direction, damage_type, damage_causer)
+  ]

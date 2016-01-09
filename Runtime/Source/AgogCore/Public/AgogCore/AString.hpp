@@ -310,7 +310,7 @@ class AString
     AString(char ch);
     AString(char ch, uint32_t char_count);
     AString(const APArrayLogical<AString> & strings, const AString & separator = ms_empty);
-    AString(uint max_size, const char * format_str_p, ...);
+    AString(uint32_t max_size, const char * format_str_p, ...);
 
     static AString ctor_int(int integer, uint base = AString_def_base);
     static AString ctor_uint(uint natural, uint base = AString_def_base);
@@ -427,15 +427,15 @@ class AString
     bool      remove(const AString & str, uint32_t instance = 1u, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder, eAStrCase case_check = AStrCase_sensitive);
     bool      remove(const AStringBM & bm, uint32_t instance = 1u, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     void      remove_all(uint32_t pos, uint32_t char_count = ALength_remainder);
-    uint      remove_all(char ch, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
-    uint      remove_all(eACharMatch match_type, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+    uint32_t  remove_all(char ch, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+    uint32_t  remove_all(eACharMatch match_type, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     uint32_t  remove_all(const AString & str, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder, eAStrCase case_check = AStrCase_sensitive);
     uint32_t  remove_all(const AStringBM & bm, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     void      remove_end(uint32_t char_count);
     void      replace(const AString & new_str, uint32_t pos = 0u, uint32_t char_count = ALength_remainder, uint32_t new_pos = 0u, uint32_t new_char_count = ALength_remainder);
     bool      replace(const AString & old_str, const AString & new_str, uint32_t instance = 1u, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder, eAStrCase case_check = AStrCase_sensitive);
     bool      replace(const AStringBM & bm, const AString & new_str, uint32_t instance = 1u, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
-    uint      replace_all(char old_ch, char new_ch, uint start_pos = 0u, uint end_pos = ALength_remainder);
+    uint32_t  replace_all(char old_ch, char new_ch, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     uint32_t  replace_all(char old_ch, const AString & new_str, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     uint32_t  replace_all(const AString & old_str, const AString & new_str, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder, eAStrCase case_check = AStrCase_sensitive);
     uint32_t  replace_all(const AStringBM & bm, const AString & new_str, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
@@ -452,15 +452,15 @@ class AString
 
     // Row & Column Modifying Methods
 
-      uint line_break_dos2rich(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_break_dos2unix(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_break_rich2dos(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_break_rich2unix(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_break_unix2dos(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_break_unix2rich(uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_indent(uint space_count = AString_indent_spaces_def, uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_indent_next(uint space_count = AString_indent_spaces_def, uint start_pos = 0u, uint end_pos = ALength_remainder);
-      uint line_unindent(uint space_count = AString_indent_spaces_def, uint tab_stops = AString_tab_stop_def, uint start_pos = 0u, uint end_pos = ALength_remainder);
+      uint32_t line_break_dos2rich(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_break_dos2unix(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_break_rich2dos(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_break_rich2unix(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_break_unix2dos(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_break_unix2rich(uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_indent(uint32_t space_count = AString_indent_spaces_def, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_indent_next(uint32_t space_count = AString_indent_spaces_def, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
+      uint32_t line_unindent(uint32_t space_count = AString_indent_spaces_def, uint32_t tab_stops = AString_tab_stop_def, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
 
     // Future methods
 
@@ -520,10 +520,10 @@ class AString
 
     // Row & Column Methods
 
-      uint find_indent_column(uint tab_stops = AString_tab_stop_def, uint * indent_idx_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder) const;
-      uint index_to_column(uint idx, uint tab_stops = AString_tab_stop_def) const;
-      uint index_to_row(uint idx, uint * row_idx_p = nullptr, uint * column_p = nullptr, uint tab_stops = AString_tab_stop_def) const;
-      uint row_to_index(uint row, uint column = 0u, uint tab_stops = AString_tab_stop_def) const;
+      uint32_t find_indent_column(uint32_t tab_stops = AString_tab_stop_def, uint32_t * indent_idx_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder) const;
+      uint32_t index_to_column(uint32_t idx, uint32_t tab_stops = AString_tab_stop_def) const;
+      uint32_t index_to_row(uint32_t idx, uint32_t * row_idx_p = nullptr, uint32_t * column_p = nullptr, uint32_t tab_stops = AString_tab_stop_def) const;
+      uint32_t row_to_index(uint32_t row, uint32_t column = 0u, uint32_t tab_stops = AString_tab_stop_def) const;
 
     // Future methods
 
@@ -555,9 +555,9 @@ class AString
 
     // C-String Column Methods
 
-    static const char * advance_to_indent(const char * cstr_p, const char * cstr_end_p, uint tab_stops, uint * column_p);
-    static const char * advance_to_column(uint column, const char * row_cstr_p, uint tab_stops);
-    static uint         count_columns(const char * row_cstr_p, const char * column_cstr_p, uint tab_stops);
+    static const char * advance_to_indent(const char * cstr_p, const char * cstr_end_p, uint32_t tab_stops, uint32_t * column_p);
+    static const char * advance_to_column(uint32_t column, const char * row_cstr_p, uint32_t tab_stops);
+    static uint32_t     count_columns(const char * row_cstr_p, const char * column_cstr_p, uint32_t tab_stops);
 
     // Character functions
 

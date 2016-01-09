@@ -218,7 +218,7 @@ AString::AString(
 // See:        format(), append_format()
 // Author(s):   Conan Reis
 AString::AString(
-  uint         max_size,
+  uint32_t     max_size,
   const char * format_str_p,
   ...
   )
@@ -1343,10 +1343,10 @@ uint32_t AString::increment(
 // 
 // See:         line_unindent(), line_*() functions, ARichEditOS::indent_selection()
 // Author(s):   Conan Reis
-uint AString::line_indent(
-  uint space_count, // = AString_indent_spaces_def
-  uint start_pos,   // = 0u
-  uint end_pos      // = ALength_remainder
+uint32_t AString::line_indent(
+  uint32_t space_count, // = AString_indent_spaces_def
+  uint32_t start_pos,   // = 0u
+  uint32_t end_pos      // = ALength_remainder
   )
   {
   // $Revisit - CReis Could use space_count=0 to indicate that spaces should be used to indent rather than spaces.
@@ -1370,11 +1370,11 @@ uint AString::line_indent(
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Determine number of lines.
-  uint   line_count   = 1u;
-  char * buffer_p     = str_ref_p->m_cstr_p;
-  char * cstr_start_p = buffer_p + start_pos;
-  char * cstr_end_p   = buffer_p + end_pos;
-  char * cstr_p       = cstr_start_p;
+  uint32_t line_count   = 1u;
+  char *   buffer_p     = str_ref_p->m_cstr_p;
+  char *   cstr_start_p = buffer_p + start_pos;
+  char *   cstr_end_p   = buffer_p + end_pos;
+  char *   cstr_p       = cstr_start_p;
 
   // Use < rather than <= to intentionally stop before last character
   while (cstr_p < cstr_end_p)
@@ -1389,10 +1389,10 @@ uint AString::line_indent(
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Ensure enough memory for indenting
-  size_t char_count;
-  char * dest_p;
-  char * source_p     = buffer_p;
-  uint   extra_chars  = line_count * space_count;
+  size_t   char_count;
+  char *   dest_p;
+  char *   source_p     = buffer_p;
+  uint32_t extra_chars  = line_count * space_count;
 
   // $Revisit - CReis Could reuse existing buffer if it is large enough.
   // Test to see if new buffer needed or if old one can be reused
@@ -1481,10 +1481,10 @@ uint AString::line_indent(
 // 
 // See:         line_unindent(), line_*() functions, ARichEditOS::indent_selection()
 // Author(s):   Conan Reis
-uint AString::line_indent_next(
-  uint space_count, // = AString_indent_spaces_def
-  uint start_pos,   // = 0u
-  uint end_pos      // = ALength_remainder
+uint32_t AString::line_indent_next(
+  uint32_t space_count, // = AString_indent_spaces_def
+  uint32_t start_pos,   // = 0u
+  uint32_t end_pos      // = ALength_remainder
   )
   {
   if (find('\n', 1u, &start_pos, start_pos, end_pos))
@@ -1514,21 +1514,21 @@ uint AString::line_indent_next(
 // 
 // See:         line_indent(), line_*() functions, ARichEditOS::unindent_selection()
 // Author(s):   Conan Reis
-uint AString::line_unindent(
-  uint space_count, // = AString_indent_spaces_def
-  uint tab_stops,   // = AString_tab_stop_def
-  uint start_pos,   // = 0u
-  uint end_pos      // = ALength_remainder
+uint32_t AString::line_unindent(
+  uint32_t space_count, // = AString_indent_spaces_def
+  uint32_t tab_stops,   // = AString_tab_stop_def
+  uint32_t start_pos,   // = 0u
+  uint32_t end_pos      // = ALength_remainder
   )
   {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   struct Nested
     {
     static char * set_column(
-      char * cstr_p, uint column, uint tab_stops)
+      char * cstr_p, uint32_t column, uint32_t tab_stops)
       {
-      uint idx = 0u;
-      uint tab_spaces = 0u;
+      uint32_t idx = 0u;
+      uint32_t tab_spaces = 0u;
 
       while (idx < column)
         {
@@ -1580,11 +1580,11 @@ uint AString::line_unindent(
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Determine number of lines.
-  uint   line_count   = 1u;
-  char * buffer_p     = str_ref_p->m_cstr_p;
-  char * cstr_start_p = buffer_p + start_pos;
-  char * cstr_end_p   = buffer_p + end_pos;
-  char * cstr_p       = cstr_start_p;
+  uint32_t line_count   = 1u;
+  char *   buffer_p     = str_ref_p->m_cstr_p;
+  char *   cstr_start_p = buffer_p + start_pos;
+  char *   cstr_end_p   = buffer_p + end_pos;
+  char *   cstr_p       = cstr_start_p;
 
   // Use < rather than <= to intentionally stop before last character
   while (cstr_p < cstr_end_p)
@@ -1601,12 +1601,12 @@ uint AString::line_unindent(
   // Ensure enough memory for unindenting
   // - Note that tabs are converted to spaces as they are reduced and they may add up to
   //   more characters even after space_count characters have been removed.
-  size_t char_count;
-  char * line_p;
-  char * dest_p;
-  char * source_p     = buffer_p;
-  uint   extra_chars  = 0u;
-  uint   column       = 0u;
+  size_t   char_count;
+  char *   line_p;
+  char *   dest_p;
+  char *   source_p     = buffer_p;
+  uint32_t extra_chars  = 0u;
+  uint32_t column       = 0u;
   
   if (tab_stops > space_count)
     {
@@ -1731,12 +1731,12 @@ void AString::insert(
 // Returns:    Returns the number of line breaks that were converted.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-uint AString::line_break_unix2dos(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+uint32_t AString::line_break_unix2dos(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
-  uint pre_remove = m_str_ref_p->m_length;
+  uint32_t pre_remove = m_str_ref_p->m_length;
 
   remove_all('\r', start_pos, end_pos);
 
@@ -1860,13 +1860,13 @@ void AString::remove_all(
 // See:        trim(), truncate(), remove_all(match_type), remove_all(str),
 //             find(match_type)
 // Author(s):   Conan Reis
-uint AString::remove_all(
+uint32_t AString::remove_all(
   char ch,
   uint32_t start_pos, // = 0u
   uint32_t end_pos    // = ALength_remainder
   )
   {
-  uint remove_count = 0u;
+  uint32_t remove_count = 0u;
 
   if (m_str_ref_p->m_length)
     {
@@ -1924,13 +1924,13 @@ uint AString::remove_all(
 // See:        trim(), truncate(), remove_all(str), remove_all(ch), find(match_type),
 //             not_char_type()
 // Author(s):   Conan Reis
-uint AString::remove_all(
+uint32_t AString::remove_all(
   eACharMatch match_type,
   uint32_t    start_pos, // = 0u
   uint32_t    end_pos    // = ALength_remainder
   )
   {
-  uint remove_count = 0u;
+  uint32_t remove_count = 0u;
 
   if (m_str_ref_p->m_length)
     {
@@ -2242,14 +2242,14 @@ bool AString::replace(
 //  Replace all old_ch with new_ch starting at start_pos and ending at end_pos.
 // Returns:     Number of characters replaced.
 // Author(s):    Conan Reis
-uint AString::replace_all(
-  char old_ch,
-  char new_ch,
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+uint32_t AString::replace_all(
+  char     old_ch,
+  char     new_ch,
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
-  uint  count  = 0u;
+  uint32_t count  = 0u;
   uint32_t length = m_str_ref_p->m_length;
   
   if (length)  // if not empty
@@ -3897,17 +3897,17 @@ bool AString::find_fuzzy_reverse(
 //   index_to_row(), row_to_index(), line_indent(), line_unindent(), advance_to_indent()
 //   
 // Author(s):   Conan Reis
-uint AString::find_indent_column(
-  uint   tab_stops,    // = AString_tab_stop_def
-  uint * indent_idx_p, // = nullptr
-  uint   start_pos,    // = 0u
-  uint   end_pos       // = ALength_remainder
+uint32_t AString::find_indent_column(
+  uint32_t   tab_stops,    // = AString_tab_stop_def
+  uint32_t * indent_idx_p, // = nullptr
+  uint32_t   start_pos,    // = 0u
+  uint32_t   end_pos       // = ALength_remainder
   ) const
   {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // Setup
   AStringRef * str_ref_p = m_str_ref_p;
-  uint         length    = str_ref_p->m_length;
+  uint32_t     length    = str_ref_p->m_length;
 
   if (length == 0u)
     {
@@ -3929,7 +3929,7 @@ uint AString::find_indent_column(
   #endif
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  uint         column   = 0u;
+  uint32_t     column   = 0u;
   char *       buffer_p = str_ref_p->m_cstr_p;
   const char * indent_p =
     advance_to_indent(buffer_p + start_pos, buffer_p + end_pos, tab_stops, &column);

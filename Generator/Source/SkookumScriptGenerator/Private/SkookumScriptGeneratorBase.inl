@@ -335,8 +335,11 @@ FString FSkookumScriptGeneratorBase::skookify_var_name(const FString & name, boo
       continue;
       }
 
-    // Insert underscore when appropriate
-    if (c == TCHAR(' ') || c == TCHAR(':') || c == TCHAR('_'))
+    // Insert underscore for anything else than [A-Za-z0-9]
+    if (c < TCHAR('0')
+     || (c > TCHAR('9') && c < TCHAR('A'))
+     || (c > TCHAR('Z') && c < TCHAR('a'))
+     || c > TCHAR('z'))
       {
       if (!was_underscore)
         {

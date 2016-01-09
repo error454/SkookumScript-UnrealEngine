@@ -22,15 +22,6 @@
 
 
 //=======================================================================================
-// Defines
-//=======================================================================================
-
-#define SKCLOSURE_INFO      (reinterpret_cast<SkClosureInfoBase *>(m_user_data.m_data.m_ptr[0])) // $Revisit - MBreyer HACK
-#define SKCLOSURE_RECV      (reinterpret_cast<SkInstance *>(m_user_data.m_data.m_ptr[1])) // $Revisit - MBreyer HACK
-#define SKCLOSURE_CAPTURES  ((SkInstance **)(ptrdiff_t(this) + sizeof(SkClosure)))
-
-
-//=======================================================================================
 // Global Structures
 //=======================================================================================
 
@@ -53,10 +44,10 @@ class SkClosure : public SkInstance
 
   // Methods
 
-    SkInstance *        get_receiver() const             { return SKCLOSURE_RECV; }
-    SkClosureInfoBase * get_info() const                 { return SKCLOSURE_INFO; }
-    uint32_t            get_captured_count() const       { return SKCLOSURE_INFO->get_captured().get_count(); }
-    SkInstance **       get_captured_array() const       { return SKCLOSURE_CAPTURES; }
+    SkInstance *        get_receiver() const             { return reinterpret_cast<SkInstance *>(m_user_data.m_data.m_ptr[1]); } // $Revisit - MBreyer HACK
+    SkClosureInfoBase * get_info() const                 { return reinterpret_cast<SkClosureInfoBase *>(m_user_data.m_data.m_ptr[0]); } // $Revisit - MBreyer HACK
+    uint32_t            get_captured_count() const       { return get_info()->get_captured().get_count(); }
+    SkInstance **       get_captured_array() const       { return (SkInstance **)(ptrdiff_t(this) + sizeof(SkClosure)); }
 
     static SkClosure * new_instance(SkClosureInfoBase * closure_info_p, SkInstance * receiver_p);
     virtual void       delete_this();

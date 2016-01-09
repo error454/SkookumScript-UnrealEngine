@@ -39,7 +39,7 @@ class SKOOKUMSCRIPTRUNTIME_API USkookumScriptComponent : public UActorComponent,
   // Public Data Members
 
     // SkookumScript class type - used to create appropriate Skookum object instance
-    // Uses most derived parent class if left blank.
+    // Uses class of this actor's Blueprint if left blank.
     UPROPERTY(Category = Script, EditAnywhere, BlueprintReadOnly)
     FString ScriptClassName;
 

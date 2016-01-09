@@ -78,7 +78,7 @@ public class SkookumScript : ModuleRules
 
     if (bPlatformAllowed)
     {
-      var buildNumber = "2020";
+      var buildNumber = "2079";
       var moduleName = "SkookumScript";
 
       // Get local file path where the library is located

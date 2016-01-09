@@ -20,6 +20,7 @@
 #include <AgogCore/AList.hpp>
 #include <SkookumScript/SkNamed.hpp>
 #include <SkookumScript/SkTyped.hpp>
+#include <SkookumScript/SkParameters.hpp>
 
 //=======================================================================================
 // Global Structures
@@ -146,10 +147,11 @@ struct SkTypeContext
       SkClassDescBase * get_rparam_type(const ASymbol & var_name) const;
       SkClassDescBase * get_local_variable_type(const ASymbol & var_name) const;
 
-      uint32_t              append_local(const ASymbol & var_name, SkClassDescBase * type_p);
+      uint32_t              append_local(const ASymbol & var_name, SkClassDescBase * type_p, bool is_return_arg);
       void                  archive_locals(const AVCompactArrayBase<ASymbol> & var_names);
-      SkTypedNameIndexed *  find_local_variable(const ASymbol & var_name) const;
+      SkTypedNameIndexed *  find_local_variable(const ASymbol & var_name, SkTypedNameIndexed ** duplicate_var_pp = nullptr) const;
       void                  free_locals(const AVCompactArrayBase<ASymbol> & var_names);
+      void                  free_locals(const tSkParamList & param_names);
       void                  free_all_locals();
       bool                  is_locals() const;
       void                  merge(tSkTypedNamesIndexed * merge_vars_p) const;
@@ -165,7 +167,7 @@ struct SkTypeContext
 
       void              change_variable_type(const ASymbol & var_name, SkClassDescBase * type_p);
       void              change_variable_types(const tSkTypedNamesIndexed & vars);
-      SkClassDescBase * get_variable_type(const ASymbol & var_name, bool skip_current_scope_b = false, uint32_t * data_idx_p = nullptr) const;
+      SkClassDescBase * get_variable_type(const ASymbol & var_name, bool skip_current_scope_b = false, uint32_t * data_idx_p = nullptr, bool * is_return_arg_p = nullptr) const;
       bool              is_previous_variable(const ASymbol & var_name) const;
       bool              is_variable(const ASymbol & var_name) const;
 

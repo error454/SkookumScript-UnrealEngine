@@ -178,8 +178,8 @@ template<
     //  void apply(_InvokeType & invoke_obj, uint32_t pos = 0u, uint32_t elem_count = ALength_remainder) const;
     //void as_binary(void ** binary_pp) const;
     //uint32_t as_binary_length() const;
-    //bool find_equiv(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder) const;
-    //bool find_equiv_reverse(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder) const;
+    //bool find_equiv(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder) const;
+    //bool find_equiv_reverse(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder) const;
 
     // Future methods
     //template<class _InvokeType>
