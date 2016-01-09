@@ -112,12 +112,13 @@ struct SkTypedNameIndexed : SkTypedName
 
   // Common Methods
 
-    SkTypedNameIndexed() : m_data_idx(0), m_has_been_bound(false) {}
-    SkTypedNameIndexed(const ASymbol & name, const SkClassDescBase * type_p, uint32_t data_idx) : SkTypedName(name, type_p), m_data_idx(data_idx), m_has_been_bound(false) {}
+    SkTypedNameIndexed() : m_data_idx(0), m_has_been_bound(false), m_is_return_arg(false) {}
+    SkTypedNameIndexed(const ASymbol & name, const SkClassDescBase * type_p, uint32_t data_idx, bool is_return_arg) : SkTypedName(name, type_p), m_data_idx(data_idx), m_is_return_arg(is_return_arg), m_has_been_bound(false) {}
 
   // Data Members
 
     uint32_t  m_data_idx;
+    bool      m_is_return_arg;  // If this variable is a return argument
     bool      m_has_been_bound; // Keep track if this variable has ever been bound
 
   };

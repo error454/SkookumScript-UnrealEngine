@@ -534,8 +534,8 @@ typedef double  f64;  // 1.7E +/-  308 (15 digits)
 // Common default/special operation/self-documenting integer constants
 // - Defaults used when 0, 1, -1, 42, etc. will not do.
 
-const int      ADef_int     = INT32_MAX;  // INT_MAX;
-const uint     ADef_uint    = UINT32_MAX; // UINT_MAX;
+const int      ADef_int     = INT_MAX;
+const uint     ADef_uint    = UINT_MAX;
 const int8_t   ADef_int8    = INT8_MAX;
 const uint8_t  ADef_uint8   = UINT8_MAX;
 const int16_t  ADef_int16   = INT16_MAX;
@@ -545,28 +545,31 @@ const uint32_t ADef_uint32  = UINT32_MAX;
 const int64_t  ADef_int64   = INT64_MAX;
 const uint64_t ADef_uint64  = UINT64_MAX;
 
+
+// $Note - Most of the major lengths/counts/sizes (arrays, strings, etc.) are in 32-bits.
+
 // Substitute with the length of the object or the length remaining after any supplied
 // starting position.
-const uint ALength_remainder = ADef_uint;
+const uint32_t ALength_remainder = ADef_uint32;
 
 // Substitute with the length of the supplied arguments - for example with a supplied
 // C-String determine its length by finding a null character.
-const uint ALength_calculate = ADef_uint;
+const uint32_t ALength_calculate = ADef_uint32;
 
 // The length of the buffer is included in the first few byte(s) of the buffer.
-const uint ALength_in_header = ADef_uint;
+const uint32_t ALength_in_header = ADef_uint32;
 
 // If searching some sort of collection where there is the possibility of multiple
 // matching elements, this indicates that the last matching element is desired
 // - i.e. the matching element that is closest to the end of the collection.
-const uint AMatch_last = ADef_uint;
+const uint32_t AMatch_last = ADef_uint32;
 
 // If searching some sort of collection where there is the possibility of multiple
 // matching elements, this indicates that the matching element that is first *found* is
 // desired.  This could be any matching element in the collection it effectively means
 // ignore element order.  This type of a search can be faster than specifying that
 // matching element order is important.
-const uint AMatch_first_found = 0u;
+const uint32_t AMatch_first_found = 0u;
 
 const uint32_t ADef_no_change = ADef_uint32;  // Indicates that no change should be made
 

@@ -114,7 +114,7 @@ class APSizedArrayBase : public APArrayBase<_ElementType>
     _ElementType * pop(uint32_t pos);
     _ElementType * pop_last();
     void           remove(uint32_t pos = 0u);
-    bool           remove_equiv(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder);
+    bool           remove_equiv(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     void           remove_last();
     void           remove_all();
     void           remove_all(uint32_t pos, uint32_t elem_count = ALength_remainder);
@@ -859,9 +859,9 @@ inline void APSizedArrayBase<_ElementType>::remove(
 template<class _ElementType>
 bool APSizedArrayBase<_ElementType>::remove_equiv(
   const _ElementType & elem,
-  uint *                 find_pos_p, // = nullptr
-  uint                  start_pos,  // = 0u
-  uint                  end_pos     // = ALength_remainder
+  uint32_t *           find_pos_p, // = nullptr
+  uint32_t             start_pos,  // = 0u
+  uint32_t             end_pos     // = ALength_remainder
   )
   {
   uint32_t find_pos;

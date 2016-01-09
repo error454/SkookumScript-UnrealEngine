@@ -51,7 +51,8 @@ A_INLINE SkTypeContext::~SkTypeContext()
 // Author(s):   Conan Reis
 A_INLINE uint32_t SkTypeContext::append_local(
   const ASymbol &   var_name,
-  SkClassDescBase * type_p
+  SkClassDescBase * type_p,
+  bool              is_return_arg
   )
   {
   // Compute data index
@@ -61,7 +62,7 @@ A_INLINE uint32_t SkTypeContext::append_local(
   m_current_scope_p->m_data_idx_count_max = a_max(m_current_scope_p->m_data_idx_count_max, m_current_scope_p->m_data_idx_count);
 
   // $Revisit - CReis [Memory] These structures should come from a memory pool
-  m_current_scope_p->m_vars.append(*SK_NEW(SkTypedNameIndexed)(var_name, type_p, data_idx));
+  m_current_scope_p->m_vars.append(*SK_NEW(SkTypedNameIndexed)(var_name, type_p, data_idx, is_return_arg));
 
   return data_idx;
   }

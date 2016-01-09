@@ -116,7 +116,7 @@ class APCompactArrayBase : public APArrayBase<_ElementType>
     // _ElementType * pop();
     // _ElementType * pop(uint32_t pos);
     // void           remove(uint32_t pos = 0u);
-    // bool           remove_equiv(const _ElementType & elem, uint * find_pos_p = nullptr, uint start_pos = 0u, uint end_pos = ALength_remainder);
+    // bool           remove_equiv(const _ElementType & elem, uint32_t * find_pos_p = nullptr, uint32_t start_pos = 0u, uint32_t end_pos = ALength_remainder);
     // void           remove_all(uint32_t pos, uint32_t elem_count = ALength_remainder);
     // void           remove_all_last(uint32_t elem_count);
     // void           set_length_null(uint32_t length);
@@ -747,9 +747,9 @@ inline void APCompactArrayBase<_ElementType>::remove(
 template<class _ElementType>
 bool APCompactArrayBase<_ElementType>::remove_equiv(
   const _ElementType & elem,
-  uint *               find_pos_p, // = nullptr
-  uint                 start_pos,  // = 0u
-  uint                 end_pos     // = ALength_remainder
+  uint32_t *           find_pos_p, // = nullptr
+  uint32_t             start_pos,  // = 0u
+  uint32_t             end_pos     // = ALength_remainder
   )
   {
   uint32_t find_pos;

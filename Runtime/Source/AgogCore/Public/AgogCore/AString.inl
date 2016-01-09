@@ -1366,9 +1366,9 @@ A_INLINE void AString::ensure_writable()
 // Returns:    Returns the number of line breaks that were converted.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-A_INLINE uint AString::line_break_dos2rich(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+A_INLINE uint32_t AString::line_break_dos2rich(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
   return remove_all('\n', start_pos, end_pos);
@@ -1380,9 +1380,9 @@ A_INLINE uint AString::line_break_dos2rich(
 // Returns:    Returns the number of line breaks that were converted.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-A_INLINE uint AString::line_break_dos2unix(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+A_INLINE uint32_t AString::line_break_dos2unix(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
   return remove_all('\r', start_pos, end_pos);
@@ -1394,9 +1394,9 @@ A_INLINE uint AString::line_break_dos2unix(
 // Returns:    Returns the number of line breaks that were converted.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-A_INLINE uint AString::line_break_rich2dos(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+A_INLINE uint32_t AString::line_break_rich2dos(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
   return replace_all('\r', ms_dos_break, start_pos, end_pos);
@@ -1407,9 +1407,9 @@ A_INLINE uint AString::line_break_rich2dos(
 //             This method will also work if the string is already in Unix style.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-A_INLINE uint AString::line_break_rich2unix(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+A_INLINE uint32_t AString::line_break_rich2unix(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
   return replace_all('\r', '\n', start_pos, end_pos);
@@ -1420,9 +1420,9 @@ A_INLINE uint AString::line_break_rich2unix(
 //             This method will also work if the string is already in Unix style.
 // See:        line_*() functions
 // Author(s):   Conan Reis
-A_INLINE uint AString::line_break_unix2rich(
-  uint start_pos,  // = 0u
-  uint end_pos     // = ALength_remainder
+A_INLINE uint32_t AString::line_break_unix2rich(
+  uint32_t start_pos,  // = 0u
+  uint32_t end_pos     // = ALength_remainder
   )
   {
   return replace_all('\n', '\r', start_pos, end_pos);
@@ -1836,11 +1836,11 @@ A_INLINE bool AString::is_filled() const
 A_INLINE const char * AString::advance_to_indent(
   const char * cstr_p,
   const char * cstr_end_p,
-  uint         tab_stops,
-  uint *       column_p
+  uint32_t     tab_stops,
+  uint32_t *   column_p
   )
   {
-  uint column = 0u;
+  uint32_t column = 0u;
 
   // Find first non-space
   while ((cstr_p < cstr_end_p)
@@ -1874,12 +1874,12 @@ A_INLINE const char * AString::advance_to_indent(
 //
 // Author(s):   Conan Reis
 A_INLINE const char * AString::advance_to_column(
-  uint         column,
+  uint32_t     column,
   const char * cstr_p,
-  uint         tab_stops
+  uint32_t     tab_stops
   )
   {
-  uint current_column = 0u;
+  uint32_t current_column = 0u;
 
   while (current_column < column)
     {
@@ -1917,13 +1917,13 @@ A_INLINE const char * AString::advance_to_column(
 //   tab_stops:     tab stop count in spaces
 //     
 // Author(s):   Conan Reis
-A_INLINE uint AString::count_columns(
+A_INLINE uint32_t AString::count_columns(
   const char * row_cstr_p,
   const char * column_cstr_p,
-  uint         tab_stops
+  uint32_t     tab_stops
   )
   {
-  uint column = 0u;
+  uint32_t column = 0u;
 
   while (row_cstr_p < column_cstr_p)
     {
@@ -1954,15 +1954,15 @@ A_INLINE uint AString::count_columns(
 //   
 // See:         row_to_index()
 // Author(s):   Conan Reis
-A_INLINE uint AString::index_to_row(
-  uint   idx,
-  uint * row_idx_p, // = nullptr
-  uint * column_p,  // = nullptr
-  uint   tab_stops  // = AString_tab_stop_def
+A_INLINE uint32_t AString::index_to_row(
+  uint32_t   idx,
+  uint32_t * row_idx_p, // = nullptr
+  uint32_t * column_p,  // = nullptr
+  uint32_t   tab_stops  // = AString_tab_stop_def
   ) const
   {
-  uint row     = 0u;
-  uint row_idx = 0u;
+  uint32_t row     = 0u;
+  uint32_t row_idx = 0u;
 
   if (idx && m_str_ref_p->m_length)
     {
@@ -2007,9 +2007,9 @@ A_INLINE uint AString::index_to_row(
 //   
 // See:         find_indent_column(), index_to_row(), row_to_index()
 // Author(s):   Conan Reis
-A_INLINE uint AString::index_to_column(
-  uint idx,
-  uint tab_stops  // = AString_tab_stop_def
+A_INLINE uint32_t AString::index_to_column(
+  uint32_t idx,
+  uint32_t tab_stops  // = AString_tab_stop_def
   ) const
   {
   if ((idx == 0u) || (m_str_ref_p->m_length == 0u))
@@ -2018,7 +2018,7 @@ A_INLINE uint AString::index_to_column(
     }
 
   // Find index for start of row
-  uint row_idx = 0u;
+  uint32_t row_idx = 0u;
 
   if (find_reverse('\n', 1u, &row_idx, 0u, idx))
     {
@@ -2048,13 +2048,13 @@ A_INLINE uint AString::index_to_column(
 //   
 // See:         index_to_row()
 // Author(s):   Conan Reis
-A_INLINE uint AString::row_to_index(
-  uint row,
-  uint column,   // = 0u
-  uint tab_stops // = AString_tab_stop_def
+A_INLINE uint32_t AString::row_to_index(
+  uint32_t row,
+  uint32_t column,   // = 0u
+  uint32_t tab_stops // = AString_tab_stop_def
   ) const
   {
-  uint row_idx = 0u;
+  uint32_t row_idx = 0u;
 
   if (row != 0u)
     {
