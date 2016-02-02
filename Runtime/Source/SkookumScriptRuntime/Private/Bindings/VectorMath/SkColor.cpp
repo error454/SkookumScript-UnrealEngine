@@ -264,3 +264,10 @@ void SkColor::register_bindings()
   ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_color);
   SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("LinearColor"));
   }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkColor::get_class()
+  {
+  return ms_class_p;
+  }

@@ -2,7 +2,7 @@
 // Gets random item from list.
 //
 // Params:
-//   random: random number generator to use
+//   rnd_gen: random number generator to use
 //
 // Return Params:
 //   index_found: random index used
@@ -24,11 +24,11 @@
 // Author(s): Conan Reis
 //---------------------------------------------------------------------------------------
 
-( Random  random: @@random
+( Random  rnd_gen: @@random
 ; Integer index_found  
 ) ItemClass_
 
   [
-  index_found: random.uniform_int(length)
+  index_found: rnd_gen.uniform_int(length)
   at(index_found)
   ]  

@@ -20,6 +20,15 @@
 // Global Macros / Defines
 //=======================================================================================
 
+namespace SkSymbolDefs
+  {
+  // Assign values to the static symbols
+  void initialize();
+
+  // Clean up static symbols
+  void deinitialize();
+  }
+
 //---------------------------------------------------------------------------------------
 // These Macros will expand to create constants of type ASymbol in the form:
 //   ASYM(Object) -> ASymbol_Object  // Representing the symbol 'Object'
@@ -222,8 +231,8 @@
 
 //---------------------------------------------------------------------------------------
 // Declare ASymbol constants
-#define ASYM(_id)         ASYMBOL_DECLARE(ASymbol, _id)
-#define ASYMX(_id, _str)  ASYMBOL_DECLARE(ASymbolX, _id)
+#define ASYM(_id)         SK_API ASYMBOL_DECLARE(ASymbol, _id)
+#define ASYMX(_id, _str)  SK_API ASYMBOL_DECLARE(ASymbolX, _id)
   SK_SYMBOLS
   SK_SYMBOLS_NAMED
 #undef ASYMX
@@ -259,13 +268,14 @@ const uint32_t ASymbolId_divert             = 0xfcaca109;
 const uint32_t ASymbolId_else               = 0x55bb558b;
 const uint32_t ASymbolId_exit               = 0x9409840e;
 const uint32_t ASymbolId_false              = 0x2bcd6830;
-const uint32_t ASymbolId_fork               = 0xbbeb587a;
 const uint32_t ASymbolId_if                 = 0x5137067c;
 const uint32_t ASymbolId_loop               = 0xa15f1dee;
 const uint32_t ASymbolId_nil                = 0x4d33c2a5;
 const uint32_t ASymbolId_race               = 0xda6fbbaf;
+const uint32_t ASymbolId_random             = 0x163bdad5;
 const uint32_t ASymbolId_rush               = 0xf533deef;
 const uint32_t ASymbolId_skip               = 0xf876557d;
+const uint32_t ASymbolId_split              = 0xb1f59a11;
 const uint32_t ASymbolId_sync               = 0x2c2bf57a;
 const uint32_t ASymbolId_this               = 0xfeee8227;
 const uint32_t ASymbolId_this_class         = 0x3f064bae;

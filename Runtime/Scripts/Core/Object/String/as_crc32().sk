@@ -1,10 +1,20 @@
 //---------------------------------------------------------------------------------------
-// Description Returns a checksum version of itself via the CRC (cyclic redundancy check)
-//             algorithm.
-// Returns     CRC32 version of itself.  ***Note that this value will be signed and many
-//             programs expect an unsigned value.***
-// Examples    str.as_crc32
-// Author(s)   Conan Reis
+// Returns a checksum version of itself via the CRC (cyclic redundancy check) algorithm.
+// 
+// # Returns:
+//   CRC32 version of itself.  ***Note that this value will be signed and many programs
+//   expect an unsigned value.***
+//
+// # Examples:
+//   str.as_crc32
+//
+// # Notes:
+//   To get hex version of this number you can use symbols -
+//   ```
+//   str.Symbol.id_str
+//   'SomeStr".id_str
+//   ```
+// # Author(s): Conan Reis
 //---------------------------------------------------------------------------------------
 
 () Integer

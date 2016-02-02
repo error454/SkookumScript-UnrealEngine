@@ -34,7 +34,7 @@ class  SkExpressionBase;
 // Subclasses SkMethodBase (SkMethod, SkMethodFunc, SkMethodMthd), SkCoroutineBase (SkCoroutine,
 //            SkCoroutineMthd, SkCoroutineFunc)
 // Author(s)  Conan Reis
-class SkInvokableBase : public SkQualifier
+class SK_API SkInvokableBase : public SkQualifier
   {
   public:
 
@@ -54,7 +54,6 @@ class SkInvokableBase : public SkQualifier
     #endif
 
     #if (SKOOKUM & SK_COMPILED_OUT)
-      bool             is_operator() const;
       virtual void     as_binary(void ** binary_pp, bool include_name) const;
       virtual uint32_t as_binary_length(bool include_name) const;
     #endif

@@ -47,7 +47,7 @@ typedef APSortedLogical<SkClass, ASymbol> tSkClasses;
 //            not have an obvious home elsewhere.
 // See Also   SkClass (and other classes)
 // Author(s)  Conan Reis
-class SkBrain
+class SK_API SkBrain
   {
   public:
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,7 +158,8 @@ class SkBrain
     // Initialization
 
     static void register_bind_atomics_func(void (*bind_atomics_f)());
-    static void initialize_pre_load();
+    static void unregister_all_bind_atomics_funcs();
+    static void initialize();
     static void initialize_core_classes(uint32_t ensure_class_count);
     static void initialize_after_classes_known(const ASymbol & startup_class_name);
     static void initialize_post_load();

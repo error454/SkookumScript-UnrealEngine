@@ -10,7 +10,7 @@ namespace UnrealBuildTool.Rules
     public SkookumScriptRuntime(TargetInfo Target)
     {
 
-      // SSUEBindings.cpp takes a long time to compile due to auto-generated engine bindings
+      // SkUEBindings.cpp takes a long time to compile due to auto-generated engine bindings
       // Set to true when actively working on this plugin, false otherwise
       bFasterWithoutUnity = false;
 
@@ -18,16 +18,16 @@ namespace UnrealBuildTool.Rules
 
       switch (Target.Platform)
       {
-        case UnrealTargetPlatform.Win32:
-        case UnrealTargetPlatform.Win64:
-          Definitions.Add("WIN32_LEAN_AND_MEAN");
-          break;
-        case UnrealTargetPlatform.Mac:
-          Definitions.Add("A_PLAT_OSX");
-          break;
-        case UnrealTargetPlatform.IOS:
-          Definitions.Add("A_PLAT_iOS");
-          break;
+      case UnrealTargetPlatform.Win32:
+      case UnrealTargetPlatform.Win64:
+        Definitions.Add("WIN32_LEAN_AND_MEAN");
+        break;
+      case UnrealTargetPlatform.Mac:
+        Definitions.Add("A_PLAT_OSX");
+        break;
+      case UnrealTargetPlatform.IOS:
+        Definitions.Add("A_PLAT_iOS");
+        break;
       }
 
       switch (Target.Configuration)
@@ -52,6 +52,12 @@ namespace UnrealBuildTool.Rules
         break;
       }
       
+      if (Target.bIsMonolithic.HasValue && !(bool)Target.bIsMonolithic)
+      {
+        Definitions.Add("A_IS_DLL");
+        Definitions.Add("SK_IS_DLL");
+      }
+
       // Add public include paths required here ...
       //PublicIncludePaths.AddRange(
       //  new string[] {          

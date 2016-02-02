@@ -13,6 +13,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/AChecksum.hpp>
 #include <string.h>      // Uses:  strlen
 #include <AgogCore/AString.hpp>

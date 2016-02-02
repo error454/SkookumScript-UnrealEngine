@@ -58,7 +58,7 @@ A_INLINE ASymbolRef::ASymbolRef(AStringRef * str_ref_p, uint32_t sym_id) :
 // #Author(s)  Conan Reis
 A_INLINE AObjReusePool<ASymbolRef> & ASymbolRef::get_pool()
   {
-  static AObjReusePool<ASymbolRef> s_pool(Agog::get_agog_core_vals().m_pool_init_symbol_ref, Agog::get_agog_core_vals().m_pool_incr_symbol_ref);
+  static AObjReusePool<ASymbolRef> s_pool(AgogCore::get_app_info()->get_pool_init_symbol_ref(), AgogCore::get_app_info()->get_pool_incr_symbol_ref());
   //A_DSINGLETON_GUARD;
   return s_pool;
   }

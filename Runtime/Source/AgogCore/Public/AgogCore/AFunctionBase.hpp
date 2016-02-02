@@ -63,9 +63,12 @@
 // InLib     AgogCore/AgogCore.lib
 // Examples:    
 // Author(s) Conan Reis
-class AFunctionBase
+class A_API AFunctionBase
   {
   public:
+
+    A_NEW_OPERATORS(AFunctionBase);
+
   // Common Methods
 
     virtual ~AFunctionBase();

@@ -46,7 +46,7 @@ typedef APArrayLogical<SkNamedIndexed, ASymbol> tSkNamedIndexedArray;
 // Notes      Class Type Scope Context - used to track variable scope & type when
 //            parsing/compiling.
 // Author(s)  Conan Reis
-struct SkTypeContext
+struct SK_API SkTypeContext
   {
   // Nested Structures
 
@@ -70,6 +70,8 @@ struct SkTypeContext
         tSkTypedNames m_var_history;
 
       // Methods
+
+        SK_NEW_OPERATORS(ScopeVars);
 
         ScopeVars(uint32_t data_idx_count) { m_data_idx_count_max = m_data_idx_count = data_idx_count; }
         ~ScopeVars() { empty(); }
@@ -95,6 +97,8 @@ struct SkTypeContext
         tSkNamedIndexedArray m_indices_to_patch;
 
       // Methods
+
+        SK_NEW_OPERATORS(CapturedVars);
 
         CapturedVars(tSkTypedNamesIndexed * scope_p) : m_scope_p(scope_p) {}
 

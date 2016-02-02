@@ -34,7 +34,7 @@
 //---------------------------------------------------------------------------------------
 // Different than a rectangle since a rectangle has (left, top, right, bottom) and a
 // region has (x, y, width, height)
-struct ARegion
+struct A_API ARegion
   {
   // Data Members
 

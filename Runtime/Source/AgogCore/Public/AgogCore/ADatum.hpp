@@ -19,6 +19,7 @@
 //=======================================================================================
 
 #include <AgogCore/AgogCore.hpp>
+#include <AgogCore/AMemory.hpp>
 
 
 //=======================================================================================
@@ -42,10 +43,13 @@ enum
 //---------------------------------------------------------------------------------------
 // Any objects that need to be persistent (saved and loaded), or converted to a
 // contiguous memory block form should have conversion methods to and from ADatum.
-class ADatum
+class A_API ADatum
   {
   public:
+
   // Common methods
+
+    A_NEW_OPERATORS(ADatum);
 
     explicit ADatum(uint32_t data_length = 0u);
     explicit ADatum(const void * data_p, uint32_t data_length = ALength_in_header, uint32_t size = 0u, eATerm term = ATerm_short);
@@ -86,12 +90,15 @@ class ADatum
   // Class Methods
 
     static uint8_t * alloc_buffer(uint32_t buffer_size);
+    static void      free_buffer(uint8_t * buffer_p);
 
   protected:
   // Internal Classes
 
     struct Reference
       {
+      A_NEW_OPERATORS(Reference);
+
       Reference(uint32_t data_length);
       Reference(void * buffer_p, uint32_t size, eATerm term = ATerm_short);
 

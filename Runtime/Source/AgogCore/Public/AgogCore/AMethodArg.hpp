@@ -81,7 +81,7 @@ class AMethodArg : public AFunctionArgBase<_ArgType>
 
   // Non-Modifying Methods
 
-    virtual AFunctionArgBase<_ArgType> * copy_new() const;
+    virtual AFunctionArgBase<_ArgType> * copy_new() const override;
 
   protected:
   // Data Members

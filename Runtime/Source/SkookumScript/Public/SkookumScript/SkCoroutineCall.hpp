@@ -29,7 +29,7 @@
 // Notes      Info used to make a coroutine call/invocation - i.e. coroutine identifier
 //            (name/index) and passed argument info.
 // Author(s)  Conan Reis
-class SkCoroutineCall : public SkInvokeBase
+class SK_API SkCoroutineCall : public SkInvokeBase
   {
   friend class SkParser;
 

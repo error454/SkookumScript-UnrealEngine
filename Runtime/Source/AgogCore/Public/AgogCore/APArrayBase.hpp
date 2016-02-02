@@ -971,7 +971,7 @@ inline APArrayBase<_ElementType>::APArrayBase(
 template<class _ElementType>
 inline _ElementType ** APArrayBase<_ElementType>::alloc_array(uint32_t needed)
   {
-  _ElementType ** buffer_p = needed ? (_ElementType **)AMemory::malloc(sizeof(_ElementType*) * needed, "APArrayBase.buffer") : nullptr;
+  _ElementType ** buffer_p = needed ? (_ElementType **)AgogCore::get_app_info()->malloc(sizeof(_ElementType*) * needed, "APArrayBase.buffer") : nullptr;
 
   A_VERIFY_MEMORY(!needed || (buffer_p != nullptr), tAPArrayBase);
 
@@ -982,7 +982,10 @@ inline _ElementType ** APArrayBase<_ElementType>::alloc_array(uint32_t needed)
 template<class _ElementType>
 inline void APArrayBase<_ElementType>::free_array(_ElementType ** array_pp)
   {
-  AMemory::free(array_pp);
+  if (array_pp)
+    {
+    AgogCore::get_app_info()->free(array_pp);
+    }
   }
 
 

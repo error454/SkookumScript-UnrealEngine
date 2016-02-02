@@ -22,6 +22,7 @@ class SkVector3 : public SkClassBindingSimpleForceInit<SkVector3, FVector>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

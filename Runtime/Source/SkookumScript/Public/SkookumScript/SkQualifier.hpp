@@ -33,7 +33,7 @@ class SkClass;  // Pre-declaration
 //            SkInvokeBase(SkMethodCallBase, SkCoroutineCall)
 // See Also   SkTypedName
 // Author(s)  Conan Reis
-class SkQualifier : public SkNamedIndexed
+class SK_API SkQualifier : public SkNamedIndexed
   {
   friend class SkQualifierCompareName;
 
@@ -105,7 +105,7 @@ class SkQualifier : public SkNamedIndexed
 // APSorted to provide a mechanism for logical sorting of elements.
 //
 // Does a logical comparison of the name and then the scope.
-class SkQualifierCompareName
+class SK_API SkQualifierCompareName
   {
   public:
   // Class Methods

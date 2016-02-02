@@ -24,6 +24,10 @@
 #include <stdarg.h>          // Uses: va_array, va_start, va_arg, va_end
 #include <stdlib.h>          // Uses: qsort
 
+#ifdef __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdynamic-class-memaccess" // Allow overclobbering of vtable pointers
+#endif
 
 //=======================================================================================
 // Global Structures
@@ -2197,7 +2201,9 @@ inline AVCompactArrayFree<_ElementType, _KeyType, _CompareClass>::~AVCompactArra
   this->free_all();
   }
 
-
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #endif  // __AVCOMPACTARRAY_HPP
 

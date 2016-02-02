@@ -43,27 +43,6 @@ enum eAErrId
   AErrId_last = 64 // Marker for starting more specific exceptions
   };
 
-// What measure to take after an error
-enum eAErrAction
-  {
-  // Go to recovery area (throw / catch) and:
-
-  AErrAction_quit,        // Quit application
-  AErrAction_retry,       // Retry last command
-  AErrAction_continue,    // Skip currnent command and continue with next command
-
-  // Go to next line of code - usually unstable
-
-  AErrAction_ignore,      // Ignore and go to next line of code (and hope that app is still stable)
-  AErrAction_ignore_all,  // Ignore and go to next line of code and do not perform this test in the future
-
-  // Modifier Flags
-
-  AErrAction__debug_break  = 0x100,
-
-  AErrAction__action_mask  = 0x0FF
-  };
-
 ///---------------------------------------------------------------------------------------
 // Notes      All thrown exceptions should be derived from this base.
 // Subclasses AException
@@ -77,8 +56,8 @@ class AExceptionBase
   public:
   // Common Methods
 
-    AExceptionBase();
-    virtual ~AExceptionBase();
+    AExceptionBase() {}
+    virtual ~AExceptionBase() {}
 
   // Modifying Methods
 

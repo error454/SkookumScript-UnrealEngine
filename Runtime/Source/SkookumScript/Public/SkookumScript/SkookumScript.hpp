@@ -18,7 +18,7 @@
 //=======================================================================================
 
 #include <AgogCore/AgogCore.hpp>
-#include <AgogCore/AString.hpp>
+#include <AgogCore/ASymbol.hpp>
 
 //=======================================================================================
 // Global Macros / Defines
@@ -109,76 +109,61 @@
 #endif
 
 //---------------------------------------------------------------------------------------
-// Initial/starting values for Skookum classes.
-struct SkookumVals
+// DLL API
+#ifdef SKOOKUMSCRIPT_API // Use SKOOKUMSCRIPT_API passed down from UE4 build system if present
+// SKOOKUMSCRIPT_API is either DLLIMPORT, DLLEXPORT or empty - map to AgogCore macros
+#ifndef DLLIMPORT
+  #define DLLIMPORT A_DLLIMPORT
+  #define DLLEXPORT A_DLLEXPORT
+#endif
+#define SK_API SKOOKUMSCRIPT_API
+#elif defined(SK_IS_DLL) // otherwise, DLL linkage control via SK_IS_DLL & SK_IS_BUILDING_SELF
+// Further down, we'll set A_DLLIMPORT and A_DLLEXPORT to platform-specific values
+#ifdef SK_IS_BUILDING_SELF
+#define SK_API A_DLLEXPORT
+#else
+#define SK_API A_DLLIMPORT
+#endif
+#else // SkookumScript is a static library
+#define SK_API
+#endif
+
+//---------------------------------------------------------------------------------------
+// Interface for SkookumScript to interact with its app
+class SkAppInfo
   {
-  // Methods
+  public:
 
-    SkookumVals();
-
-  // Public Data Members
-
-    // 'true' when initially constructed.  If an app needs to override the default values,
-    // check for 'true', set any desired custom values, and then set to 'false'.
-    bool m_using_defaults;
-
+    //---------------------------------------------------------------------------------------
     // If to use the built-in actor class. Otherwise you have to implement your own.
-    bool m_use_builtin_actor;
+    virtual bool use_builtin_actor() const { return true; }
 
+    //---------------------------------------------------------------------------------------
     // If you do not use the built-in actor class, here is where you specify the name of yours.
     // Or set to ASymbol::ms_null if you do not want an actor class at all.
-    AString m_custom_actor_class_name;
+    virtual ASymbol get_custom_actor_class_name() const { return ASymbol::ms_null; }
 
-    // Object pool size for SkBoolean objects.  Initial size and amount to increment when
-    // more objects are needed than are available.
-    uint m_pool_init_boolean;
-    uint m_pool_incr_boolean;
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for SkInstance objects  
+    virtual uint32_t get_pool_init_instance() const { return 3000; }
+    virtual uint32_t get_pool_incr_instance() const { return 256; }
 
-    // Object pool size for SkDataInstance objects.  Initial size and amount to increment
-    // when more objects are needed than are available.
-    uint m_pool_init_data_instance;
-    uint m_pool_incr_data_instance;
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for SkDataInstance objects
+    virtual uint32_t get_pool_init_data_instance() const { return 64; }
+    virtual uint32_t get_pool_incr_data_instance() const { return 64; }
 
-    // Object pool size for SkInstance objects.  Initial size and amount to increment
-    // when more objects are needed than are available.
-    uint m_pool_init_instance;
-    uint m_pool_incr_instance;
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for SkInvokedExpression objects
+    virtual uint32_t get_pool_init_iexpr() const { return 1152; }
+    virtual uint32_t get_pool_incr_iexpr() const { return 128; }
 
-    // Object pool size for SkInvokedExpression objects.  Initial size and amount to
-    // increment when more objects are needed than are available.
-    uint m_pool_init_iexpr;
-    uint m_pool_incr_iexpr;
-
-    // Object pool size for SkInvokedMethod objects.  Initial size and amount to
-    // increment when more objects are needed than are available.
-    uint m_pool_init_imethod;
-    uint m_pool_incr_imethod;
-
-    // Object pool size for SkInvokedCoroutine objects.  Initial size and amount to
-    // increment when more objects are needed than are available.
-    uint m_pool_init_icoroutine;
-    uint m_pool_incr_icoroutine;
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for SkInvokedCoroutine objects
+    virtual uint32_t get_pool_init_icoroutine() const { return 896; }
+    virtual uint32_t get_pool_incr_icoroutine() const { return 128; }
 
   };
-
-
-namespace Skookum
-  {
-
-  // This must be defined somewhere by the application.
-  SkookumVals & get_lib_vals();
-  // Its body would look something like this:
-  //  {
-  //  static SkookumVals s_values;
-  //  if (s_values.m_using_defaults)
-  //    {
-  //    // Set custom initial values
-  //    s_values.m_using_defaults = false;
-  //    }
-  //  return s_values;
-  //  }
-
-  }
 
 //=======================================================================================
 // Global Types
@@ -308,7 +293,7 @@ enum eSkAnnotationTarget
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript main class
 // Author(s)  Conan Reis
-class SkookumScript
+class SK_API SkookumScript
   {
   friend class SkActor;
   friend class SkBrain;
@@ -329,14 +314,12 @@ class SkookumScript
 
   // Class Methods
 
-    static void enable_flag(eFlag flag, bool enable_b = true);
-    static bool is_flag_set(eFlag flag);
-    static bool is_flags_set(uint32_t flag);
+    static void         set_app_info(SkAppInfo * app_info_p);
+    static SkAppInfo *  get_app_info();
 
     static void register_bind_atomics_func(void (*bind_atomics_f)());
-    static void pools_reserve();
 
-    static void initialize_pre_load();
+    static void initialize();
     static void initialize_post_load();
     static void initialize_session();
     static void initialize_instances(bool create_master_mind = true);
@@ -347,6 +330,10 @@ class SkookumScript
 
     static SkMind *     get_master_mind()                                     { return ms_master_mind_p; }
     static SkInstance * get_master_mind_or_meta_class();
+
+    static void enable_flag(eFlag flag, bool enable_b = true);
+    static bool is_flag_set(eFlag flag);
+    static bool is_flags_set(uint32_t flag);
 
 
     // Update methods (in order of preference) - just use most convenient version once an update
@@ -375,7 +362,14 @@ class SkookumScript
 
   protected:
 
+  // Class Methods
+
+    static void pools_reserve();
+    static void pools_empty();
+
   // Class Data Members
+
+    static SkAppInfo * ms_app_info_p;
 
     static SkClass * ms_startup_class_p;
     static SkMind *  ms_master_mind_p;   // created in `SkookumScript::initialize_session()`

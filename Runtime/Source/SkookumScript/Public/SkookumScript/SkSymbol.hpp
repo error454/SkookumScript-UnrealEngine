@@ -18,10 +18,11 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic Symbol class
-class SkSymbol : public SkClassBindingSimple<SkSymbol, ASymbol>
+class SK_API SkSymbol : public SkClassBindingSimple<SkSymbol, ASymbol>
   {
   public:
 
-    static void     register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

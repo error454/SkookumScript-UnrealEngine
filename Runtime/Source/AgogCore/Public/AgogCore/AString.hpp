@@ -137,7 +137,7 @@ enum eACharMatch
 // Common argument data structure used in most string methods.  It specifies the range
 // of the string to operate on and whether or not any character comparisons should be
 // case sensitive or not.  
-struct AStrArgs
+struct A_API AStrArgs
   {
   // Public Data Members
 
@@ -176,7 +176,7 @@ struct AStrArgs
 
 
 //---------------------------------------------------------------------------------------
-struct AFindStrArgs : public AStrArgs
+struct A_API AFindStrArgs : public AStrArgs
   {
   // Public Data Members
 
@@ -241,7 +241,7 @@ struct AFindStrArgs : public AStrArgs
 // InLibs     AgogCore/AgogCore.lib
 // Examples:    
 // Author(s)  Conan Reis
-class AString
+class A_API AString
   {
   friend class AStringBM;
   friend class ASymbol;
@@ -288,6 +288,10 @@ class AString
     static const char ms_char2lower[AString_ansi_charset_length];
 
   // Common Methods
+
+    static void  initialize();
+    static void  deinitialize();
+    static bool  is_initialized();
 
     A_NEW_OPERATORS(AString);
 
@@ -645,7 +649,7 @@ class ACompareStrInsensitive
 //---------------------------------------------------------------------------------------
 // Class used for the speedy substring search based on the Boyer Moore search
 // algorithm.
-class AStringBM : public AString
+class A_API AStringBM : public AString
   {
   public:
     friend class AString;

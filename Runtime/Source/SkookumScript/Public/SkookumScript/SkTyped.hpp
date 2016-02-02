@@ -38,7 +38,7 @@ class SkExpressionBase;
 // Notes      SkookumScript Typed Name
 // See Also   SkQualifier
 // Author(s)  Conan Reis
-struct SkTypedName : ANamed
+struct SK_API SkTypedName : ANamed
   {
 	SK_NEW_OPERATORS(SkTypedName);
   
@@ -80,7 +80,7 @@ typedef APSortedLogical<SkTypedName, ASymbol> tSkTypedNames;
 
 //---------------------------------------------------------------------------------------
 // SkookumScript Typed Name + Raw data info
-struct SkTypedNameRaw : SkTypedName
+struct SK_API SkTypedNameRaw : SkTypedName
   {
   SK_NEW_OPERATORS(SkTypedNameRaw);
 
@@ -106,13 +106,13 @@ typedef APSortedLogical<SkTypedNameRaw, ASymbol> tSkTypedNamesRaw;
 
 //---------------------------------------------------------------------------------------
 // SkookumScript Typed Name + Runtime Data Index
-struct SkTypedNameIndexed : SkTypedName
+struct SK_API SkTypedNameIndexed : SkTypedName
   {
   SK_NEW_OPERATORS(SkTypedNameIndexed);
 
   // Common Methods
 
-    SkTypedNameIndexed() : m_data_idx(0), m_has_been_bound(false), m_is_return_arg(false) {}
+    SkTypedNameIndexed() : m_data_idx(0), m_is_return_arg(false), m_has_been_bound(false) {}
     SkTypedNameIndexed(const ASymbol & name, const SkClassDescBase * type_p, uint32_t data_idx, bool is_return_arg) : SkTypedName(name, type_p), m_data_idx(data_idx), m_is_return_arg(is_return_arg), m_has_been_bound(false) {}
 
   // Data Members

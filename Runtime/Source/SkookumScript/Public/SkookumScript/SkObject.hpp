@@ -17,11 +17,12 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic object class
-class SkObject : public SkClassBindingAbstract<SkObject>, public SkInstance
+class SK_API SkObject : public SkClassBindingAbstract<SkObject>, public SkInstance
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };
 

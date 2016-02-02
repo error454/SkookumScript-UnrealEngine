@@ -5,7 +5,7 @@
 // Author: Markus Breyer
 //=======================================================================================
 
-#include "SkookumScriptEditorPrivatePCH.h"
+#include "SkookumScriptEditorGUIPrivatePCH.h"
 #include "SkookumStyles.h"
 
 #define IMAGE_BRUSH( RelativePath, ... )  FSlateImageBrush(ms_singleton_p->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)

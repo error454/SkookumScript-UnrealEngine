@@ -76,13 +76,13 @@ class AMethod : public AFunctionBase
 
   // Non-Modifying Methods
 
-    virtual AFunctionBase * copy_new() const;
+    virtual AFunctionBase * copy_new() const override;
 
   protected:
   // Data Members
 
     void (_OwnerType::* m_method_p)(); // pointer to method to call
-    _OwnerType *        m_owner_p;         // pointer to owner of method to call
+    _OwnerType *        m_owner_p;     // pointer to owner of method to call
 
   };  // AMethod
 

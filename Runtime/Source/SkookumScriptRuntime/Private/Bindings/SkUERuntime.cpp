@@ -48,15 +48,21 @@ namespace
       static SkBinaryHandleUE * create(const TCHAR * path_p)
         {
         FArchive * reader_p = IFileManager::Get().CreateFileReader(path_p);
-
         if (!reader_p)
           {
           return nullptr;
           }
-    
-        int32   size     = reader_p->TotalSize();
-        uint8 * binary_p = (uint8*)FMemory::Malloc(size);
 
+        int64 size = reader_p->TotalSize();
+        if (size == INDEX_NONE)
+          {
+          reader_p->Close();
+          delete reader_p;
+
+          return nullptr;
+          }
+
+        uint8 * binary_p = (uint8*)FMemory::Malloc(size);
         if (!binary_p)
           {
           reader_p->Close();
@@ -66,10 +72,16 @@ namespace
           }
 
         reader_p->Serialize(binary_p, size);
-        reader_p->Close();
+        bool success = reader_p->Close();
         delete reader_p;
 
-        return new SkBinaryHandleUE(binary_p, size);
+        if (!success)
+          {
+          delete binary_p;
+          return nullptr;
+          }
+
+        return new SkBinaryHandleUE(binary_p, (uint32_t)size);
         }
     };
 
@@ -129,6 +141,9 @@ void SkUERuntime::shutdown()
   // Unloads SkookumScript and cleans-up
   SkookumScript::deinitialize_session();
   SkookumScript::deinitialize();
+
+  // Gets rid of registered bind functions
+  SkBrain::unregister_all_bind_atomics_funcs();
 
   m_is_initialized = false;
   }

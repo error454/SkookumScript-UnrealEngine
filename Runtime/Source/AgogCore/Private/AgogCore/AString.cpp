@@ -15,6 +15,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/AString.hpp>
 #ifdef A_INL_IN_CPP
   #include <AgogCore/AString.inl>
@@ -29,6 +30,11 @@
   #include "windows.h"    // Uses:  WideCharToMultiByte()
 #endif
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wchar-subscripts" // Allow char-typed indices into arrays
+#endif
+
 
 //=======================================================================================
 // AString Class Data Members
@@ -40,6 +46,31 @@
 //=======================================================================================
 // Method Definitions
 //=======================================================================================
+
+//---------------------------------------------------------------------------------------
+
+void AString::initialize()
+  {
+  // Initialize constants
+  const_cast<AString&>(ms_comma) = ",";
+  const_cast<AString&>(ms_dos_break) = "\r\n";
+  }
+
+//---------------------------------------------------------------------------------------
+
+void AString::deinitialize()
+  {
+  // Deinitialize constants
+  const_cast<AString&>(ms_comma) = AString::ms_empty;
+  const_cast<AString&>(ms_dos_break) = AString::ms_empty;
+  }
+
+//---------------------------------------------------------------------------------------
+
+bool AString::is_initialized()
+  {
+  return !ms_comma.is_empty();
+  }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Converter methods
@@ -1525,7 +1556,7 @@ uint32_t AString::line_unindent(
   struct Nested
     {
     static char * set_column(
-      char * cstr_p, uint32_t column, uint32_t tab_stops)
+      char * cstr_p, uint32_t column, uint32_t _tab_stops)
       {
       uint32_t idx = 0u;
       uint32_t tab_spaces = 0u;
@@ -1540,7 +1571,7 @@ uint32_t AString::line_unindent(
         else
           {
           // Must be a tab - determine its number of spaces
-          tab_spaces = tab_stops - (idx % tab_stops);
+          tab_spaces = _tab_stops - (idx % _tab_stops);
 
           if ((idx + tab_spaces) >= column)
             {
@@ -4868,4 +4899,7 @@ void AStringBM::convert(
     }
   }
 
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 

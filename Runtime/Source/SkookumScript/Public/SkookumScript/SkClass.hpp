@@ -141,7 +141,7 @@ typedef SkInstance * (*tSkObjectIdLookupFunc)(SkObjectId * obj_id_p);
 // updater mind rather than the single "master mind".
 // 
 // Author(s)  Conan Reis
-class SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
+class SK_API SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
   {
   friend class SkClass;       // Accesses protected elements
   friend class SkClassUnion;  // Accesses protected elements
@@ -181,7 +181,7 @@ class SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
 
   // Methods
 
-    SkClass & get_class_info() const  { return *m_class_info_p; }
+    SkClass * get_class_info() const  { return m_class_info_p; }
 
     // Overriding from SkClassUnaryBase & SkClassDescBase
 
@@ -257,7 +257,7 @@ template<> inline SkMetaClass * SkInstance::as_data<SkMetaClass>() const { retur
 // Specialization - also ensures that `SkInvokedBase::get_arg_data<SkClass>(--)` etc. work properly
 // 
 // See: SkInstance::as<SkMetaClass>()
-template<> inline SkClass * SkInstance::as_data<SkClass>() const  { return &static_cast<const SkMetaClass *>(this)->get_class_info(); }
+template<> inline SkClass * SkInstance::as_data<SkClass>() const  { return static_cast<const SkMetaClass *>(this)->get_class_info(); }
 
 
 //---------------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ template<> inline SkClass * SkInstance::as_data<SkClass>() const  { return &stat
 //
 // Subclasses: SkActorClass
 // Author(s):  Conan Reis
-class SkClass : public SkClassUnaryBase, public ANamed
+class SK_API SkClass : public SkClassUnaryBase, public ANamed
   {
   // Accesses protected elements
   friend class SkBrain;
@@ -809,7 +809,7 @@ class SkClass : public SkClassUnaryBase, public ANamed
 //     - potentially make a SkClassDescRef that does this automatically
 //
 // Author(s)  Conan Reis
-class SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassUnion>
+class SK_API SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassUnion>
   {
   // Accesses protected elements
   friend class SkBrain;       

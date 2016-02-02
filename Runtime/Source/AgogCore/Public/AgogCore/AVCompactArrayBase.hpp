@@ -23,6 +23,10 @@
 #include <AgogCore/AMemory.hpp>
 #include <string.h>      // Uses: memcpy()
 
+#ifdef __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdynamic-class-memaccess" // Allow overclobbering of vtable pointers
+#endif
 
 //=======================================================================================
 // Global Structures
@@ -1040,7 +1044,7 @@ inline AVCompactArrayBase<_ElementType>::AVCompactArrayBase(
 template<class _ElementType>
 inline _ElementType * AVCompactArrayBase<_ElementType>::alloc_array(uint32_t count)
   {
-  _ElementType * buffer_p = count ? (_ElementType *)AMemory::malloc(
+  _ElementType * buffer_p = count ? (_ElementType *)AgogCore::get_app_info()->malloc(
     sizeof(_ElementType) * count, "AVCompactArray") : nullptr;
 
   A_VERIFY_MEMORY(!count || (buffer_p != nullptr), tAVCompactArrayBase);
@@ -1081,9 +1085,15 @@ inline void AVCompactArrayBase<_ElementType>::dtor_elems(
 template<class _ElementType>
 inline void AVCompactArrayBase<_ElementType>::free_array(_ElementType * array_p)
   {
-  AMemory::free(array_p);
+  if (array_p)
+    {
+    AgogCore::get_app_info()->free(array_p);
+    }
   }
 
+#ifdef __clang__
+  #pragma clang diagnostic pop
+#endif
 
 #endif  // __AVCOMPACTARRAYBASE_HPP
 

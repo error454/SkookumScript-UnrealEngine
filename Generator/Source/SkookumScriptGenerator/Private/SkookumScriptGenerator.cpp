@@ -466,7 +466,8 @@ void FSkookumScriptGenerator::generate_class_header_file(UStruct * class_or_stru
     *cpp_class_name);
 
   generated_code += TEXT("  public:\r\n");
-  generated_code += TEXT("    static void register_bindings();\r\n");
+  generated_code += TEXT("    static void      register_bindings();\r\n");
+  generated_code += TEXT("    static SkClass * get_class() { return ms_class_p; }\r\n");
   generated_code += TEXT("  };\r\n");
 
   save_text_file_if_changed(m_binding_code_path / class_header_file_name, generated_code);
@@ -1364,7 +1365,7 @@ void FSkookumScriptGenerator::generate_master_binding_file()
     {
     if (Cast<UClass>(class_p))
       {
-      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_class_mapping(SkUE%s::ms_class_p, SkUE%s::ms_uclass_p);\r\n"), *get_skookum_class_name(class_p), *get_skookum_class_name(class_p));
+      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_class_mapping(SkUE%s::get_class(), SkUE%s::ms_uclass_p);\r\n"), *get_skookum_class_name(class_p), *get_skookum_class_name(class_p));
       }
     }
 
@@ -1373,7 +1374,7 @@ void FSkookumScriptGenerator::generate_master_binding_file()
     {
     if (!Cast<UClass>(class_p))
       {
-      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_struct_mapping(SkUE%s::ms_class_p, SkUE%s::ms_ustruct_p);\r\n"), *get_skookum_class_name(class_p), *get_skookum_class_name(class_p));
+      generated_code += FString::Printf(TEXT("    SkUEClassBindingHelper::add_static_struct_mapping(SkUE%s::get_class(), SkUE%s::ms_ustruct_p);\r\n"), *get_skookum_class_name(class_p), *get_skookum_class_name(class_p));
       }
     }
   generated_code += TEXT("\r\n    }\r\n");

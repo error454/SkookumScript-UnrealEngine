@@ -72,7 +72,7 @@ const tSkRawDataInfo SkRawDataInfo_Invalid = uint64_t(int64_t(-1));
 // Subclasses SkClassUnaryBase(SkClass(SkActorClass), SkTypedClass, SkMetaClass),
 //            SkClassUnion
 // Author(s)  Conan Reis
-class SkClassDescBase 
+class SK_API SkClassDescBase
   {
   friend class SkBrain;  // Accesses protected elements
 
@@ -192,7 +192,7 @@ class SkClassDescBase
 //
 // Subclasses SkClass(SkActorClass), SkTypedClass, SkInvokableClass, SkMetaClass
 // Author(s)  Conan Reis
-class SkClassUnaryBase : public SkClassDescBase
+class SK_API SkClassUnaryBase : public SkClassDescBase
   {
   public:
 

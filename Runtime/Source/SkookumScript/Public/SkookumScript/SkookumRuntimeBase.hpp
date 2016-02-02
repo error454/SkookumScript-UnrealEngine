@@ -64,12 +64,11 @@ struct SkBinaryHandle
 // Skookum.  Each method should be overridden as needed.  
 // 
 // Other areas that have external function hooks:
-//   - Agog::dprint()
 //   - A_BREAK
 //   - memory allocate/deallocate, etc.
 //   - SkookumRemoteBase socket functionality + spawn remote IDE
 //   - SkDebug execution hooks
-class SkookumRuntimeBase
+class SK_API SkookumRuntimeBase
   {
   public:
 
@@ -85,7 +84,7 @@ class SkookumRuntimeBase
     // Binary Serialization / Loading Overrides
 
       virtual bool             is_binary_hierarchy_existing() = 0;
-      virtual void             on_binary_hierarchy_path_changed() = 0;
+      virtual void             on_binary_hierarchy_path_changed() = 0; // Called if the binaries are moved around on disk
       virtual SkBinaryHandle * get_binary_hierarchy() = 0;
       virtual SkBinaryHandle * get_binary_class_group(const SkClass & cls) = 0;
 

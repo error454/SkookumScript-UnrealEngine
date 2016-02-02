@@ -26,7 +26,7 @@
 // Notes      Class instance objects with one or more data members
 // Subclasses SkDataInstance(SkActor), SkMetaClass
 // Author(s)  Conan Reis
-class SkDataInstance : public SkInstance
+class SK_API SkDataInstance : public SkInstance
   {
   public:
   

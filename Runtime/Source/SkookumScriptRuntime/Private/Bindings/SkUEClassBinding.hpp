@@ -92,6 +92,9 @@ class SkUEClassBindingHelper
     static void           initialize_list_from_array(SkInstanceList * out_instance_list_p, const TArray<_DataType> & array);
 
     template<class _BindingClass, typename _DataType>
+    static void           initialize_empty_list_from_array(SkInstanceList * out_instance_list_p, const TArray<_DataType> & array);
+
+    template<class _BindingClass, typename _DataType>
     static SkInstance *   list_from_array(const TArray<_DataType> & array);
 
     template<class _BindingClass, typename _DataType, typename _CastType = _DataType>
@@ -305,7 +308,7 @@ class SkUEClassBindingStructPod : public SkUEClassBindingStruct<_BindingClass,_D
   {
   public:
 
-  #if defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
+  #ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
   #endif
@@ -314,7 +317,7 @@ class SkUEClassBindingStructPod : public SkUEClassBindingStruct<_BindingClass,_D
     static void mthd_ctor_copy(SkInvokedMethod * scope_p, SkInstance ** result_pp) { ::memcpy(&scope_p->this_as<_BindingClass>(), &scope_p->get_arg<_BindingClass>(SkArg_1), sizeof(typename _BindingClass::tDataType)); }
     static void mthd_op_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp) { ::memcpy(&scope_p->this_as<_BindingClass>(), &scope_p->get_arg<_BindingClass>(SkArg_1), sizeof(typename _BindingClass::tDataType)); }
 
-  #if defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
+  #ifdef __clang__
     #pragma clang diagnostic pop
   #endif
   };
@@ -484,10 +487,11 @@ SkInstance * SkUEClassBindingHelper::access_raw_data_struct(void * obj_p, tSkRaw
 //---------------------------------------------------------------------------------------
 
 template<class _BindingClass, typename _DataType>
-void SkUEClassBindingHelper::initialize_list_from_array(SkInstanceList * out_instance_list_p, const TArray<_DataType> & array)
+void SkUEClassBindingHelper::initialize_empty_list_from_array(SkInstanceList * out_instance_list_p, const TArray<_DataType> & array)
   {
   APArray<SkInstance> & list_instances = out_instance_list_p->get_instances();
-  list_instances.ensure_size_empty(array.Num());
+  SK_ASSERTX(list_instances.is_empty(), "initialize_empty_list_from_array() called with non-empty list!");
+  list_instances.ensure_size(array.Num());
   for (auto & item : array)
     {
     list_instances.append(*new_instance<_BindingClass, _DataType>(item));
@@ -497,10 +501,19 @@ void SkUEClassBindingHelper::initialize_list_from_array(SkInstanceList * out_ins
 //---------------------------------------------------------------------------------------
 
 template<class _BindingClass, typename _DataType>
-SkInstance * SkUEClassBindingHelper::list_from_array(const TArray<_DataType> & array)
+inline void SkUEClassBindingHelper::initialize_list_from_array(SkInstanceList * out_instance_list_p, const TArray<_DataType> & array)
+  {
+  out_instance_list_p->empty();
+  initialize_empty_list_from_array<_BindingClass, _DataType>(out_instance_list_p, array);
+  }
+
+//---------------------------------------------------------------------------------------
+
+template<class _BindingClass, typename _DataType>
+inline SkInstance * SkUEClassBindingHelper::list_from_array(const TArray<_DataType> & array)
   {
   SkInstance * instance_p = SkList::new_instance(array.Num());
-  initialize_list_from_array<_BindingClass, _DataType>(&instance_p->as<SkList>(), array);
+  initialize_empty_list_from_array<_BindingClass, _DataType>(&instance_p->as<SkList>(), array);
   return instance_p;
   }
 

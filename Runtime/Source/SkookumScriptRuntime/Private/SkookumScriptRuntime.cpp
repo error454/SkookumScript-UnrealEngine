@@ -12,6 +12,7 @@
 #include "Bindings/SkUERuntime.hpp"
 #include "Bindings/SkUERemote.hpp"
 #include "Bindings/SkUEBlueprintInterface.hpp"
+#include "Bindings/SkUESymbol.hpp"
 
 #include "Runtime/Launch/Resources/Version.h"
 #include "Engine/World.h"
@@ -21,12 +22,37 @@
 
 #include <SkUEWorld.generated.hpp>
 
-#ifdef A_PLAT_PC
-  #include <windows.h>  // Uses: IsDebuggerPresent(), OutputDebugStringA()
-#endif
-
 // For profiling SkookumScript performance
 DECLARE_CYCLE_STAT(TEXT("SkookumScript Time"), STAT_SkookumScriptTime, STATGROUP_Game);
+
+//---------------------------------------------------------------------------------------
+// UE4 implementation of AAppInfoCore
+class FAppInfo : public AAppInfoCore, public SkAppInfo
+  {
+  public:
+
+    FAppInfo();
+    ~FAppInfo();
+
+  protected:
+
+    // AAppInfoCore implementation
+
+    virtual void *             malloc(size_t size, const char * debug_name_p) override;
+    virtual void               free(void * mem_p) override;
+    virtual uint32_t           request_byte_size(uint32_t size_requested) override;
+    virtual bool               is_using_fixed_size_pools() override;
+    virtual void               debug_print(const char * cstr_p) override;
+    virtual AErrorOutputBase * on_error_pre(bool nested) override;
+    virtual void               on_error_post(eAErrAction action) override;
+    virtual void               on_error_quit() override;
+
+    // SkAppInfo implementation
+
+    virtual bool               use_builtin_actor() const override;
+    virtual ASymbol            get_custom_actor_class_name() const override;
+
+  };
 
 //---------------------------------------------------------------------------------------
 class FSkookumScriptRuntime : public ISkookumScriptRuntime
@@ -74,6 +100,8 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
 
     // Local methods
 
+    void          ensure_runtime_initialized();
+
     void          tick_game(float deltaTime);
     void          tick_editor(float deltaTime);
 
@@ -86,6 +114,8 @@ class FSkookumScriptRuntime : public ISkookumScriptRuntime
     void          on_world_cleanup(UWorld * world_p, bool session_ended_b, bool cleanup_resources_b);
 
   // Data Members
+
+    FAppInfo          m_app_info;
 
     SkUERuntime       m_runtime;
 
@@ -228,208 +258,122 @@ DEFINE_LOG_CATEGORY(LogSkookum);
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Memory Allocation with Descriptions
+// FAppInterface implementation
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// These must be defined because A_MEMORY_FUNCS_PRESENT is set in AgogCore/AgogExtHook.hpp
-
-// Note that the new/delete allocation functions without description arguments are defined
-// in the IMPLEMENT_MODULE macro above:
-//   ```
-//   void * operator new(size_t Size);
-//   void * operator new[](size_t Size);
-//   void   operator delete(void * Ptr);
-//   void   operator delete[](void * Ptr);
-//   ```
-
 //---------------------------------------------------------------------------------------
-void * operator new(size_t size, const char * desc_cstr_p)
+
+FAppInfo::FAppInfo()
   {
-  return FMemory::Malloc(size, 16); // $Revisit - MBreyer Make alignment controllable by caller
+  AgogCore::initialize(this);
+  SkookumScript::set_app_info(this);
+  SkUESymbol::initialize();
   }
 
 //---------------------------------------------------------------------------------------
-void * operator new[](size_t size, const char * desc_cstr_p)
-  {
-  return FMemory::Malloc(size, 16); // $Revisit - MBreyer Make alignment controllable by caller
-  }
 
-// $Note - *** delete operators with additional arguments cannot be called explicitly
-// - they are only called on class destruction on a paired new with similar arguments.
-// This means that a simple delete call will often call the single argument operator
-// delete(void * mem_p) so take care to ensure that the proper delete is paired with a
-// corresponding new.
-
-//---------------------------------------------------------------------------------------
-void operator delete(void * buffer_p, const char * desc_cstr_p)
+FAppInfo::~FAppInfo()
   {
-  FMemory::Free(buffer_p);
+  SkUESymbol::deinitialize();
+  SkookumScript::set_app_info(nullptr);
+  AgogCore::deinitialize();
   }
 
 //---------------------------------------------------------------------------------------
-void operator delete[](void * buffer_p, const char * desc_cstr_p)
+
+void * FAppInfo::malloc(size_t size, const char * debug_name_p)
   {
-  FMemory::Free(buffer_p);
+  return size ? FMemory::Malloc(size, 16) : nullptr; // $Revisit - MBreyer Make alignment controllable by caller
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FAppInfo::free(void * mem_p)
+  {
+  if (mem_p) FMemory::Free(mem_p); // $Revisit - MBreyer Make alignment controllable by caller
+  }
+
+//---------------------------------------------------------------------------------------
+
+uint32_t FAppInfo::request_byte_size(uint32_t size_requested)
+  {
+  // Since we call the 16-byte aligned allocator
+  return a_align_up(size_requested, 16);
+  }
+
+//---------------------------------------------------------------------------------------
+
+bool FAppInfo::is_using_fixed_size_pools()
+  {
+  return false;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FAppInfo::debug_print(const char * cstr_p)
+  {
+  /*
+  // Strip LF from start and end to prevent unnecessary gaps in log
+  FString msg(cstr_p);
+  msg.RemoveFromEnd(TEXT("\n"));
+  msg.RemoveFromEnd(TEXT("\n"));
+  msg.RemoveFromStart(TEXT("\n"));
+  msg.RemoveFromStart(TEXT("\n"));
+  UE_LOG(LogSkookum, Log, TEXT("%s"), *msg);
+  */
+      
+  ADebug::print_std(cstr_p);
+  }
+
+//---------------------------------------------------------------------------------------
+
+AErrorOutputBase * FAppInfo::on_error_pre(bool nested)
+  {
+  static ASimpleErrorOutput s_simple_err_out;
+  return &s_simple_err_out;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FAppInfo::on_error_post(eAErrAction action)
+  {
+  // Depending on action could switch back to fullscreen
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FAppInfo::on_error_quit()
+  {
+  exit(EXIT_FAILURE);
+  }
+
+//---------------------------------------------------------------------------------------
+
+bool FAppInfo::use_builtin_actor() const
+  {
+  return false;
+  }
+
+//---------------------------------------------------------------------------------------
+
+ASymbol FAppInfo::get_custom_actor_class_name() const
+  {
+  return ASymbol_Actor;
   }
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Agog Namespace Functions
+// FSkookumScriptRuntime
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-namespace Agog
-  {
-
-  //---------------------------------------------------------------------------------------
-  // Description Returns constants / values used by the AgogCore library.
-  // Returns     constants / values used by the AgogCore library.
-  // Examples    Called internally
-  // Author(s)   Conan Reis
-  AgogCoreVals & get_agog_core_vals()
-    {
-    static AgogCoreVals s_values;
-
-    //if (s_values.m_using_defaults)
-    //  {
-    //  // Set custom initial values
-    //  s_values.m_using_defaults = false;
-    //  }
-
-    return s_values;
-    }
-
-  //---------------------------------------------------------------------------------------
-  // Prints supplied C-string to debug console - which can be a debugger window, standard
-  // out, something custom in the app, etc.
-  // 
-  // #Notes
-  //   Called by ADebug print functions & A_DPRINT() which call the ADebug print functions.
-  //   
-  // #See Also
-  //   ADebug print functions which all call this function.
-  //   Also the functions ADebug::register_print_*() can register additional print
-  //   functions.
-  void dprint(const char * cstr_p)
-    {
-    #ifdef A_PLAT_PC
-      if (FPlatformMisc::IsDebuggerPresent())
-        {
-        // Note that Unicode version OutputDebugStringW() actually calls OutputDebugStringA()
-        // so calling it directly is faster.
-        ::OutputDebugStringA(cstr_p);
-        }
-      //else
-    #endif
-      //  {
-      //  ADebug::print_std(cstr_p);
-      //  }
-    }
-
-  //---------------------------------------------------------------------------------------
-  // Description Called whenever an error occurs but *before* a choice has been made as to
-  //             how it should be resolved.  It optionally creates an error output object
-  //             that will have its determine_choice() called if 'nested' is false.
-  // Returns     an AErrorOutputBase object to call determine_choice() on or NULL if a
-  //             default resolve error choice is to be made without prompting the user with
-  //             output to the debug output window.
-  // Arg         nested - Indicates whether the error is nested inside another error - i.e.
-  //             an additional error happened before a prior error was fully resolved
-  //             (while unwinding the stack on a 'continue' exception throw for example).
-  //             determine_choice() will *not* be called if 'nested' is true.
-  // Examples    Called by ADebug class - before on_error_post() and on_error_quit()
-  // See Also    ADebug, AErrPopUp, AErrorDialog
-  // Author(s)   Conan Reis
-  AErrorOutputBase * on_error_pre(bool nested)
-    {
-    static ASimpleErrorOutput s_simple_err_out;
-
-    return &s_simple_err_out;
-    }
-
-  //---------------------------------------------------------------------------------------
-  // Description Called whenever an error occurs and *after* a choice has been made as to
-  //             how it should be resolved.
-  // Arg         action - the action that will be taken to attempt resolve the error.
-  // Examples    Called by ADebug class - after on_error_pre() and before on_error_quit()
-  // Author(s)   Conan Reis
-  void on_error_post(eAErrAction action)
-    {
-    // Depending on action could switch back to fullscreen
-    }
-
-  //---------------------------------------------------------------------------------------
-  // Description Called if 'Quit' is chosen during error.
-  // Examples    Called by ADebug class - after on_error_pre() and on_error_post()
-  // Author(s)   Conan Reis
-  void on_error_quit()
-    {
-    //AApplication::shut_down();
-    
-    exit(EXIT_FAILURE);
-    }
-
-  //---------------------------------------------------------------------------------------
-  void * malloc_func(size_t size, const char * name_p)
-    {
-    return size ? FMemory::Malloc(size, 16) : nullptr; // $Revisit - MBreyer Make alignment controllable by caller
-    }
-
-  //---------------------------------------------------------------------------------------
-  void free_func(void * mem_p)
-    {
-    if (mem_p) FMemory::Free(mem_p); // $Revisit - MBreyer Make alignment controllable by caller
-    }
-
-  //---------------------------------------------------------------------------------------
-  // Converts the size requested to allocate to the actual amount allocated.
-  uint32_t req_byte_size_func(uint32_t bytes_requested)
-    {
-    // Assume 1:1 for default
-    return bytes_requested;
-    }
-
-  }  // End Agog namespace
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Skookum Namespace Functions
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-namespace Skookum
-  {
-
-  //---------------------------------------------------------------------------------------
-  // Description Returns constants / values used by the SkookumScript library.
-  // Returns     constants / values used by the SkookumScript library.
-  // Examples    Called internally
-  // Author(s)   Conan Reis
-  SkookumVals & get_lib_vals()
-    {
-    static SkookumVals s_values;
-
-    if (s_values.m_using_defaults)
-      {
-      // Set custom initial values
-      s_values.m_using_defaults = false;
-
-      // Unreal uses its own actor class
-      s_values.m_use_builtin_actor = false; 
-      s_values.m_custom_actor_class_name = "Actor";
-      }
-
-    return s_values;
-    }
-
-  }
-
 
 //---------------------------------------------------------------------------------------
 FSkookumScriptRuntime::FSkookumScriptRuntime()
-  : m_game_world_p(nullptr)
+  : 
 #ifdef SKOOKUM_REMOTE_UNREAL
-  , m_freshen_binaries_requested(WITH_EDITORONLY_DATA) // With cooked data, load binaries immediately and do not freshen
+  m_freshen_binaries_requested(WITH_EDITORONLY_DATA), // With cooked data, load binaries immediately and do not freshen
 #endif
-  , m_editor_world_p(nullptr)
+  m_game_world_p(nullptr),
+  m_editor_world_p(nullptr)
   {
   //m_runtime.set_compiled_path("Scripts" SK_BITS_ID "\\");
   }
@@ -447,7 +391,7 @@ void FSkookumScriptRuntime::StartupModule()
       }
   #endif
 
-  A_DPRINT(A_SOURCE_STR " Starting up SkookumScript plug-in modules\n");
+  A_DPRINT("Starting up SkookumScript plug-in modules\n");
 
   // Note that FWorldDelegates::OnPostWorldCreation has world_p->WorldType set to None
   // Note that FWorldDelegates::OnPreWorldFinishDestroy has world_p->GetName() set to "None"
@@ -455,9 +399,6 @@ void FSkookumScriptRuntime::StartupModule()
   m_on_world_init_pre_handle  = FWorldDelegates::OnPreWorldInitialization.AddRaw(this, &FSkookumScriptRuntime::on_world_init_pre);
   m_on_world_init_post_handle = FWorldDelegates::OnPostWorldInitialization.AddRaw(this, &FSkookumScriptRuntime::on_world_init_post);
   m_on_world_cleanup_handle   = FWorldDelegates::OnWorldCleanup.AddRaw(this, &FSkookumScriptRuntime::on_world_cleanup);
-
-  // Hook up Unreal memory allocator
-  AMemory::override_functions(&Agog::malloc_func, &Agog::free_func, &Agog::req_byte_size_func);
 
   // Gather and register all UE classes/structs/enums known to SkookumScript
   SkUEBindings::register_static_types();
@@ -529,6 +470,12 @@ void FSkookumScriptRuntime::on_world_init_pre(UWorld * world_p, const UWorld::In
 void FSkookumScriptRuntime::on_world_init_post(UWorld * world_p, const UWorld::InitializationValues init_vals)
   {
   //A_DPRINT("on_world_init_post: %S %p\n", *world_p->GetName(), world_p);
+
+  #if !WITH_EDITORONLY_DATA
+    // Resolve raw data for all classes if a callback function is given
+    // $Revisit MBreyer this gets called several times (so in cooked builds everything gets resolved) - fix so it's called only once
+    SkBrain::ms_object_class_p->resolve_raw_data_recurse();
+  #endif
 
   #if defined(SKOOKUM_REMOTE_UNREAL)
     if (world_p->IsGameWorld())
@@ -623,6 +570,41 @@ void FSkookumScriptRuntime::ShutdownModule()
   }
 
 //---------------------------------------------------------------------------------------
+
+void FSkookumScriptRuntime::ensure_runtime_initialized()
+  {
+  if (!m_runtime.is_initialized())
+    {
+    m_runtime.startup();
+
+    #ifdef SKOOKUM_REMOTE_UNREAL
+      // At this point, have zero patience with the IDE and launch it if not connected
+      if (!IsRunningCommandlet())
+        {
+        // At this point, wait if necessary to make sure we are connected
+        m_remote_client.ensure_connected(0.0);
+        if (m_remote_client.is_authenticated())
+          {
+          // Kick off re-compilation of the binaries
+          m_remote_client.cmd_compiled_state(true);
+          m_freshen_binaries_requested = false; // Request satisfied
+          }
+        else
+          {
+          // If no remote connection, attempt to load binaries at this point
+          bool success_b = m_runtime.load_compiled_scripts();
+          SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+          }
+        }
+    #else
+      // If no remote connection, load binaries at this point
+      bool success_b = m_runtime.load_compiled_scripts();
+      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
+    #endif
+    }
+  }
+
+//---------------------------------------------------------------------------------------
 // Update SkookumScript in game
 //
 // #Params:
@@ -683,6 +665,9 @@ void FSkookumScriptRuntime::tick_remote()
     // If the game is currently running, delay until it's not
     if (m_remote_client.is_load_compiled_binaries_requested() && !m_game_world_p)
       {
+      // Makes sure the SkookumScript runtime object is initialized at this point
+      ensure_runtime_initialized();
+
       // Load the Skookum class hierarchy scripts in compiled binary form
       bool is_first_time = !is_skookum_initialized();
 
@@ -765,35 +750,7 @@ void FSkookumScriptRuntime::set_editor_interface(ISkookumScriptRuntimeEditorInte
 void FSkookumScriptRuntime::on_editor_map_opened()
   {
   // When editor is present, initialize Sk here
-  if (!m_runtime.is_initialized())
-    {
-    m_runtime.startup();
-
-    #ifdef SKOOKUM_REMOTE_UNREAL
-      // At this point, have zero patience with the IDE and launch it if not connected
-      if (!IsRunningCommandlet())
-        {
-        // At this point, wait if necessary to make sure we are connected
-        m_remote_client.ensure_connected(0.0);
-        if (m_remote_client.is_authenticated())
-          {
-          // Kick off re-compilation of the binaries
-          m_remote_client.cmd_compiled_state(true);
-          m_freshen_binaries_requested = false; // Request satisfied
-          }
-        else
-          {
-          // If no remote connection, attempt to load binaries at this point
-          bool success_b = m_runtime.load_compiled_scripts();
-          SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
-          }
-        }
-    #else
-      // If no remote connection, load binaries at this point
-      bool success_b = m_runtime.load_compiled_scripts();
-      SK_ASSERTX(success_b, AErrMsg("Unable to load SkookumScript compiled binaries!", AErrLevel_notify));
-    #endif
-    }
+  ensure_runtime_initialized();
   }
 
 //---------------------------------------------------------------------------------------

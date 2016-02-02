@@ -15,7 +15,7 @@
 // Includes
 //=======================================================================================
 
-#include <AgogCore/AgogCore.hpp>
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/ARandom.hpp>
 #include <AgogCore/AStringRef.hpp>
 #include <AgogCore/AString.hpp>
@@ -36,6 +36,9 @@
 #include <AgogCore/AMethodArg.hpp>
 #include <AgogCore/APCompactArray.hpp>
 
+#if defined(A_PLAT_PC) && defined(A_EXTRA_CHECK)
+  #include <windows.h> // OutputDebugStringA
+#endif
 
 //=======================================================================================
 // Local Global Structures
@@ -55,9 +58,13 @@ enum
 // Ensures that this translation unit is initialized before all others except for
 // compiler translation units
 // ***Note: This may not work with all compilers (Borland for example).
-#pragma warning( disable : 4073 )  // Disable warning message for the next line
-#pragma init_seg(lib)
+#ifdef _MSC_VER
+  #pragma warning( disable : 4073 )  // Disable warning message for the next line
+  #pragma init_seg(lib)
+#endif
 
+// The UE4 build system requires to link with a function named like this, so give it one
+void EmptyLinkFunctionForStaticInitializationAgogCore(void) {}
 
 namespace
   {
@@ -65,33 +72,7 @@ namespace
   // Persistent C-string buffer for temporary strings
   char g_cstr_p[AFormat_string_char_max];
 
-  // Default values for AgogCoreVals
-  const uint32_t ADatum_pool_size     =   256u;
-  const uint32_t ADatum_pool_incr     =    64u;
-  const uint32_t AStringRef_pool_size = 40960u;
-  const uint32_t AStringRef_pool_incr =   256u;
-  const uint32_t ASymbolRef_pool_size =  2048u;
-  const uint32_t ASymbolRef_pool_incr =   256u;
-
   };
-
-
-//---------------------------------------------------------------------------------------
-// Constructor
-// See:        Agog::get_agog_core_vals()
-// Notes:      This is placed in the .cpp file so changes can be made and only this
-//             module will need to recompile.
-// Author(s):   Conan Reis
-AgogCoreVals::AgogCoreVals() :
-  m_using_defaults(true),
-  m_pool_init_datum(ADatum_pool_size),
-  m_pool_incr_datum(ADatum_pool_incr),
-  m_pool_init_string_ref(AStringRef_pool_size),
-  m_pool_incr_string_ref(AStringRef_pool_incr),
-  m_pool_init_symbol_ref(ASymbolRef_pool_size),
-  m_pool_incr_symbol_ref(ASymbolRef_pool_incr)
-  {
-  }
 
 
 //=======================================================================================
@@ -105,8 +86,8 @@ bool *             AString::ms_is_uppercase = AString::ms_char_match_table[AChar
 bool *             AString::ms_is_digit     = AString::ms_char_match_table[ACharMatch_digit];
 const AString      AString::ms_empty(AStringRef::get_empty());
 //A_DSCOPE_LOG(AString_ms_empty, A_SOURCE_STR "AString::ms_empty - ctor\n", A_SOURCE_STR "AString::ms_empty - dtor\n");
-const AString      AString::ms_comma(",", 1u);
-const AString      AString::ms_dos_break("\r\n", 2u);
+const AString      AString::ms_comma;
+const AString      AString::ms_dos_break;
 AConstructDestruct AString::ms_construct_destruct(init_match_table);  // ctor/dtor must be last data member
 
 // Convert ASCII character to uppercase.
@@ -204,7 +185,7 @@ const char AString::ms_char2lower[256] =
 //=======================================================================================
 
 #if defined(A_SYMBOLTABLE_CLASSES)
-  ASymbolTable * ASymbolTable::ms_main_p = &ASymbolTable::get_main();
+  ASymbolTable * ASymbolTable::ms_main_p = nullptr;
 #endif
 
 
@@ -226,6 +207,57 @@ ARandom ARandom::ms_gen;
 //=======================================================================================
 // Global Functions
 //=======================================================================================
+
+namespace AgogCore
+  {
+
+  // Pointer to app interface of enclosing app
+  static AAppInfoCore * s_app_info_p;
+
+  //---------------------------------------------------------------------------------------
+  // Static/global initialization of AgogCore
+  void initialize(AAppInfoCore * app_info_p)
+    {
+    // Remember app interface
+    s_app_info_p = app_info_p;
+
+    // Now initialize subsystems
+    AString::initialize();
+    ASymbolTable::initialize();
+    ADebug::initialize();
+    }
+
+  //---------------------------------------------------------------------------------------
+  // Static/global deinitialization of AgogCore
+  void deinitialize()
+    {
+    // Deinitialize subsystems
+    ADebug::deinitialize();
+    ASymbolTable::deinitialize();
+    AString::deinitialize();
+
+    // Clear app interface
+    s_app_info_p = nullptr;
+    }
+
+  //---------------------------------------------------------------------------------------
+  // Get app interface pointer
+  AAppInfoCore * get_app_info()
+    {
+    #ifdef A_EXTRA_CHECK
+      if (!s_app_info_p) A_BREAK(); // AgogCore app interface not set! AgogCore::initialize() must be called by the enclosing app before this point in code is reached.
+    #endif
+    return s_app_info_p;
+    }
+
+  //---------------------------------------------------------------------------------------
+
+  extern A_API void set_app_info(AAppInfoCore * app_info_p)
+    {
+    s_app_info_p = app_info_p;
+    }
+
+  }
 
 //---------------------------------------------------------------------------------------
 // Creates a formatted C-string.  The character buffer is guaranteed to be
@@ -284,7 +316,7 @@ char * a_cstr_format(const char * format_cstr_p, ...)
 //             to modify it or delete it without making a copy first.
 // Arg         format_str_p - follows the same format as the C printf(), sprintf(), etc.
 //             See the MSDev online help for 'Format Specification Fields' for a
-//             description. 
+//             description.                               onew
 // Arg         ... - variable length arguments expected by the formatted string.
 //
 //             #### IMPORTANT #### Since this method currently uses the standard C string
@@ -320,3 +352,77 @@ AString a_str_format(const char * format_cstr_p, ...)
 
   return AString(g_cstr_p, AFormat_string_char_max, length, false);
   }
+
+//=======================================================================================
+// AAppInfoCoreDefault
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+
+void * AAppInfoCoreDefault::malloc(size_t size, const char * debug_name_p)
+  {
+  return ::malloc(size);
+  }
+
+//---------------------------------------------------------------------------------------
+
+void AAppInfoCoreDefault::free(void * mem_p)
+  {
+  ::free(mem_p);
+  }
+
+//---------------------------------------------------------------------------------------
+
+uint32_t AAppInfoCoreDefault::request_byte_size(uint32_t size_requested)
+  {
+  return a_align_up(size_requested, 8);
+  }
+
+//---------------------------------------------------------------------------------------
+
+bool AAppInfoCoreDefault::is_using_fixed_size_pools()
+  {
+  return false;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void AAppInfoCoreDefault::debug_print(const char * cstr_p)
+  {
+  #if defined(A_PLAT_PC) && defined(A_EXTRA_CHECK)
+    if (::IsDebuggerPresent())
+      {
+      // Note that Unicode version OutputDebugStringW() actually calls OutputDebugStringA()
+      // so calling it directly is faster.
+      ::OutputDebugStringA(cstr_p);
+      }
+    else
+      {
+      ADebug::print_std(cstr_p);
+      }
+  #else
+    ADebug::print_std(cstr_p);
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+
+AErrorOutputBase * AAppInfoCoreDefault::on_error_pre(bool nested)
+  {
+  return nullptr;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void AAppInfoCoreDefault::on_error_post(eAErrAction action)
+  {
+  // Do nothing
+  }
+
+//---------------------------------------------------------------------------------------
+
+void AAppInfoCoreDefault::on_error_quit()
+  {
+  exit(EXIT_FAILURE);
+  }
+

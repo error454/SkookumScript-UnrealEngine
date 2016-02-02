@@ -67,6 +67,13 @@ void SkUEName::register_bindings()
   ms_class_p->register_method_func(ASymbol_String, SkUEName_Impl::mthd_String, SkBindFlag_instance_no_rebind);
 
   // Hook up extra String methods
-  SkString::ms_class_p->register_method_func("Name", SkUEName_Impl::mthd_String_to_Name);
+  SkString::get_class()->register_method_func("Name", SkUEName_Impl::mthd_String_to_Name);
+  }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkUEName::get_class()
+  {
+  return ms_class_p;
   }
 

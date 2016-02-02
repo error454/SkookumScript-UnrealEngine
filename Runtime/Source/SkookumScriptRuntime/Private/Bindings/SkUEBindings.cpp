@@ -68,12 +68,12 @@ void SkUEBindings::register_static_types()
 void SkUEBindings::register_all_bindings()
   {
   // Core Overlay
-  SkBoolean::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_boolean);
-  SkInteger::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_integer);
-  SkReal::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkReal>);
-  SkString::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_string);
-  SkEnum::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_enum);
-  SkList::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_list);
+  SkBoolean::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_boolean);
+  SkInteger::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_integer);
+  SkReal::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkReal>);
+  SkString::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_string);
+  SkEnum::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_enum);
+  SkList::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_list);
 
   // VectorMath Overlay
   SkVector2::register_bindings();
@@ -92,5 +92,5 @@ void SkUEBindings::register_all_bindings()
   SkUEEntityClass_Ext::register_bindings();
   SkUEActor_Ext::register_bindings();
   SkUEName::register_bindings();
-  SkUEName::ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkUEName>);
+  SkUEName::get_class()->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkUEName>);
   }

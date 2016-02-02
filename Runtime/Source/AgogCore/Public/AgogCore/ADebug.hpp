@@ -272,7 +272,7 @@ enum eAErrLevel
 //---------------------------------------------------------------------------------------
 // Describes information (both high and low level) about an exception.
 // Used by AErrorOutputBase::determine_choice().
-struct AErrMsg
+struct A_API AErrMsg
   {
   // Common Methods
     
@@ -338,7 +338,7 @@ struct AErrMsg
 //            input or a default action. 
 // Subclasses AErrPopUp, AErrorDialog
 // Author(s)  Conan Reis
-class AErrorOutputBase
+class A_API AErrorOutputBase
   {
   public:
   // Common Methods
@@ -359,16 +359,20 @@ typedef AFunctionArgBase<AString *>       tAContextFunc;
 
 //---------------------------------------------------------------------------------------
 // Author   Conan Reis
-class ADebug
+class A_API ADebug
   {
   public:
 
   // Class Methods
 
+    static void    initialize();
+    static void    deinitialize();
+
     static void    info();
     static bool    context_append(AString * str_p);
     static AString context_string();
     static bool    is_nested_error();
+    static bool    is_debugging();
     static void    print(const char * cstr_p, bool call_print_funcs_b = true);
     static void    print(const AString & str, bool call_print_funcs_b = true);
     static void    print_format(const char * format_cstr_p, ...);

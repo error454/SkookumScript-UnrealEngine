@@ -18,6 +18,7 @@
 //=======================================================================================
 
 #include <SkookumScript/SkookumScript.hpp>
+#include <AgogCore/AString.hpp>
 
 
 //=======================================================================================
@@ -80,7 +81,7 @@ const uint32_t SkRemote_version_reply_byte_size = 13u;  // command(4) + version(
 
 //---------------------------------------------------------------------------------------
 // Information about the current project that gets transmitted during authentication
-struct SkProjectInfo
+struct SK_API SkProjectInfo
   {
   // Data members
   AString m_engine_id;                      // String representing the type and version of the engine connected to the IDE, e.g. "Unreal Engine 4.10.1"
@@ -102,7 +103,7 @@ struct SkProjectInfo
 //---------------------------------------------------------------------------------------
 // Skookum remote IDE communication commands that are common to both the Skookum client
 // environment and the server IDE.
-class SkookumRemoteBase
+class SK_API SkookumRemoteBase
   {
   public:
   // Nested Types
@@ -223,14 +224,14 @@ class SkookumRemoteBase
 
     eSkLocale    get_mode() const                                 { return m_mode; }
     virtual void set_mode(eSkLocale mode);
-    bool         is_authenticating() const                        { return this && ((m_connect_state == ConnectState_authenticating) || (m_connect_state == ConnectState_authenticated)); }
-    bool         is_authenticated() const                         { return this && (m_connect_state == ConnectState_authenticated); }
-    bool         is_embedded() const                              { return (this == nullptr) || (m_mode == SkLocale_embedded); }
-    bool         is_remote_ide() const                            { return this && (m_mode == SkLocale_ide); }
-    bool         is_remote_runtime() const                        { return this && (m_mode == SkLocale_runtime); }
-    bool         is_connecting() const                            { return this && (m_connect_state <= ConnectState_authenticated); }
-    virtual bool is_connected() const                             { return this && (m_mode != SkLocale_embedded); }
-    bool         is_symbol_db_remote() const                      { return this && ((m_remote_flags & SkRemoteFlag_symbol_db) != 0u); }
+    bool         is_authenticating() const                        { return ((m_connect_state == ConnectState_authenticating) || (m_connect_state == ConnectState_authenticated)); }
+    bool         is_authenticated() const                         { return (m_connect_state == ConnectState_authenticated); }
+    bool         is_embedded() const                              { return (m_mode == SkLocale_embedded); }
+    bool         is_remote_ide() const                            { return (m_mode == SkLocale_ide); }
+    bool         is_remote_runtime() const                        { return (m_mode == SkLocale_runtime); }
+    bool         is_connecting() const                            { return (m_connect_state <= ConnectState_authenticated); }
+    virtual bool is_connected() const                             { return (m_mode != SkLocale_embedded); }
+    bool         is_symbol_db_remote() const                      { return ((m_remote_flags & SkRemoteFlag_symbol_db) != 0u); }
     virtual void disconnect();
 
     virtual bool should_class_ctors_be_called() const;

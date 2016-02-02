@@ -27,6 +27,9 @@
 #if defined(A_EXTRA_CHECK) && !defined(AORPOOL_NO_USAGE_COUNT) && !defined(AORPOOL_USAGE_COUNT)
   // If this is defined track the current and maximum number of objects used.
   #define AORPOOL_USAGE_COUNT
+  // If this is defined store a callstack with each object allocated, and link to list of allocated objects
+  // CAUTION: Big overhead!
+  //#define AORPOOL_ALLOCATION_TRACKING
 #endif
 
 
@@ -88,8 +91,9 @@ class AObjReusePool
 
   // Accessor Methods
 
-    uint32_t get_expand_size() const     { return m_expand_size; }
-    uint32_t get_count_initial() const   { return m_blocks.get_first()->m_size; }
+    uint32_t get_initial_size() const     { return m_initial_size; }
+    uint32_t get_expand_size() const      { return m_expand_size; }
+    uint32_t get_count_initial() const    { return m_blocks.get_first()->m_size; }
   #ifdef AORPOOL_USAGE_COUNT
     uint32_t get_count_used() const       { return m_count_now; }
     uint32_t get_count_max() const        { return m_count_max; }
@@ -102,16 +106,15 @@ class AObjReusePool
     uint32_t get_count_overflow() const   { return 0; }
     uint32_t get_count_available() const  { return 0; }
     uint32_t get_bytes_allocated() const  { return 0; }
-#endif
+  #endif
 
   // Modifying Methods
 
     _ObjectType * allocate();
     void          recycle(_ObjectType * obj_p);
-    void          recycle_all(_ObjectType * objs_a, uint length);
     void          recycle_all(_ObjectType ** objs_a, uint length);
 
-    void          add_block(uint32_t size);
+    void          add_block();
     void          empty();
     void          remove_expanded();
     void          repool();
@@ -120,6 +123,24 @@ class AObjReusePool
   protected:
 
   // Types
+
+    #ifdef AORPOOL_ALLOCATION_TRACKING
+
+      // For each object, store a callstack and link into list of allocations
+      struct AllocObject : _ObjectType, AListNode<AllocObject>
+        {
+        ACallStack m_call_stack;
+        };
+
+      // List of all allocated objects
+      AList<AllocObject>  m_allocated_list;
+
+    #else
+
+      // Just allocate the plain objects themselves
+      struct AllocObject : _ObjectType {};
+
+    #endif
 
     struct ObjBlock : AListNode<ObjBlock>
       {
@@ -130,18 +151,25 @@ class AObjReusePool
 
       // The object array - with m_size elements
       // Located right after this header structure in memory
-      _ObjectType * get_array() const { return reinterpret_cast<_ObjectType *>(a_align_up((uintptr_t)(this + 1), 16)); }
+      AllocObject * get_array() const { return reinterpret_cast<AllocObject *>(a_align_up((uintptr_t)(this + 1), 16)); }
       };
+
+  // Methods
+
+    void recycle_all(AllocObject * objs_a, uint length);
 
   // Data Members
 
-
     // Pool of previously constructed objects that are ready for use.
-    _ObjectType * m_pool_first_p;
+    AllocObject * m_pool_first_p;
 
     // List of blocks where the objects are actually stored
     // The first list element is the special "initial" block
     AList<ObjBlock> m_blocks;
+
+    // If we ever completely free all memory, and then start allocating again,
+    // need to know how big the initial block is supposed to be
+    uint32_t m_initial_size;
 
     // If there is need of additional objects, this is the size to use for additional
     // object blocks.
@@ -175,9 +203,10 @@ inline AObjReusePool<_ObjectType>::AObjReusePool(
     m_count_now(0u), m_count_max(0u), m_count_total(0u), m_grow_f(nullptr),
   #endif
   m_pool_first_p(nullptr),
+  m_initial_size(initial_size),
   m_expand_size(expand_size)
   {
-  add_block(initial_size);
+  add_block();
   }
 
 //---------------------------------------------------------------------------------------
@@ -225,12 +254,18 @@ inline _ObjectType * AObjReusePool<_ObjectType>::allocate()
   if (!m_pool_first_p)
     {
     // No free objects, so make more
-    add_block(m_expand_size);
+    add_block();
     }
 
   // Unlink one object from the linked list of free objects
-  _ObjectType * obj_p = m_pool_first_p;
-  m_pool_first_p = *obj_p->get_pool_unused_next();
+  AllocObject * obj_p = m_pool_first_p;
+  m_pool_first_p = static_cast<AllocObject *>(*obj_p->get_pool_unused_next());
+
+  #ifdef AORPOOL_ALLOCATION_TRACKING
+    obj_p->m_call_stack.set();
+    m_allocated_list.append(obj_p);
+  #endif
+
   return obj_p;
   }
 
@@ -249,8 +284,12 @@ inline void AObjReusePool<_ObjectType>::recycle(_ObjectType * obj_p)
     --m_count_now;
   #endif
 
+  #ifdef AORPOOL_ALLOCATION_TRACKING    
+    m_allocated_list.remove(static_cast<AllocObject *>(obj_p));
+  #endif
+
   *obj_p->get_pool_unused_next() = m_pool_first_p;
-  m_pool_first_p = obj_p;
+  m_pool_first_p = static_cast<AllocObject *>(obj_p);
   }
 
 //---------------------------------------------------------------------------------------
@@ -272,13 +311,17 @@ void AObjReusePool<_ObjectType>::recycle_all(
     m_count_now -= length;
   #endif
 
-  _ObjectType *  next_obj_p = m_pool_first_p;
-  _ObjectType ** objs_end_a = objs_a + length;
-  while (objs_a < objs_end_a)
+  AllocObject *  next_obj_p = m_pool_first_p;
+  AllocObject ** objs_end_a = (AllocObject **)objs_a + length;
+  while ((AllocObject **)objs_a < objs_end_a)
     {
-    _ObjectType * obj_p = *objs_a++;
+    AllocObject * obj_p = static_cast<AllocObject *>(*objs_a++);
     *obj_p->get_pool_unused_next() = next_obj_p;
     next_obj_p = obj_p;
+
+    #ifdef AORPOOL_ALLOCATION_TRACKING    
+      m_allocated_list.remove(obj_p);
+    #endif
     }
   m_pool_first_p = next_obj_p;
   }
@@ -287,7 +330,7 @@ void AObjReusePool<_ObjectType>::recycle_all(
 // Frees up 'length' Objects and returns them into the dynamic pool
 template<class _ObjectType>
 void AObjReusePool<_ObjectType>::recycle_all(
-  _ObjectType * objs_a,
+  AllocObject * objs_a,
   uint          length
   )
   {
@@ -295,13 +338,17 @@ void AObjReusePool<_ObjectType>::recycle_all(
     m_count_now -= length;
   #endif
 
-  _ObjectType * next_obj_p = m_pool_first_p;
-  _ObjectType * objs_end_a = objs_a + length;
+  AllocObject * next_obj_p = m_pool_first_p;
+  AllocObject * objs_end_a = objs_a + length;
   while (objs_a < objs_end_a)
     {
-    _ObjectType * obj_p = objs_a++;
+    AllocObject * obj_p = objs_a++;
     *obj_p->get_pool_unused_next() = next_obj_p;
     next_obj_p = obj_p;
+
+    #ifdef AORPOOL_ALLOCATION_TRACKING    
+      m_allocated_list.remove(obj_p);
+    #endif
     }
   m_pool_first_p = next_obj_p;
   }
@@ -311,8 +358,10 @@ void AObjReusePool<_ObjectType>::recycle_all(
 // Arg         size - number of objects to allocate in the block
 // Author(s):   Conan Reis
 template<class _ObjectType>
-void AObjReusePool<_ObjectType>::add_block(uint32_t size)
+void AObjReusePool<_ObjectType>::add_block()
   {
+  uint32_t size = m_blocks.is_empty() ? m_initial_size : m_expand_size;
+
   #ifdef AORPOOL_USAGE_COUNT
     // Got more objects
     m_count_now += size;
@@ -325,15 +374,15 @@ void AObjReusePool<_ObjectType>::add_block(uint32_t size)
   #endif
 
   // Allocate a new block from the system heap
-  ObjBlock * obj_block_p = new(AMemory::malloc(a_align_up((uintptr_t)sizeof(ObjBlock), 16) + size * sizeof(_ObjectType), "ObjBlock")) ObjBlock(size);
+  ObjBlock * obj_block_p = new(AgogCore::get_app_info()->malloc(a_align_up((uintptr_t)sizeof(ObjBlock), 16) + size * sizeof(AllocObject), "ObjBlock")) ObjBlock(size);
   A_VERIFY_MEMORY(obj_block_p != nullptr, tObjReusePool);
 
   // Invoke constructors on all objects
-  _ObjectType * obj_p = obj_block_p->get_array();
-  _ObjectType * obj_end_p = obj_p + size;
+  AllocObject * obj_p = obj_block_p->get_array();
+  AllocObject * obj_end_p = obj_p + size;
   while (obj_p < obj_end_p)
     {
-    new ((void*)obj_p++) _ObjectType();
+    new ((void*)obj_p++) AllocObject();
     }
 
   // Add block to list of blocks
@@ -349,13 +398,20 @@ template<class _ObjectType>
 void AObjReusePool<_ObjectType>::empty()
   {
   #ifdef AORPOOL_USAGE_COUNT
-    A_ASSERTX(!m_count_now, "Tried to destroy object pool with objects still in the pool.");
+    A_ASSERTX(!m_count_now, AErrMsg(a_cstr_format("Tried to empty object pool with %u objects still in use!", m_count_now), AErrLevel_internal));
     m_count_now = 0u;
+  #endif
+
+  #ifdef AORPOOL_ALLOCATION_TRACKING    
+    #ifndef AORPOOL_USAGE_COUNT
+      A_ASSERTX(m_allocated_list.is_empty(), AErrMsg("Tried to empty object pool with objects still in use!", AErrLevel_internal));
+    #endif
+    m_allocated_list.empty();
   #endif
 
   while (!m_blocks.is_empty())
     {
-    AMemory::free(m_blocks.pop_last());
+    AgogCore::get_app_info()->free(m_blocks.pop_last());
     }
     
   m_pool_first_p = nullptr;
@@ -376,7 +432,7 @@ void AObjReusePool<_ObjectType>::remove_expanded()
 
   while (!m_blocks.is_empty() && m_blocks.get_first() != m_blocks.get_last())
     {
-    AMemory::free(m_blocks.pop_last());
+    AgogCore::get_app_info()->free(m_blocks.pop_last());
     }
     
   m_pool_first_p = nullptr;
@@ -384,6 +440,11 @@ void AObjReusePool<_ObjectType>::remove_expanded()
     {
     recycle_all(m_blocks.get_first()->get_array(), m_blocks.get_first()->m_size);
     }
+
+  #ifdef AORPOOL_ALLOCATION_TRACKING    
+    A_ASSERTX(m_allocated_list.is_empty(), "Tried to destroy object pool with objects still in the pool.");
+    m_allocated_list.empty();
+  #endif
   }
 
 //---------------------------------------------------------------------------------------
@@ -396,13 +457,6 @@ template<class _ObjectType>
 void AObjReusePool<_ObjectType>::repool()
   {
   remove_expanded();
-
-  #ifdef AORPOOL_USAGE_COUNT
-    m_count_now = m_blocks.get_first()->m_size;
-  #endif
-
-  m_pool_first_p = nullptr;
-  recycle_all(m_blocks.get_first()->get_array(), m_blocks.get_first()->m_size);
   }
 
 

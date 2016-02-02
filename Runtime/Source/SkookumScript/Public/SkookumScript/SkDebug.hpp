@@ -261,7 +261,7 @@ typedef AFunctionArgBase<const SkPrintInfo &> tSkPrintFunc;
 const uint16_t SkExpr_char_pos_invalid = UINT16_MAX - 1u;
 
 //---------------------------------------------------------------------------------------
-struct SkDebugInfo
+struct SK_API SkDebugInfo
   {
   // Nested Structures
 
@@ -342,7 +342,7 @@ const size_t SkDebugInfo_size_used = sizeof(SkDebugInfoPtrDummyStruct) - sizeof(
 //---------------------------------------------------------------------------------------
 // Used to provide extra debug info in SK_ASSERT_INFO() when the currently executing
 // expression is known.
-struct SkDebugInfoSetter
+struct SK_API SkDebugInfoSetter
   {
   // Methods
     SkDebugInfoSetter();
@@ -355,7 +355,7 @@ struct SkDebugInfoSetter
 //---------------------------------------------------------------------------------------
 // Notes      Member Expression identifying information
 // Author(s)  Conan Reis
-class SkMemberExpression : public SkMemberInfo
+class SK_API SkMemberExpression : public SkMemberInfo
   {
   public:
 
@@ -364,6 +364,7 @@ class SkMemberExpression : public SkMemberInfo
       SkMemberExpression()                                : m_expr_p(nullptr), m_source_idx(0u) {}
       SkMemberExpression(const SkMemberInfo & member_info, SkExpressionBase * expr_p = nullptr);
       SkMemberExpression(const SkMemberExpression & info) : SkMemberInfo(info), m_expr_p(info.m_expr_p), m_source_idx(info.m_source_idx) {}
+      virtual ~SkMemberExpression() {}
 
     // Comparison Methods
 
@@ -416,7 +417,7 @@ class SkMemberExpression : public SkMemberInfo
 //---------------------------------------------------------------------------------------
 // Invoked object descriptor - SkInvokedContext(SkInvokedMethod or SkInvokedCoroutine) or
 // SkInvokedExpression/SkExpression "leaf".
-class SkInvokedInfo
+class SK_API SkInvokedInfo
   : public SkMemberInfo,
   AListNode<SkInvokedInfo>  // Stored in the m_calls of its caller
   {
@@ -437,6 +438,8 @@ class SkInvokedInfo
     bool operator<(const SkInvokedInfo & iinfo) const   { return m_unique_id < iinfo.m_unique_id; }
 
   protected:
+
+    friend AListNode<SkInvokedInfo>;
 
   // Data Members
 
@@ -485,7 +488,7 @@ class SkInvokedInfo
 // representation than a "call stack".  Each actor object may have zero to many call tree
 // "leaves" that it is updating and there can be many call trees distributed amongst all
 // the actors in the runtime.
-class SkCallTree
+class SK_API SkCallTree
   {
   public:
 
@@ -510,7 +513,7 @@ class SkCallTree
 //---------------------------------------------------------------------------------------
 // Notes      Debug Breakpoint
 // Author(s)  Conan Reis
-class SkBreakPoint : public SkMemberExpression
+class SK_API SkBreakPoint : public SkMemberExpression
   {
   public:
 
@@ -642,7 +645,7 @@ typedef void (* tSkScriptSystemHook)(const ASymbol & origin_id);
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript Debug
 // Author(s)  Conan Reis
-class SkDebug
+class SK_API SkDebug
   {
   public:
 
@@ -860,7 +863,7 @@ class SkDebug
 
   // Common Methods
 
-      static void initialize_pre_load();
+      static void initialize();
       static void enable_engine_present(bool engine_present_b = true)           { ms_engine_present_b = engine_present_b; }
       static bool is_engine_present()                                           { return ms_engine_present_b; }
       static void register_bindings();

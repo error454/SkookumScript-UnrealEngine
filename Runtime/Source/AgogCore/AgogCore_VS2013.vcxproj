@@ -357,7 +357,6 @@
     <ClCompile Include="Private\AgogCore\ADatum.cpp" />
     <ClCompile Include="Private\AgogCore\ADebug.cpp" />
     <ClCompile Include="Private\AgogCore\AException.cpp" />
-    <ClCompile Include="Private\AgogCore\AExceptionBase.cpp" />
     <ClCompile Include="Private\AgogCore\ADeferFunc.cpp" />
     <ClCompile Include="Private\AgogCore\AFunction.cpp" />
     <ClCompile Include="Private\AgogCore\AFunctionBase.cpp" />

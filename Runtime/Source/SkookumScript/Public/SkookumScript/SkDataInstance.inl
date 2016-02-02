@@ -53,7 +53,7 @@ A_INLINE void SkDataInstance::set_data_by_idx(uint32_t data_idx, SkInstance * ob
 // #Author(s)  Conan Reis
 A_INLINE AObjReusePool<SkDataInstance> & SkDataInstance::get_pool()
   {
-  static AObjReusePool<SkDataInstance> s_pool(Skookum::get_lib_vals().m_pool_init_data_instance, Skookum::get_lib_vals().m_pool_incr_data_instance);
+  static AObjReusePool<SkDataInstance> s_pool(SkookumScript::get_app_info()->get_pool_init_data_instance(), SkookumScript::get_app_info()->get_pool_incr_data_instance());
 
   return s_pool;
   }

@@ -37,7 +37,7 @@
 // InLibs     AgogCore/AgogCore.lib
 // Examples:    
 // Author(s)  Conan Reis
-class AException : public AExceptionBase
+class A_API AException : public AExceptionBase
   {
   public:
   // Common Methods

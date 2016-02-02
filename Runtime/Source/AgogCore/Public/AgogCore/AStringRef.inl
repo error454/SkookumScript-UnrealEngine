@@ -303,7 +303,7 @@ A_INLINE void AStringRef::pool_delete(AStringRef * str_ref_p)
 // #Author(s)  Conan Reis
 A_INLINE AObjReusePool<AStringRef> & AStringRef::get_pool()
   {
-  static AObjReusePool<AStringRef> s_pool(Agog::get_agog_core_vals().m_pool_init_string_ref, Agog::get_agog_core_vals().m_pool_incr_string_ref);
+  static AObjReusePool<AStringRef> s_pool(AgogCore::get_app_info()->get_pool_init_string_ref(), AgogCore::get_app_info()->get_pool_incr_string_ref());
   //A_DSINGLETON_GUARD;
   return s_pool;
   }
@@ -325,7 +325,7 @@ A_INLINE AObjReusePool<AStringRef> & AStringRef::get_pool()
 A_INLINE uint32_t AStringRef::request_char_count(uint32_t needed_chars)
   {
   // Add 1 for terminating null character.
-  return AMemory::request_byte_size(needed_chars + 1u);
+  return AgogCore::get_app_info()->request_byte_size(needed_chars + 1u);
   }
 
 //---------------------------------------------------------------------------------------
@@ -343,7 +343,7 @@ A_INLINE char * AStringRef::alloc_buffer(uint32_t needed)
   // $Revisit - CReis [Efficiency] Should check efficiency difference for memory allocation between new and malloc().
   #ifdef A_EXTRA_CHECK
 
-    char * cstr_p = (char*)AMemory::malloc( sizeof(char) * needed, "AStringRef.buffer" );
+    char * cstr_p = (char*)AgogCore::get_app_info()->malloc( sizeof(char) * needed, "AStringRef.buffer" );
 
     A_VERIFY_MEMORY(cstr_p, AStringRef);
 
@@ -353,7 +353,7 @@ A_INLINE char * AStringRef::alloc_buffer(uint32_t needed)
 
   #else
 
-  return (char*)AMemory::malloc( sizeof(char) * needed, "AStringRef.buffer" );
+  return (char*)AgogCore::get_app_info()->malloc( sizeof(char) * needed, "AStringRef.buffer" );
 
   #endif
   }
@@ -361,7 +361,7 @@ A_INLINE char * AStringRef::alloc_buffer(uint32_t needed)
 //---------------------------------------------------------------------------------------
 A_INLINE void AStringRef::free_buffer(char * buffer)
   {
-  AMemory::free(buffer);
+  AgogCore::get_app_info()->free(buffer);
   }
 
 

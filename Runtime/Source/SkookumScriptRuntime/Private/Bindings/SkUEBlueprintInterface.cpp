@@ -130,7 +130,7 @@ void SkUEBlueprintInterface::reexpose_all()
   clear();
 
   // Traverse Sk classes and gather methods that want to be exposed
-  reexpose_class_recursively(SkUEEntity::ms_class_p);
+  reexpose_class_recursively(SkUEEntity::get_class());
   }
 
 //---------------------------------------------------------------------------------------
@@ -437,7 +437,7 @@ int32_t SkUEBlueprintInterface::add_function_entry(UClass * ue_class_p, SkInvoka
   // Allocate binding entry
   const ParamInfo & return_info = param_info_array_p[num_params];
   bool has_return = return_info.m_ue_param_p != nullptr;
-  FunctionEntry * function_entry_p = new(AMemory::malloc(sizeof(FunctionEntry) + num_params * sizeof(SkParamEntry), "FunctionEntry"))
+  FunctionEntry * function_entry_p = new(FMemory::Malloc(sizeof(FunctionEntry) + num_params * sizeof(SkParamEntry)))
     FunctionEntry(sk_invokable_p, ue_function_p, num_params, params.get_result_class()->get_key_class(), has_return ? return_info.m_ue_param_p->GetSize() : 0, return_info.m_sk_value_getter_p);
 
   // Initialize parameters
@@ -483,7 +483,7 @@ int32_t SkUEBlueprintInterface::add_event_entry(UClass * ue_class_p, SkMethodBas
   bind_event_method(sk_method_p);
 
   // Allocate binding entry
-  EventEntry * event_entry_p = new(AMemory::malloc(sizeof(EventEntry) + num_params * sizeof(K2ParamEntry), "EventEntry")) EventEntry(sk_method_p, ue_function_p, num_params);
+  EventEntry * event_entry_p = new(FMemory::Malloc(sizeof(EventEntry) + num_params * sizeof(K2ParamEntry))) EventEntry(sk_method_p, ue_function_p, num_params);
 
   // Initialize parameters
   for (uint32_t i = 0; i < num_params; ++i)
@@ -553,7 +553,7 @@ void SkUEBlueprintInterface::delete_binding_entry(uint32_t binding_index)
       // Destroy the function along with its attached properties
       ue_function_p->ConditionalBeginDestroy();
       }
-    AMemory::free(binding_entry_p);
+    FMemory::Free(binding_entry_p);
     m_binding_entry_array.set_at(binding_index, nullptr);
     }
   }
@@ -614,7 +614,7 @@ UFunction * SkUEBlueprintInterface::build_ue_function(UClass * ue_class_p, SkInv
   uint32_t num_params = param_list.get_length();
 
   // Handle return value if any
-  if (params.get_result_class() && params.get_result_class() != SkObject::ms_class_p)
+  if (params.get_result_class() && params.get_result_class() != SkObject::get_class())
     {
     UProperty * result_param_p = build_ue_param(ue_function_p, params.get_result_class(), "result", out_param_info_array_p ? out_param_info_array_p + num_params : nullptr);
     if (!result_param_p)
@@ -662,31 +662,31 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
   UProperty * property_p = nullptr;
   tK2ParamFetcher k2_param_fetcher_p = nullptr;
   tSkValueGetter sk_value_getter_p = nullptr;
-  if (sk_parameter_class_p == SkBoolean::ms_class_p)
+  if (sk_parameter_class_p == SkBoolean::get_class())
     {
     property_p = NewObject<UBoolProperty>(ue_function_p, param_name, RF_Public);
     k2_param_fetcher_p = &fetch_k2_param_boolean;
     sk_value_getter_p = &get_sk_value_boolean;
     }
-  else if (sk_parameter_class_p == SkInteger::ms_class_p)
+  else if (sk_parameter_class_p == SkInteger::get_class())
     {
     property_p = NewObject<UIntProperty>(ue_function_p, param_name, RF_Public);
     k2_param_fetcher_p = &fetch_k2_param_integer;
     sk_value_getter_p = &get_sk_value_integer;
     }
-  else if (sk_parameter_class_p == SkReal::ms_class_p)
+  else if (sk_parameter_class_p == SkReal::get_class())
     {
     property_p = NewObject<UFloatProperty>(ue_function_p, param_name, RF_Public);
     k2_param_fetcher_p = &fetch_k2_param_real;
     sk_value_getter_p = &get_sk_value_real;
     }
-  else if (sk_parameter_class_p == SkString::ms_class_p)
+  else if (sk_parameter_class_p == SkString::get_class())
     {
     property_p = NewObject<UStrProperty>(ue_function_p, param_name, RF_Public);
     k2_param_fetcher_p = &fetch_k2_param_string;
     sk_value_getter_p = &get_sk_value_string;
     }
-  else if (sk_parameter_class_p == SkVector3::ms_class_p)
+  else if (sk_parameter_class_p == SkVector3::get_class())
     {
     UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
     struct_property_p->Struct = m_struct_vector3_p;
@@ -694,7 +694,7 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
     k2_param_fetcher_p = &fetch_k2_param_vector3;
     sk_value_getter_p = &get_sk_value_vector3;
     }
-  else if (sk_parameter_class_p == SkRotationAngles::ms_class_p)
+  else if (sk_parameter_class_p == SkRotationAngles::get_class())
     {
     UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
     struct_property_p->Struct = m_struct_rotation_angles_p;
@@ -702,7 +702,7 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
     k2_param_fetcher_p = &fetch_k2_param_rotation_angles;
     sk_value_getter_p = &get_sk_value_rotation_angles;
     }
-  else if (sk_parameter_class_p == SkTransform::ms_class_p)
+  else if (sk_parameter_class_p == SkTransform::get_class())
     {
     UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
     struct_property_p->Struct = m_struct_transform_p;
@@ -710,7 +710,7 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
     k2_param_fetcher_p = &fetch_k2_param_transform;
     sk_value_getter_p = &get_sk_value_transform;
     }
-  else if (sk_parameter_class_p->get_key_class()->is_class(*SkUEEntity::ms_class_p))
+  else if (sk_parameter_class_p->get_key_class()->is_class(*SkUEEntity::get_class()))
     {
     UClass * uclass_p = SkUEClassBindingHelper::get_ue_class_from_sk_class(sk_parameter_class_p);
     SK_ASSERTX(uclass_p, a_cstr_format("Class '%s' of parameter '%s' of method '%S.%S' being exported to Blueprints is not a known engine class.", sk_parameter_class_p->get_key_class_name().as_cstr_dbg(), param_name.GetPlainANSIString(), *ue_function_p->GetOwnerClass()->GetName(), *ue_function_p->GetName()));

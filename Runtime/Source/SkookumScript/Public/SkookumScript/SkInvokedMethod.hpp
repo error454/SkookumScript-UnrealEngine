@@ -33,7 +33,7 @@ class SkMethodBase;  // Pre-declaration
 //---------------------------------------------------------------------------------------
 // Notes      Wrapper for executed/called/invoked methods
 // Author(s)  Conan Reis
-class SkInvokedMethod : public SkInvokedContextBase
+class SK_API SkInvokedMethod : public SkInvokedContextBase
   {
   public:
   // Common Methods

@@ -20,11 +20,12 @@
 // Notes      SkookumScript Atomic Boolean (true/false) - allows short circuit evaluation.
 //            Has same data as SkInstance - only differs in that it has a different
 //            virtual method table.
-class SkBoolean : public SkClassBindingSimpleZero<SkBoolean, SkBooleanType>
+class SK_API SkBoolean : public SkClassBindingSimpleZero<SkBoolean, SkBooleanType>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };
 

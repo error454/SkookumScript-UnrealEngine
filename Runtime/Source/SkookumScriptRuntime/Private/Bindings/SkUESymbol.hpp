@@ -20,6 +20,15 @@
 // Global Macros / Defines
 //=======================================================================================
 
+namespace SkUESymbol
+  {
+  // Assign values to the static symbols
+  void initialize();
+
+  // Clean up static symbols
+  void deinitialize();
+  }
+
 //---------------------------------------------------------------------------------------
 // These Macros will expand to create constants of type ASymbol in the form:
 //   ASYM(Object) -> ASymbol_Object  // Representing the symbol 'Object'

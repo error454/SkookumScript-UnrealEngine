@@ -22,6 +22,7 @@ class SkRotation : public SkClassBindingSimpleForceInit<SkRotation, FQuat>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

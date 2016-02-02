@@ -218,7 +218,7 @@ A_INLINE SkInstance * SkInstance::new_instance_uninitialized(SkClass * class_p, 
   void * user_data_p = &instance_p->m_user_data;
   if (byte_size > sizeof(tUserData))
     {
-    user_data_p = AMemory::malloc(byte_size, "SkUserData");
+    user_data_p = AgogCore::get_app_info()->malloc(byte_size, "SkUserData");
     *((void **)&instance_p->m_user_data) = user_data_p;
     }
   *user_data_pp = user_data_p;
@@ -241,7 +241,7 @@ A_INLINE SkInstance * SkInstance::new_instance_uninitialized_ref(SkClass * class
   {
   SK_ASSERTX(byte_size > sizeof(tUserData), "Use new_instance_val instead!");
   SkInstance * instance_p = new_instance(class_p);
-  void * user_data_p = AMemory::malloc(byte_size, "SkUserData");
+  void * user_data_p = AgogCore::get_app_info()->malloc(byte_size, "SkUserData");
   *((void **)&instance_p->m_user_data) = user_data_p;
   *user_data_pp = user_data_p;
   return instance_p;
@@ -290,7 +290,7 @@ A_INLINE SkInstance * SkInstance::new_instance_ref(SkClass * class_p, const void
 // #Author(s)  Conan Reis
 A_INLINE AObjReusePool<SkInstance> & SkInstance::get_pool()
   {
-  static AObjReusePool<SkInstance> s_pool(Skookum::get_lib_vals().m_pool_init_instance, Skookum::get_lib_vals().m_pool_incr_instance);
+  static AObjReusePool<SkInstance> s_pool(SkookumScript::get_app_info()->get_pool_init_instance(), SkookumScript::get_app_info()->get_pool_incr_instance());
   //A_DSINGLETON_GUARD;
   return s_pool;
   }

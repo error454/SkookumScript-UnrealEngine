@@ -35,7 +35,7 @@ class SkIdentifierLocal;
 // Notes      SkookumScript invocation / call selector / descriptor
 // Subclasses SkMethodCallBase, SkCoroutineCall
 // Author(s)  Conan Reis
-class SkInvokeBase : public SkQualifier
+class SK_API SkInvokeBase : public SkQualifier
 
   {
   friend class SkParser;
@@ -136,7 +136,7 @@ class SkInvokeBase : public SkQualifier
 // See Also   SkInvokeSync, SkInvokeRace, SkInvokeCascade, SkInstantiate
 // Examples:      receiver.call()
 // Author(s)  Conan Reis
-class SkInvocation : public SkExpressionBase
+class SK_API SkInvocation : public SkExpressionBase
   {
   friend class SkParser;
 
@@ -217,7 +217,7 @@ class SkInvocation : public SkExpressionBase
 //            list%call()
 //            {1, 2, 3}%add_assign(1)  // becomes {2, 3, 4}
 // Author(s)  Conan Reis
-class SkInvokeSync : public SkInvocation
+class SK_API SkInvokeSync : public SkInvocation
   {
   friend class SkParser;
 
@@ -275,7 +275,7 @@ class SkInvokeSync : public SkInvocation
 //            {1, 2, 3}%>add_assign(1)               // becomes {2, 3, 4}
 //            {guy1, guy2, guy3}%>_path_to_pos(pos)  // After first guy gets to pos other guys stop
 // Author(s)  Conan Reis
-class SkInvokeRace : public SkInvocation
+class SK_API SkInvokeRace : public SkInvocation
   {
   friend class SkParser;
 
@@ -321,7 +321,7 @@ class SkInvokeRace : public SkInvocation
 //              :call2()
 //              :call3()
 // Author(s)  Conan Reis
-class SkInvokeCascade : public SkExpressionBase
+class SK_API SkInvokeCascade : public SkExpressionBase
   {
   friend class SkParser;
   friend class SkInvokedExpression;
@@ -402,7 +402,7 @@ class SkInvokeCascade : public SkExpressionBase
 // 
 // #See Also   SkCopyInvoke, SkInvocation, SkInvokeSync, SkInvokeRace, SkInvokeCascade
 // #Author(s)  Conan Reis
-class SkInstantiate : public SkExpressionBase
+class SK_API SkInstantiate : public SkExpressionBase
   {
   friend class SkParser;
 
@@ -473,7 +473,7 @@ class SkInstantiate : public SkExpressionBase
 // 
 // #See Also   SkInstantiation, SkInvocation, SkInvokeSync, SkInvokeRace, SkInvokeCascade
 // #Author(s)  Conan Reis
-class SkCopyInvoke : public SkExpressionBase
+class SK_API SkCopyInvoke : public SkExpressionBase
   {
   friend class SkParser;
 

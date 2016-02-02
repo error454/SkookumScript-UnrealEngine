@@ -453,44 +453,14 @@ void SkUERemote::get_project_info(SkProjectInfo * out_project_info_p)
   // Get game name
   out_project_info_p->m_project_name = FStringToAString(FApp::GetGameName());
 
-  // Name of generated scripts overlay
-  TCHAR const * const generated_overlay_name_p = TEXT("Project-Generated");
-
-  // Look for default SkookumScript project file in engine folder.
-  FString default_project_path(FPaths::EnginePluginsDir() / TEXT("SkookumScript/Runtime/Scripts/Skookum-project-default.ini"));
-  SK_ASSERTX(FPaths::FileExists(default_project_path), a_str_format("Cannot find default project settings file '%S'!", *default_project_path));
-  out_project_info_p->m_default_project_path = FStringToAString(FPaths::ConvertRelativePathToFull(default_project_path));
-
-  // Check if we have loaded any game
-  if (!out_project_info_p->m_project_name.is_empty())
-    {
-    // Look for specific SkookumScript project in game/project folder.
-    // 1) Check permanent location
-    FString project_path(FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini"));
-    if (FPaths::FileExists(project_path))
+  // Get project paths if any
+  #if WITH_EDITORONLY_DATA
+    if (m_editor_interface_p)
       {
-      #if WITH_EDITORONLY_DATA
-        if (m_editor_interface_p)
-          {
-          m_editor_interface_p->set_overlay_path(FPaths::GetPath(project_path), generated_overlay_name_p);
-          }
-      #endif
+      out_project_info_p->m_project_path         = FStringToAString(m_editor_interface_p->get_project_path());
+      out_project_info_p->m_default_project_path = FStringToAString(m_editor_interface_p->get_default_project_path());
       }
-    else
-      {
-      project_path.Empty();
-      #if WITH_EDITORONLY_DATA
-        if (m_editor_interface_p)
-          {
-          // 2) Check/create temp location
-          project_path = m_editor_interface_p->ensure_temp_project(generated_overlay_name_p);
-          SK_ASSERTX(!project_path.IsEmpty(), a_str_format("Could not generated project file '%S' for project '%s'!", *project_path, out_project_info_p->m_project_name.as_cstr()));
-          }
-      #endif
-      }
-
-    out_project_info_p->m_project_path = FStringToAString(FPaths::ConvertRelativePathToFull(project_path));
-    }
+  #endif
   }
 
 

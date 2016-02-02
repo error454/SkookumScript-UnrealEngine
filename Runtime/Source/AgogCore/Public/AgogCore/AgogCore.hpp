@@ -30,7 +30,7 @@
 #include <limits.h>  // integer minimums and maximums: INT_MAX, UINT_MAX
 #include <float.h>   // float minimums and maximums: FLT_DIG, FLT_MAX, FLT_EPSILON, DBL_DIG
 #include <stddef.h>  // size_t on OS X
-#include <new>       // new & delete
+#include <new>       // alloca
 #include <memory.h>  // memcpy
 
 // Additional includes at end of file
@@ -40,7 +40,27 @@
 // Global Macros / Defines
 //=======================================================================================
 
-#define A_COPYRIGHT_TEXT  "Copyright (c) 2001-2015 Agog Labs Inc."
+#define A_COPYRIGHT_TEXT  "Copyright (c) 2001-2016 Agog Labs Inc."
+
+//---------------------------------------------------------------------------------------
+// DLL API
+#ifdef AGOGCORE_API // Use AGOGCORE_API passed down from UE4 build system if present
+  // AGOGCORE_API is either DLLIMPORT, DLLEXPORT or empty - map to AgogCore macros
+  #ifndef DLLIMPORT
+    #define DLLIMPORT A_DLLIMPORT
+    #define DLLEXPORT A_DLLEXPORT
+  #endif
+  #define A_API AGOGCORE_API
+#elif defined(A_IS_DLL) // otherwise, DLL linkage control via A_IS_DLL & A_IS_BUILDING_SELF
+  // Further down, we'll set A_DLLIMPORT and A_DLLEXPORT to platform-specific values
+  #ifdef A_IS_BUILDING_SELF
+    #define A_API A_DLLEXPORT
+  #else
+    #define A_API A_DLLIMPORT
+  #endif
+#else // AgogCore is a static library
+  #define A_API
+#endif
 
 //---------------------------------------------------------------------------------------
 // Platform Defines
@@ -49,7 +69,7 @@
   && !defined(A_PLAT_PS3) && !defined(A_PLAT_PS4) \
   && !defined(A_PLAT_WIIU) \
   && !defined(A_PLAT_iOS) && !defined(A_PLAT_tvOS) && !defined(A_PLAT_OSX) \
-  && !defined(A_PLAT_LINUX64)
+  && !defined(A_PLAT_ANDROID) && !defined(A_PLAT_LINUX64)
   #ifdef _WIN32
     // Assume it is a Windows PC platform (either 32-bit or 64-bit)
     #ifdef _WIN64
@@ -103,6 +123,8 @@
     #pragma warning( disable : 4100 ) // unreferenced formal parameter
     #pragma warning( disable : 4201 ) // nonstandard extension used : nameless struct/union (for MMSystem.h)
     #pragma warning( disable : 4238 ) // nonstandard extension used, class rvalue as lvalue
+    #pragma warning( disable : 4275 ) // non dll-interface class used as base for dll-interface class
+    #pragma warning( disable : 4251 ) // class 'x' (member of 'y') needs to have dll-interface to be used by clients of class 'y'
     #pragma warning( disable : 4348 ) // potential redefinition of template default parameter
     #pragma warning( disable : 4355 ) // 'this' : used in base member initializer list
     #pragma warning( disable : 4786 ) // Disable warning message for long identifiers
@@ -137,6 +159,10 @@
   
     #define A_BREAK()   __debugbreak()
 
+    // DLL linkage specification
+    #define A_DLLIMPORT __declspec(dllimport)
+    #define A_DLLEXPORT __declspec(dllexport)
+
   #endif  // _MSC_VER
 
 #endif  // A_PLAT_PC
@@ -162,6 +188,10 @@
   // Indicate that _itoa(), _ultoa(), and _gcvt() are not defined
   #define A_NO_NUM2STR_FUNCS
   
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
+
 #endif
 
 
@@ -188,6 +218,10 @@
   // Indicate that _itoa(), _ultoa(), and _gcvt() are not defined
   #define A_NO_NUM2STR_FUNCS
 
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
+
 #endif
 
 
@@ -199,6 +233,10 @@
   #define A_PLAT_STR_DESC "Microsoft Xbox One"
   #define A_BITS64
   #define AGOG_LITTLE_ENDIAN_HOST   1    // Little endian
+
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
 
 #endif
 
@@ -215,6 +253,10 @@
 
   // Load given memory location into L1 cache
   #define a_prefetch(ptr)
+
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
 
 #endif
 
@@ -252,6 +294,10 @@
 
   #pragma clang diagnostic ignored "-Wundefined-bool-conversion"
 
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
+
 #endif
 
 //---------------------------------------------------------------------------------------
@@ -263,7 +309,9 @@
   #define A_NO_SSE
   #define AGOG_ALIGNMENT32
   #define AGOG_LITTLE_ENDIAN_HOST   1    // Little endian
+
   #define NO_AGOG_PLACEMENT_NEW
+  #define A_NO_GLOBAL_EXCEPTION_CATCH
 
   // $Revisit - CReis Look into using __func__ and __PRETTY_FUNCTION__ instead
   #define __FUNCSIG__  __FUNCTION__
@@ -284,6 +332,10 @@
   #define A_NO_NUM2STR_FUNCS
 
   #pragma clang diagnostic ignored "-Wundefined-bool-conversion"
+
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
 
 #endif
 
@@ -314,6 +366,10 @@
 
   // Indicate that _itoa(), _ultoa(), and _gcvt() are not defined
   #define A_NO_NUM2STR_FUNCS
+
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
 
 #endif
 
@@ -346,6 +402,51 @@
   // Indicate that _itoa(), _ultoa(), and _gcvt() are not defined
   #define A_NO_NUM2STR_FUNCS
 
+  // DLL linkage specification
+  #define A_DLLEXPORT __attribute__((visibility("default")))
+  #define A_DLLIMPORT __attribute__((visibility("default")))
+
+#endif
+
+
+//---------------------------------------------------------------------------------------
+// Android Platform 64-bit
+#ifdef A_PLAT_ANDROID
+
+  #define A_PLAT_STR_ID   "Android"
+  #define A_PLAT_STR_DESC "Android"
+
+  #if defined(__x86_64__) || defined(__ia64__) || defined(__ARM_ARCH_ISA_A64)
+    #define A_BITS64
+  #endif
+
+  #define A_NO_SSE
+  #define AGOG_LITTLE_ENDIAN_HOST  (!defined(__ARMEB__))
+
+  #define NO_AGOG_PLACEMENT_NEW
+  #define A_NO_GLOBAL_EXCEPTION_CATCH
+
+  #define __FUNCSIG__ __PRETTY_FUNCTION__
+
+  #define A_BREAK()   __builtin_trap()
+  
+  // Use old POSIX call convention rather than new ISO convention
+  #define _gcvt       gcvt
+  #define _stricmp    strcasecmp
+  #define _strnicmp   strncasecmp
+  #define _snprintf   snprintf
+  #define _vsnprintf  vsnprintf
+
+  // Load given memory location into L1 cache
+  #define a_prefetch(ptr) __builtin_prefetch(ptr)
+
+  // Indicate that _itoa(), _ultoa(), and _gcvt() are not defined
+  #define A_NO_NUM2STR_FUNCS
+
+  // DLL linkage specification
+  #define A_DLLEXPORT __attribute__((visibility("default")))
+  #define A_DLLIMPORT __attribute__((visibility("default")))
+
 #endif
 
 
@@ -359,6 +460,10 @@
 
   // Load given memory location into L1 cache
   #define a_prefetch(ptr) __builtin_prefetch(ptr)
+
+  // DLL linkage specification
+  #define A_DLLIMPORT
+  #define A_DLLEXPORT
 
 #endif
 
@@ -478,21 +583,6 @@
 
 #define A_SOURCE_FUNC_STR  A_SOURCE_STR __FUNCSIG__
 
-// Use #pragma A_LOG("IDE Output to double click") to write to the IDE output window
-// during compilation with a line that includes _msg and will load up the appropriate file
-// and line when it is double clicked on.
-// $Revisit - CReis Look into using C99/C++0X _Pragma() and MSVC _pragma() to shorten this
-#define A_LOG(_msg)  message(A_SOURCE_STR _msg " - " __FUNCTION__ "()")
-
-// Work-in-progress note - just like A_LOG() above though only shown if A_SHOW_NOTES is
-// defined and ignored otherwise.  For example:
-// #pragma A_NOTE("***Incomplete***")
-#ifdef A_SHOW_NOTES
-  #define A_NOTE(_msg)  A_LOG(_msg)
-#else
-  #define A_NOTE(_msg)
-#endif
-
 // This acts as an intention comment for a non-terminating (i.e. infinite) loop.
 #define A_LOOP_INFINITE for (;;)
 
@@ -504,6 +594,7 @@
 
 // Pre-declarations
 class AString;
+class AErrorOutputBase;
 
 //---------------------------------------------------------------------------------------
 // Number Type Shorthand
@@ -696,51 +787,116 @@ enum eAVerbosity
   AVerbosity_full       // Display both major/minor high/low-level info in all its glory
   };
 
-
-//---------------------------------------------------------------------------------------
-// Initial/starting values for AgogCore classes.
-struct AgogCoreVals
+// What measure to take after an error
+enum eAErrAction
   {
-  // Methods
+  // Go to recovery area (throw / catch) and:
 
-    AgogCoreVals();
+  AErrAction_quit,        // Quit application
+  AErrAction_retry,       // Retry last command
+  AErrAction_continue,    // Skip currnent command and continue with next command
 
-  // Public Data Members
+                          // Go to next line of code - usually unstable
 
-    // 'true' when initially constructed.  If an app needs to override the default values,
-    // check for 'true', set any desired custom values, and then set to 'false'.
-    bool m_using_defaults;
+  AErrAction_ignore,      // Ignore and go to next line of code (and hope that app is still stable)
+  AErrAction_ignore_all,  // Ignore and go to next line of code and do not perform this test in the future
 
-    // Object pool size for ADatum objects.  Initial size and amount to increment when
-    // more objects are needed than are available.
-    uint m_pool_init_datum;
-    uint m_pool_incr_datum;
+                          // Modifier Flags
 
-    // Object pool size for AStringRef objects.  Initial size and amount to increment when
-    // more objects are needed than are available.
-    uint m_pool_init_string_ref;
-    uint m_pool_incr_string_ref;
+  AErrAction__debug_break = 0x100,
 
-    // Object pool size for AStringRef objects.  Initial size and amount to increment when
-    // more objects are needed than are available.
-    uint m_pool_init_symbol_ref;
-    uint m_pool_incr_symbol_ref;
-
+  AErrAction__action_mask = 0x0FF
   };
 
+//---------------------------------------------------------------------------------------
+// Interface for AgogCore to interact with its app
+class AAppInfoCore
+  {
+  public:
 
-namespace Agog
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for ADatum objects  
+    virtual uint32_t get_pool_init_datum() const { return 256; }
+    virtual uint32_t get_pool_incr_datum() const { return 64;  }
+
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for AStringRef objects
+    virtual uint32_t get_pool_init_string_ref() const { return 40960; }
+    virtual uint32_t get_pool_incr_string_ref() const { return 256; }
+
+    //---------------------------------------------------------------------------------------
+    // Initial pool size and increment amount for ASymbolRef objects
+    virtual uint32_t get_pool_init_symbol_ref() const { return 2048; }
+    virtual uint32_t get_pool_incr_symbol_ref() const { return 256; }
+
+    //---------------------------------------------------------------------------------------
+    // Memory allocation
+    virtual void *   malloc(size_t size, const char * debug_name_p) = 0;
+    virtual void     free(void * mem_p) = 0;
+    virtual uint32_t request_byte_size(uint32_t size_requested) = 0; // Convert needed byte size to byte size for allocation
+    virtual bool     is_using_fixed_size_pools() = 0; // If _any_ memory can potentially come from a memory pool (for debug display only)
+
+    //---------------------------------------------------------------------------------------
+    // Prints supplied C-string to debug console
+    // which can be a debugger window, standard out, something custom in the app, etc.
+    virtual void debug_print(const char * cstr_p) = 0;
+
+    //---------------------------------------------------------------------------------------
+    // Called whenever an error occurs but *before* a choice has been made as to
+    //             how it should be resolved.  It optionally creates an error output object
+    //             that will have its determine_choice() called if 'nested' is false.
+    // Returns:    an AErrorOutputBase object to call determine_choice() on or nullptr if a
+    //             default resolve error choice is to be made without prompting the user with
+    //             output to the debug output window.
+    // Arg         nested - Indicates whether the error is nested inside another error - i.e.
+    //             an additional error happened before a prior error was fully resolved
+    //             (while unwinding the stack on a 'continue' exception throw for example).
+    //             determine_choice() will *not* be called if 'nested' is true.
+    virtual AErrorOutputBase * on_error_pre(bool nested) = 0;
+
+    //---------------------------------------------------------------------------------------
+    // Called whenever an error occurs and *after* a choice has been made as to
+    //             how it should be resolved.
+    // Arg         action - the action that will be taken to attempt resolve the error.
+    virtual void on_error_post(eAErrAction action) = 0;
+
+    //---------------------------------------------------------------------------------------
+    // Called if 'Quit' is chosen during error.
+    virtual void on_error_quit() = 0;
+
+};
+
+//---------------------------------------------------------------------------------------
+// Convenience default implementation of AAppInfoCore
+class AAppInfoCoreDefault : public AAppInfoCore
   {
 
-  // This must be defined somewhere by the application - See _AgogCoreDefaults.cpp
-  AgogCoreVals & get_agog_core_vals();
+  virtual void *             malloc(size_t size, const char * debug_name_p) override;
+  virtual void               free(void * mem_p) override;
+  virtual uint32_t           request_byte_size(uint32_t size_requested) override;
+  virtual bool               is_using_fixed_size_pools() override;
+  virtual void               debug_print(const char * cstr_p) override;
+  virtual AErrorOutputBase * on_error_pre(bool nested) override;
+  virtual void               on_error_post(eAErrAction action) override;
+  virtual void               on_error_quit() override;
 
-  }
-
+  };
 
 //=======================================================================================
 // Global Functions
 //=======================================================================================
+
+namespace AgogCore
+  {
+
+  // Static (global) initialization/deinitialization of AgogCore
+  extern A_API void  initialize(AAppInfoCore * app_info_p);
+  extern A_API void  deinitialize();
+
+  extern A_API AAppInfoCore *  get_app_info();
+  extern A_API void            set_app_info(AAppInfoCore * app_info_p);
+
+  }
 
 //---------------------------------------------------------------------------------------
 // Compares two types and returns the result as an eAEquate
@@ -757,80 +913,38 @@ inline eAEquate a_compare(_Type lhs, _Type rhs)
 // even better use the AString class if possible.  See the comments in the cpp file for
 // more info.
 
-char *  a_cstr_format(const char * format_cstr_p, ...);
-AString a_str_format(const char * format_cstr_p, ...);
-
+A_API char *  a_cstr_format(const char * format_cstr_p, ...);
+A_API AString a_str_format(const char * format_cstr_p, ...);
 
 //---------------------------------------------------------------------------------------
 // Memory allocation declarations 
 
-#define a_align_up(x,align)        (((x)+((align)-1)) & (-((int)(align))))
+#define a_align_up(x,align)       (((x)+((align)-1)) & (-((int)(align))))
 #define a_stack_allocate(count,T) (T*)alloca((count)*sizeof(T))
 
-// $Revisit - CReis These should probably be macros to allow for easier redefinition/memory tracking
-
-#ifdef A_PLAT_X360
-  //_Ret_bytecap_(_Size) void * operator new[](size_t size);
-#else
-  //void * operator new[](size_t size);
-#endif
-//void  operator delete(void * ptr);
-//void  operator delete[](void * ptr);
-
-void * operator new(size_t size, const char * desc_cstr_p);
-void * operator new[](size_t size, const char * desc_cstr_p);
-
-// $Note - *** delete operators with additional arguments cannot be called explicitly
-// - they are only called on class destruction on a paired new with similar arguments.
-// This means that a simple delete call will often call the single argument operator
-// delete(void * mem_p) so take care to ensure that the proper delete is paired with a
-// corresponding new.
-
-void  operator delete(void * ptr, const char * desc_cstr_p);
-void  operator delete[](void * ptr, const char * desc_cstr_p);
-
+//---------------------------------------------------------------------------------------
+inline void * operator new(size_t size, const char * desc_cstr_p)
+  {
+  return AgogCore::get_app_info()->malloc(size, desc_cstr_p);
+  }
+    
+//---------------------------------------------------------------------------------------
+inline void * operator new[](size_t size, const char * desc_cstr_p)
+  {
+  return AgogCore::get_app_info()->malloc(size, desc_cstr_p);
+  }
 
 //---------------------------------------------------------------------------------------
-// Memory allocation definitions
-// Standard inlined memory allocation functions used if A_MEMORY_FUNCS_PRESENT not present
-// and custom definitions need to be present if A_MEMORY_FUNCS_PRESENT is present.
-#if !defined(A_MEMORY_FUNCS_PRESENT)
-  #define A_MEMORY_FUNCS_PRESENT
+inline void operator delete(void * buffer_p, const char * desc_cstr_p)
+  {
+  AgogCore::get_app_info()->free(buffer_p);
+  }
 
-  #if defined(A_PLAT_iOS)
-    #include <malloc/malloc.h>
-  #elif defined(A_PLAT_OSX)
-    #include <stdlib.h>
-  #else
-    #include <malloc.h>
-  #endif
-
-  //---------------------------------------------------------------------------------------
-  inline void * operator new(size_t size, const char * desc_cstr_p)
-    {
-    return ::malloc(size);
-    }
-    
-  //---------------------------------------------------------------------------------------
-  inline void * operator new[](size_t size, const char * desc_cstr_p)
-    {
-    return ::malloc(size);
-    }
-
-  //---------------------------------------------------------------------------------------
-  inline void operator delete(void * buffer_p, const char * desc_cstr_p)
-    {
-    ::free(buffer_p);
-    }
-
-  //---------------------------------------------------------------------------------------
-  inline void operator delete[](void * buffer_p, const char * desc_cstr_p)
-    {
-    ::free(buffer_p);
-    }
-
-
-#endif  // A_MEMORY_FUNCS_PRESENT
+//---------------------------------------------------------------------------------------
+inline void operator delete[](void * buffer_p, const char * desc_cstr_p)
+  {
+  AgogCore::get_app_info()->free(buffer_p);
+  }
 
 // Define placement new
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(NO_AGOG_PLACEMENT_NEW)
@@ -871,7 +985,6 @@ inline void operator delete(void *, void *)
 //=======================================================================================
 
 #include <AgogCore/ADebug.hpp>  // For all debugging related stuff.
-
 
 #endif  // __AGOGCORE_HPP
 

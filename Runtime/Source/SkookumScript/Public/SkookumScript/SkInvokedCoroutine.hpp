@@ -38,7 +38,7 @@ class SkCoroutineCall;
 //---------------------------------------------------------------------------------------
 // Notes      Wrapper for executed/called/invoked coroutines
 // Author(s)  Conan Reis
-class SkInvokedCoroutine :
+class SK_API SkInvokedCoroutine :
   public SkInvokedContextBase,
   public AListNode<SkInvokedCoroutine> // Used by SkMind::m_icoroutines_to_update, SkMind::m_icoroutines_pending, SkMind::ms_icoroutines_updating
   {

@@ -13,13 +13,7 @@
 #include <K2Node_CallFunction.h>
 #include <K2Node_Event.h>
 
-#include "SkookumScriptEditorCommands.h"
-#include "SkookumStyles.h"
-#include "LevelEditor.h"
 #include "GraphEditor.h"
-#include "BlueprintEditor.h"
-#include "BlueprintEditorModule.h"
-#include "MultiBoxExtender.h"
 
 #include "../../../../Generator/Source/SkookumScriptGenerator/Private/SkookumScriptGeneratorBase.inl"
 
@@ -42,9 +36,9 @@ protected:
   //---------------------------------------------------------------------------------------
   // ISkookumScriptRuntimeEditorInterface implementation
 
-  virtual FString       ensure_temp_project(const TCHAR * generated_overlay_name_p) override;
+  virtual FString       get_project_path() override;
+  virtual FString       get_default_project_path() override;
   virtual FString       make_project_editable() override;
-  virtual void          set_overlay_path(const FString & scripts_path, const FString & overlay_name) override; // E.g. ProjectName/Scripts/Project-Generated
   virtual int32         get_overlay_path_depth() const override;
   virtual void          generate_all_class_script_files() override;
   virtual void          recompile_blueprints_with_errors() override;
@@ -53,6 +47,8 @@ protected:
 
   //---------------------------------------------------------------------------------------
   // Local implementation
+
+  void                    initialize_paths();
 
   ISkookumScriptRuntime * get_runtime() const { return static_cast<ISkookumScriptRuntime *>(m_runtime_p.Get()); }
 
@@ -74,13 +70,12 @@ protected:
   void                    delete_class_script_files(UClass * ue_class_p);
   void                    generate_used_class_script_files();
 
-  void                    add_skookum_button_to_level_tool_bar(FToolBarBuilder &);
-  void                    add_skookum_button_to_blueprint_tool_bar(FToolBarBuilder &);
-  void                    on_skookum_button_clicked();
-
   // Data members
 
   TSharedPtr<IModuleInterface>  m_runtime_p;  // TSharedPtr holds on to the module so it can't go away while we need it
+
+  FString                       m_project_path;
+  FString                       m_default_project_path;
 
   FDelegateHandle               m_on_asset_loaded_handle;
   FDelegateHandle               m_on_object_modified_handle;
@@ -98,15 +93,6 @@ protected:
 
   const TCHAR *                 m_editable_ini_settings_p; // ini file settings to describe that a project is not editable
 
-  TSharedPtr<FUICommandList>        m_button_commands;
-
-  TSharedPtr<FExtensibilityManager> m_level_extension_manager;
-  TSharedPtr<const FExtensionBase>  m_level_tool_bar_extension;
-  TSharedPtr<FExtender>             m_level_tool_bar_extender;
-
-  TSharedPtr<FExtensibilityManager> m_blueprint_extension_manager;
-  TSharedPtr<const FExtensionBase>  m_blueprint_tool_bar_extension;
-  TSharedPtr<FExtender>             m_blueprint_tool_bar_extender;
   };
 
 IMPLEMENT_MODULE(FSkookumScriptEditor, SkookumScriptEditor)
@@ -140,6 +126,9 @@ void FSkookumScriptEditor::StartupModule()
   // String to insert into/remove from Sk project ini file
   m_editable_ini_settings_p = TEXT("Editable=false\r\nCanMakeEditable=true\r\n");
 
+  // Set up project and overlay paths
+  initialize_paths();
+
   if (IsRunningCommandlet())
     {
     // Tell runtime to start skookum now
@@ -160,35 +149,6 @@ void FSkookumScriptEditor::StartupModule()
     m_on_asset_renamed_handle = asset_registry.Get().OnAssetRenamed().AddRaw(this, &FSkookumScriptEditor::on_asset_renamed);
     m_on_in_memory_asset_created_handle = asset_registry.Get().OnInMemoryAssetCreated().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_created);
     m_on_in_memory_asset_deleted_handle = asset_registry.Get().OnInMemoryAssetDeleted().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_deleted);
-
-    //---------------------------------------------------------------------------------------
-    // UI extension
-
-    // Register commands and styles
-    FSkookumScriptEditorCommands::Register();
-    FSlateStyleRegistry::UnRegisterSlateStyle(FSkookumStyles::GetStyleSetName()); // Hot reload hack
-    FSkookumStyles::Initialize();
-
-    // Button commands 
-    m_button_commands = MakeShareable(new FUICommandList);
-    m_button_commands->MapAction(
-      FSkookumScriptEditorCommands::Get().m_skookum_button,
-      FExecuteAction::CreateRaw(this, &FSkookumScriptEditor::on_skookum_button_clicked),
-      FCanExecuteAction());
-
-    // Add to level tool bar
-    m_level_tool_bar_extender = MakeShareable(new FExtender);
-    m_level_tool_bar_extension = m_level_tool_bar_extender->AddToolBarExtension("Compile", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_level_tool_bar));
-    FLevelEditorModule & level_editor_module = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-    m_level_extension_manager = level_editor_module.GetToolBarExtensibilityManager();
-    m_level_extension_manager->AddExtender(m_level_tool_bar_extender);
-
-    // Add to blueprint tool bar
-    m_blueprint_tool_bar_extender = MakeShareable(new FExtender);
-    m_blueprint_tool_bar_extension = m_blueprint_tool_bar_extender->AddToolBarExtension("Asset", EExtensionHook::After, m_button_commands, FToolBarExtensionDelegate::CreateRaw(this, &FSkookumScriptEditor::add_skookum_button_to_blueprint_tool_bar));
-    FBlueprintEditorModule & blueprint_editor_module = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet");
-    m_blueprint_extension_manager = blueprint_editor_module.GetMenuExtensibilityManager();
-    m_blueprint_extension_manager->AddExtender(m_blueprint_tool_bar_extender);
     }
 
   }
@@ -219,33 +179,6 @@ void FSkookumScriptEditor::ShutdownModule()
       asset_registry_p->Get().OnInMemoryAssetCreated().Remove(m_on_in_memory_asset_created_handle);
       asset_registry_p->Get().OnInMemoryAssetDeleted().Remove(m_on_in_memory_asset_deleted_handle);
       }
-
-    //---------------------------------------------------------------------------------------
-    // UI extension
-
-    if (m_level_extension_manager.IsValid())
-      {
-      FSkookumScriptEditorCommands::Unregister();
-      m_level_tool_bar_extender->RemoveExtension(m_level_tool_bar_extension.ToSharedRef());
-      m_level_extension_manager->RemoveExtender(m_level_tool_bar_extender);
-      }
-    else
-      {
-      m_level_extension_manager.Reset();
-      }
-
-    if (m_blueprint_extension_manager.IsValid())
-      {
-      FSkookumScriptEditorCommands::Unregister();
-      m_blueprint_tool_bar_extender->RemoveExtension(m_blueprint_tool_bar_extension.ToSharedRef());
-      m_blueprint_extension_manager->RemoveExtender(m_blueprint_tool_bar_extender);
-      }
-    else
-      {
-      m_blueprint_extension_manager.Reset();
-      }
-
-    FSkookumStyles::Shutdown();
     }
   }
 
@@ -254,39 +187,17 @@ void FSkookumScriptEditor::ShutdownModule()
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
-// Make sure a temporary Sk project file/folder exists in the project's `Intermediate` folder
 
-FString FSkookumScriptEditor::ensure_temp_project(const TCHAR * generated_overlay_name_p)
+FString FSkookumScriptEditor::get_project_path()
   {
-  // Check temporary location (in `Intermediate` folder)
-  FString temp_root_path(FPaths::GameIntermediateDir() / TEXT("SkookumScript"));
-  FString temp_scripts_path(temp_root_path / TEXT("Scripts"));
-  FString project_path = temp_scripts_path / TEXT("Skookum-project.ini");
-  if (FPaths::FileExists(project_path))
-    {
-    set_overlay_path(temp_scripts_path, generated_overlay_name_p);
-    }
-  else
-    {
-    // If in neither folder, create new project in temporary location
-    // $Revisit MBreyer - read ini file from default_project_path and patch it up to carry over customizations
-    FString proj_ini = FString::Printf(TEXT("[Project]\r\nProjectName=%s\r\nStrictParse=true\r\nUseBuiltinActor=false\r\nCustomActorClass=Actor\r\nStartupMind=Master\r\n%s"), FApp::GetGameName(), m_editable_ini_settings_p);
-    proj_ini += TEXT("[Output]\r\nCompileManifest=false\r\nCompileTo=../Content/skookumscript/classes.sk-bin\r\n");
-    proj_ini += TEXT("[Script Overlays]\r\nOverlay1=*Core|Core\r\nOverlay2=-*Core-Sandbox|Core-Sandbox\r\nOverlay3=*VectorMath|VectorMath\r\nOverlay4=*Engine-Generated|Engine-Generated|3\r\nOverlay5=*Engine|Engine\r\nOverlay6=*Project-Generated|Project-Generated|3\r\n");
-    if (FFileHelper::SaveStringToFile(proj_ini, *project_path, FFileHelper::EEncodingOptions::ForceAnsi))
-      {
-      IFileManager::Get().MakeDirectory(*(temp_root_path / TEXT("Content/skookumscript")), true);
-      IFileManager::Get().MakeDirectory(*(temp_scripts_path / generated_overlay_name_p / TEXT("Object")), true);
-      set_overlay_path(temp_scripts_path, generated_overlay_name_p);
-      generate_all_class_script_files();
-      }
-    else
-      {
-      project_path.Empty();
-      }
-    }
+  return m_project_path;
+  }
 
-  return project_path;
+//---------------------------------------------------------------------------------------
+
+FString FSkookumScriptEditor::get_default_project_path()
+  {
+  return m_default_project_path;
   }
 
 //---------------------------------------------------------------------------------------
@@ -372,15 +283,6 @@ FString FSkookumScriptEditor::make_project_editable()
 
 //---------------------------------------------------------------------------------------
 
-void FSkookumScriptEditor::set_overlay_path(const FString & scripts_path, const FString & overlay_name)
-  {
-  // Set up scripts path and depth
-  m_overlay_path = scripts_path / overlay_name;
-  compute_scripts_path_depth(scripts_path / TEXT("Skookum-project.ini"), overlay_name);
-  }
-
-//---------------------------------------------------------------------------------------
-
 int32 FSkookumScriptEditor::get_overlay_path_depth() const
   {
   return m_overlay_path_depth;
@@ -393,7 +295,7 @@ void FSkookumScriptEditor::generate_all_class_script_files()
   if (!m_overlay_path.IsEmpty())
     {
     TArray<UObject*> blueprint_array;
-    GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
+    GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject);
     for (UObject * obj_p : blueprint_array)
       {
       generate_class_script_files(static_cast<UBlueprint *>(obj_p)->GeneratedClass, true);
@@ -409,7 +311,7 @@ void FSkookumScriptEditor::generate_all_class_script_files()
 void FSkookumScriptEditor::recompile_blueprints_with_errors()
   {
   TArray<UObject*> blueprint_array;
-  GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject | RF_PendingKill);
+  GetObjectsOfClass(UBlueprint::StaticClass(), blueprint_array, false, RF_ClassDefaultObject);
   for (UObject * obj_p : blueprint_array)
     {
     UBlueprint * blueprint_p = static_cast<UBlueprint *>(obj_p);
@@ -490,7 +392,7 @@ void FSkookumScriptEditor::on_class_updated(UClass * ue_class_p)
 
   // 2) Refresh node display of all SkookumScript function call nodes
   obj_array.Reset();
-  GetObjectsOfClass(UK2Node_CallFunction::StaticClass(), obj_array, true, RF_ClassDefaultObject | RF_PendingKill);
+  GetObjectsOfClass(UK2Node_CallFunction::StaticClass(), obj_array, true, RF_ClassDefaultObject);
   for (auto obj_p : obj_array)
     {
     UK2Node_CallFunction * function_node_p = Cast<UK2Node_CallFunction>(obj_p);
@@ -506,7 +408,7 @@ void FSkookumScriptEditor::on_class_updated(UClass * ue_class_p)
 
   // 3) Refresh node display of all SkookumScript event nodes
   obj_array.Reset();
-  GetObjectsOfClass(UK2Node_Event::StaticClass(), obj_array, true, RF_ClassDefaultObject | RF_PendingKill);
+  GetObjectsOfClass(UK2Node_Event::StaticClass(), obj_array, true, RF_ClassDefaultObject);
   for (auto obj_p : obj_array)
     {
     UK2Node_Event * event_node_p = Cast<UK2Node_Event>(obj_p);
@@ -525,6 +427,71 @@ void FSkookumScriptEditor::on_class_updated(UClass * ue_class_p)
 //=======================================================================================
 // FSkookumScriptEditor implementation
 //=======================================================================================
+
+//---------------------------------------------------------------------------------------
+
+void FSkookumScriptEditor::initialize_paths()
+  {             
+  const TCHAR * overlay_name_p = TEXT("Project-Generated");
+
+  // Look for default SkookumScript project file in engine folder.
+  FString default_project_path(FPaths::EnginePluginsDir() / TEXT("SkookumScript/Runtime/Scripts/Skookum-project-default.ini"));
+  checkf(FPaths::FileExists(default_project_path), TEXT("Cannot find default project settings file '%s'!"), *default_project_path);
+  m_default_project_path = FPaths::ConvertRelativePathToFull(default_project_path);
+
+  // Look for specific SkookumScript project in game/project folder.
+  FString project_path;
+  if (!FPaths::GameDir().IsEmpty())
+    {
+    // 1) Check permanent location
+    project_path = FPaths::GameDir() / TEXT("Scripts/Skookum-project.ini");
+    if (!FPaths::FileExists(project_path))
+      {
+      // 2) Check/create temp location
+      // Check temporary location (in `Intermediate` folder)
+      FString temp_root_path(FPaths::GameIntermediateDir() / TEXT("SkookumScript"));
+      FString temp_scripts_path(temp_root_path / TEXT("Scripts"));
+      project_path = temp_scripts_path / TEXT("Skookum-project.ini");
+      if (!FPaths::FileExists(project_path))
+        {
+        // If in neither folder, create new project in temporary location
+        // $Revisit MBreyer - read ini file from default_project_path and patch it up to carry over customizations
+        FString proj_ini = FString::Printf(TEXT("[Project]\r\nProjectName=%s\r\nStrictParse=true\r\nUseBuiltinActor=false\r\nCustomActorClass=Actor\r\nStartupMind=Master\r\n%s"), FApp::GetGameName(), m_editable_ini_settings_p);
+        proj_ini += TEXT("[Output]\r\nCompileManifest=false\r\nCompileTo=../Content/skookumscript/classes.sk-bin\r\n");
+        proj_ini += TEXT("[Script Overlays]\r\nOverlay1=*Core|Core\r\nOverlay2=-*Core-Sandbox|Core-Sandbox\r\nOverlay3=*VectorMath|VectorMath\r\nOverlay4=*Engine-Generated|Engine-Generated|3\r\nOverlay5=*Engine|Engine\r\nOverlay6=*");
+        proj_ini += overlay_name_p;
+        proj_ini += TEXT("|");
+        proj_ini += overlay_name_p;
+        proj_ini += TEXT("|3\r\n");
+        if (FFileHelper::SaveStringToFile(proj_ini, *project_path, FFileHelper::EEncodingOptions::ForceAnsi))
+          {
+          IFileManager::Get().MakeDirectory(*(temp_root_path / TEXT("Content/skookumscript")), true);
+          IFileManager::Get().MakeDirectory(*(temp_scripts_path / overlay_name_p / TEXT("Object")), true);
+          generate_all_class_script_files();
+          }
+        else
+          {
+          // Silent failure since we don't want to disturb people's workflow
+          project_path.Empty();
+          }
+        }
+      }
+    }
+
+  FString scripts_path = FPaths::GetPath(m_default_project_path);
+  if (!project_path.IsEmpty())
+    {
+    // If project path exists, overrides the default script location
+    scripts_path = FPaths::GetPath(project_path);
+
+    // Qualify and store for later reference
+    m_project_path = FPaths::ConvertRelativePathToFull(project_path);
+    }
+
+  // Set overlay path and depth
+  m_overlay_path = scripts_path / overlay_name_p;
+  compute_scripts_path_depth(scripts_path / TEXT("Skookum-project.ini"), overlay_name_p);
+  }
 
 //---------------------------------------------------------------------------------------
 
@@ -931,89 +898,4 @@ void FSkookumScriptEditor::delete_class_script_files(UClass * ue_class_p)
     IFileManager::Get().DeleteDirectory(*directory_to_delete, false, true);
     get_runtime()->on_class_scripts_changed_by_editor(class_name, ISkookumScriptRuntime::ChangeType_deleted);
     }
-  }
-
-//---------------------------------------------------------------------------------------
-
-void FSkookumScriptEditor::add_skookum_button_to_level_tool_bar(FToolBarBuilder & builder)
-  {
-  #define LOCTEXT_NAMESPACE "LevelEditorToolBar"
-
-    FSlateIcon icon_brush = FSlateIcon(FSkookumStyles::GetStyleSetName(), "SkookumScriptEditor.ShowIDE", "SkookumScriptEditor.ShowIDE.Small");
-    builder.AddToolBarButton(FSkookumScriptEditorCommands::Get().m_skookum_button, NAME_None, LOCTEXT("SkookumButton_Override", "Skookum IDE"), LOCTEXT("SkookumButton_ToolTipOverride", "Summons the Skookum IDE and navigates to the related class"), icon_brush, NAME_None);
-
-  #undef LOCTEXT_NAMESPACE
-  }
-
-//---------------------------------------------------------------------------------------
-
-void FSkookumScriptEditor::add_skookum_button_to_blueprint_tool_bar(FToolBarBuilder & builder)
-  {
-  #define LOCTEXT_NAMESPACE "BlueprintEditorToolBar"
-
-    FSlateIcon icon_brush = FSlateIcon(FSkookumStyles::GetStyleSetName(), "SkookumScriptEditor.ShowIDE", "SkookumScriptEditor.ShowIDE.Small");
-    builder.AddToolBarButton(FSkookumScriptEditorCommands::Get().m_skookum_button, NAME_None, LOCTEXT("SkookumButton_Override", "Show in IDE"), LOCTEXT("SkookumButton_ToolTipOverride", "Summons the Skookum IDE and navigates to the related class or method/coroutine"), icon_brush, NAME_None);
-
-  #undef LOCTEXT_NAMESPACE
-  }
-
-//---------------------------------------------------------------------------------------
-
-void FSkookumScriptEditor::on_skookum_button_clicked()
-  {
-  FString focus_class_name;
-  FString focus_member_name;
-
-  // There must be a better way of finding the active editor...
-  TArray<UObject*> obj_array = FAssetEditorManager::Get().GetAllEditedAssets();
-  double latest_activation_time = 0.0;
-  IAssetEditorInstance * active_editor_p = nullptr;
-  if (obj_array.Num() > 0)
-    {
-    for (auto obj_iter = obj_array.CreateConstIterator(); obj_iter; ++obj_iter)
-      {
-      // Don't allow user to perform certain actions on objects that aren't actually assets (e.g. Level Script blueprint objects)
-      UBlueprint * blueprint_p = Cast<UBlueprint>(*obj_iter);
-      if (blueprint_p)
-        {
-        IAssetEditorInstance * editor_p = FAssetEditorManager::Get().FindEditorForAsset(blueprint_p, false);
-        if (editor_p->GetLastActivationTime() > latest_activation_time)
-          {
-          latest_activation_time = editor_p->GetLastActivationTime();
-          active_editor_p = editor_p;
-          }
-        }
-      }
-    }
-
-  if (active_editor_p)
-    {
-    // We found the most recently used Blueprint editor
-    FBlueprintEditor * blueprint_editor_p = static_cast<FBlueprintEditor *>(active_editor_p);
-    // Get name of associated Blueprint
-    focus_class_name = blueprint_editor_p->GetBlueprintObj()->GetName();
-    // See if any SkookumScript node is selected, if so, tell the IDE
-    const FGraphPanelSelectionSet node_array = blueprint_editor_p->GetSelectedNodes();
-    for (auto obj_iter = node_array.CreateConstIterator(); obj_iter; ++obj_iter)
-      {
-      UK2Node_CallFunction * call_node_p = Cast<UK2Node_CallFunction>(*obj_iter);
-      if (call_node_p)
-        {
-        focus_member_name = call_node_p->FunctionReference.GetMemberName().ToString();
-        break; // For now, just return the first one
-        }
-      UK2Node_Event * event_node_p = Cast<UK2Node_Event>(*obj_iter);
-      if (event_node_p)
-        {
-        focus_member_name = event_node_p->EventReference.GetMemberName().ToString();
-        break; // For now, just return the first one
-        }
-      }
-    }
-
-  // Bring up IDE and navigate to selected class/method/coroutine
-  get_runtime()->show_ide(focus_class_name, focus_member_name, false, false);
-
-  // Request recompilation if there have previously been errors
-  get_runtime()->freshen_compiled_binaries_if_have_errors();
   }

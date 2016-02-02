@@ -44,7 +44,7 @@ enum eSkExprFind
 
 
 //---------------------------------------------------------------------------------------
-struct SkMemberInfo
+struct SK_API SkMemberInfo
   {
   // Nested Structures
 
