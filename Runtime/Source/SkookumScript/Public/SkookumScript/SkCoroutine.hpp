@@ -32,7 +32,7 @@ class SkInvokedCoroutine;  // Pre-declaration
 // Notes      Method parameters & body abstract class
 // Subclasses SkCoroutine, SkCoroutineMthd, SkCoroutineFunc
 // Author(s)  Conan Reis
-class SkCoroutineBase : public SkInvokableBase
+class SK_API SkCoroutineBase : public SkInvokableBase
   {
   public:
 
@@ -70,7 +70,7 @@ class SkCoroutineBase : public SkInvokableBase
 //---------------------------------------------------------------------------------------
 // Notes      Custom/Compound Coroutine Class
 // Author(s)  Conan Reis
-class SkCoroutine : public SkCoroutineBase
+class SK_API SkCoroutine : public SkCoroutineBase
   {
   friend class SkParser;
 
@@ -160,7 +160,7 @@ typedef bool (SkInstance::* tSkCoroutineMthd)(SkInvokedCoroutine * scope_p);
 //---------------------------------------------------------------------------------------
 // Notes      Atomic Coroutine (C++) Method Class
 // Author(s)  Conan Reis
-class SkCoroutineMthd : public SkCoroutineBase
+class SK_API SkCoroutineMthd : public SkCoroutineBase
   {
   public:
 	  SK_NEW_OPERATORS(SkCoroutineMthd);
@@ -224,7 +224,7 @@ typedef bool (* tSkCoroutineFunc)(SkInvokedCoroutine * scope_p);
 //---------------------------------------------------------------------------------------
 // Notes      Atomic Coroutine Function Class
 // Author(s)  Conan Reis
-class SkCoroutineFunc : public SkCoroutineBase
+class SK_API SkCoroutineFunc : public SkCoroutineBase
   {
   public:
 	  SK_NEW_OPERATORS(SkCoroutineFunc);

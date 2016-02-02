@@ -17,7 +17,7 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic Enumeration class
-class SkEnum : public SkClassBindingSimpleZero<SkEnum, SkEnumType>
+class SK_API SkEnum : public SkClassBindingSimpleZero<SkEnum, SkEnumType>
   {
   public:
 
@@ -27,6 +27,7 @@ class SkEnum : public SkClassBindingSimpleZero<SkEnum, SkEnumType>
     static ANamed *       get_class_data_enum_name(SkClass * enum_class_p, SkEnumType enum_value);
 
     static void           register_bindings();
+    static SkClass *      get_class();
 
   };
 

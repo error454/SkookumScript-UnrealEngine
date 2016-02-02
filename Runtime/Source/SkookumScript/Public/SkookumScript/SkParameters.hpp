@@ -43,7 +43,7 @@ typedef APCompactArrayLogical<SkTypedName, ASymbol>     tSkParamReturnList;
 //            (SkMethod, SkMethodFunc, SkMethodMthd), SkCoroutineBase (SkCoroutine,
 //            SkCoroutineMthd, SkCoroutineFunc)]
 // Author(s)  Conan Reis
-class SkParameters : public ARefCountMix<SkParameters>
+class SK_API SkParameters : public ARefCountMix<SkParameters>
   {
   friend class SkParser;  // For quick access during construction with parsing
 

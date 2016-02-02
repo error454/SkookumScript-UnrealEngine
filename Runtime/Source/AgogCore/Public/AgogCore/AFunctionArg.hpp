@@ -70,13 +70,13 @@ class AFunctionArg : public AFunctionArgBase<_ArgType>
 
   // Modifying Methods
 
-    void invoke(_ArgType arg);
+    void invoke(_ArgType arg) override;
 
   // Non-Modifying Methods
 
-    virtual AFunctionArgBase<_ArgType> * copy_new() const;
+    virtual AFunctionArgBase<_ArgType> * copy_new() const override;
 
-	virtual bool is_invokable() const  { return m_function_p != nullptr; }
+    virtual bool is_invokable() const override { return m_function_p != nullptr; }
 
   protected:
   // Data Members

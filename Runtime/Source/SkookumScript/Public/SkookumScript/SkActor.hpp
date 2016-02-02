@@ -33,7 +33,7 @@ class SkActorClass;
 // 
 // $Revisit - CReis Some actors may not need data members so there could be a version of
 // `SkActor` that derives from `SkInstance` rather than `SkDataInstance`.
-class SkActor :
+class SK_API SkActor :
   public SkClassBindingAbstract<SkActor>, // Adds static class pointer
   public ANamed,         // Adds name
   public SkDataInstance  // Adds instance info and data members.

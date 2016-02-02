@@ -3,5 +3,5 @@
 // Returns     itself
 //---------------------------------------------------------------------------------------
 
-(Random random) Random
+(Random source) Random
 

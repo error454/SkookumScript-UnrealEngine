@@ -207,9 +207,6 @@
     <ClCompile Include="Private\AgogCore\AException.cpp">
       <Filter>ErrorHandling</Filter>
     </ClCompile>
-    <ClCompile Include="Private\AgogCore\AExceptionBase.cpp">
-      <Filter>ErrorHandling</Filter>
-    </ClCompile>
     <ClCompile Include="Private\AgogCore\ADeferFunc.cpp">
       <Filter>FunctionObjects</Filter>
     </ClCompile>

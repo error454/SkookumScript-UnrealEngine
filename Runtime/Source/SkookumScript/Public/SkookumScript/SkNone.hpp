@@ -14,7 +14,6 @@
 //=======================================================================================
 
 #include <SkookumScript/SkClassBindingAbstract.hpp>
-#include <SkookumScript/SkSymbolDefs.hpp>
 
 
 //=======================================================================================
@@ -22,13 +21,15 @@
 //=======================================================================================
 
 //---------------------------------------------------------------------------------------
-class SkNone : public SkClassBindingAbstract<SkNone>, public SkInstanceUnreffed
+class SK_API SkNone : public SkClassBindingAbstract<SkNone>, public SkInstanceUnreffed
   {
   public:
     
     SK_NEW_OPERATORS(SkNone);
-    SkNone() : SkInstanceUnreffed(ms_class_p) { SK_ASSERTX(ms_class_p, "Class instance must be non-null here."); }
 
-    static void initialize() { SkClassBindingAbstract::initialize(ASymbolId_None); }
+    SkNone();
+
+    static void       initialize();
+    static SkClass *  get_class();
 
   };  // SkNone

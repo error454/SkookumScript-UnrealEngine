@@ -35,7 +35,7 @@
 //        space with just a different virtual table.
 //     1+ uses its own memory rather than hijacking an SkInstance and includes references
 //        to captured variables.
-class SkClosure : public SkInstance
+class SK_API SkClosure : public SkInstance
   {
   public:
   // Common Methods

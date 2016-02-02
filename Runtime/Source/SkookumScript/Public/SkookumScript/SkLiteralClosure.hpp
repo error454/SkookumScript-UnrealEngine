@@ -41,7 +41,7 @@
 // Subclasses SkClosureMethodInfo, SkClosureCoroutineInfo           
 // See Also   Other *Closure* classes
 // Author(s)  Conan Reis
-class SkClosureInfoBase : public ARefCountMix<SkClosureInfoBase>
+class SK_API SkClosureInfoBase : public ARefCountMix<SkClosureInfoBase>
   {
   friend class SkLiteralClosure;
   friend class SkParser;
@@ -106,7 +106,7 @@ class SkClosureInfoBase : public ARefCountMix<SkClosureInfoBase>
 // Notes      Shared info for closure literals and closure objects/invokables for methods
 // See Also   SkClosure*
 // Author(s)  Conan Reis
-class SkClosureInfoMethod : public SkClosureInfoBase, public SkMethod
+class SK_API SkClosureInfoMethod : public SkClosureInfoBase, public SkMethod
   {
   friend class SkParser;
 
@@ -161,7 +161,7 @@ class SkClosureInfoMethod : public SkClosureInfoBase, public SkMethod
 // Notes      Shared info for closure literals and closure objects/invokables for coroutines
 // See Also   SkClosure*
 // Author(s)  Conan Reis
-class SkClosureInfoCoroutine : public SkClosureInfoBase, public SkCoroutine
+class SK_API SkClosureInfoCoroutine : public SkClosureInfoBase, public SkCoroutine
   {
   friend class SkParser;
 
@@ -218,7 +218,7 @@ class SkClosureInfoCoroutine : public SkClosureInfoBase, public SkCoroutine
 // Notes      Literal for closures & anonymous/lambda code/functions.
 // See Also   SkClosure*
 // Author(s)  Conan Reis
-class SkLiteralClosure : public SkExpressionBase
+class SK_API SkLiteralClosure : public SkExpressionBase
   {
   friend class SkParser;
 

@@ -276,7 +276,7 @@ void * SkUEClassBindingHelper::get_raw_pointer_entity(SkInstance * obj_p)
 SkInstance * SkUEClassBindingHelper::access_raw_data_entity(void * obj_p, tSkRawDataInfo raw_data_info, SkClassDescBase * data_type_p, SkInstance * value_p)
   {
   uint32_t byte_offset = (raw_data_info >> Raw_data_info_offset_shift) & Raw_data_info_offset_mask;
-  SK_ASSERTX(((raw_data_info >> (Raw_data_info_type_shift + Raw_data_type_size_shift)) & Raw_data_type_size_mask) == sizeof(SkUEWeakObjectPtr<UObject>), "Size of data type and data member must match!");
+  SK_ASSERTX(((raw_data_info >> (Raw_data_info_type_shift + Raw_data_type_size_shift)) & Raw_data_type_size_mask) == sizeof(UObject *), "Size of data type and data member must match!");
   
   UObject ** data_p = (UObject **)((uint8_t*)obj_p + byte_offset);
 

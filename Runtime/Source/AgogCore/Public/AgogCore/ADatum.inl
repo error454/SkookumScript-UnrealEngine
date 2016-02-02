@@ -394,11 +394,19 @@ A_INLINE uint32_t ADatum::calc_size(
 // Author(s):  Conan Reis
 A_INLINE uint8_t * ADatum::alloc_buffer(uint32_t buffer_size)
   {
-  uint8_t * buffer_p = new ("ADatum::alloc_buffer") uint8_t[buffer_size];
+  uint8_t * buffer_p = (uint8_t *)AgogCore::get_app_info()->malloc(buffer_size, "ADatum::alloc_buffer");
 
   A_VERIFY_MEMORY(buffer_p != nullptr, ADatum);
 
   return buffer_p;
   }
+
+//---------------------------------------------------------------------------------------
+
+A_INLINE void ADatum::free_buffer(uint8_t * buffer_p)
+  {
+  AgogCore::get_app_info()->free(buffer_p);
+  }
+
 
 

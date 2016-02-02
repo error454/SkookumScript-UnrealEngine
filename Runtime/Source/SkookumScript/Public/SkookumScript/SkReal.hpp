@@ -17,11 +17,12 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic Real (floating point) class
-class SkReal : public SkClassBindingSimpleZero<SkReal, SkRealType>
+class SK_API SkReal : public SkClassBindingSimpleZero<SkReal, SkRealType>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };
 

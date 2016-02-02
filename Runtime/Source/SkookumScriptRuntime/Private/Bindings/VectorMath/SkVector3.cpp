@@ -558,3 +558,10 @@ void SkVector3::register_bindings()
   ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector3>);
   SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Vector"));
   }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkVector3::get_class()
+  {
+  return ms_class_p;
+  }

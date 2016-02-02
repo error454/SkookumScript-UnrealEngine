@@ -31,7 +31,7 @@ template<class _ObjectType> class AObjBlock;
 
 //---------------------------------------------------------------------------------------
 // Author   Conan Reis
-struct AStringRef
+struct A_API AStringRef
   {
   // Common methods
 

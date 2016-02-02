@@ -149,7 +149,7 @@ A_INLINE void SkInvokedBase::abort_common(
 // #Author(s)  Conan Reis
 A_INLINE AObjReusePool<SkInvokedExpression> & SkInvokedExpression::get_pool()
   {
-  static AObjReusePool<SkInvokedExpression> s_pool(Skookum::get_lib_vals().m_pool_init_iexpr, Skookum::get_lib_vals().m_pool_incr_iexpr);
+  static AObjReusePool<SkInvokedExpression> s_pool(SkookumScript::get_app_info()->get_pool_init_iexpr(), SkookumScript::get_app_info()->get_pool_incr_iexpr());
 
   return s_pool;
   }
@@ -255,13 +255,17 @@ A_INLINE void SkInvokedContextBase::data_append_var()
 // Author(s):   Conan Reis
 A_INLINE void SkInvokedContextBase::data_create_vars(uint32_t start_idx, uint32_t count)
   {
-  // 'nil' will be used as an initial value for the temporary variables.
-  // nil does not need to be referenced/dereferenced
-  SkInstance ** var_pp = m_data.get_array() + start_idx;
-  SkInstance ** var_end_pp = var_pp + count;
-  while (var_pp < var_end_pp)
+  if (count)
     {
-    *var_pp++ = SkBrain::ms_nil_p;
+    // 'nil' will be used as an initial value for the temporary variables.
+    // nil does not need to be referenced/dereferenced
+    SkInstance * nil_p = SkBrain::ms_nil_p;
+    SkInstance ** var_pp = m_data.get_array() + start_idx;
+    SkInstance ** var_end_pp = var_pp + count;
+    do
+      {
+      *var_pp++ = nil_p;
+      } while (var_pp < var_end_pp);
     }
   }
 
@@ -270,12 +274,17 @@ A_INLINE void SkInvokedContextBase::data_create_vars(uint32_t start_idx, uint32_
 // that they refer to - thus removing them from the "temporary variable stack".
 A_INLINE void SkInvokedContextBase::data_destroy_vars(uint32_t start_idx, uint32_t count)
   {
-  // Dereference variables
-  SkInstance ** var_pp = m_data.get_array() + start_idx;
-  SkInstance ** var_end_pp = var_pp + count;
-  while (var_pp < var_end_pp)
+  if (count)
     {
-    (*var_pp++)->dereference();
+    // Dereference variables
+    SkInstance * nil_p = SkBrain::ms_nil_p;
+    SkInstance ** var_pp = m_data.get_array() + start_idx;
+    SkInstance ** var_end_pp = var_pp + count;
+    do    
+      {
+      (*var_pp)->dereference();
+      *var_pp++ = nil_p; // Set to nil as this slot might be re-used by another local variable
+      } while (var_pp < var_end_pp);
     }
   }
 
@@ -364,17 +373,12 @@ A_INLINE void SkInvokedContextBase::bind_arg(
   // more readable.
   uint32_t pos,
   // Object to set/bind - assumes that it already has its reference count incremented
-  SkInstance * obj_p,
-  // If to not deref the existing value
-  bool is_initial_bind
+  SkInstance * obj_p
   )
   {
   SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
   SkInstance ** elem_pp = m_data.get_array() + pos;
-  if (!is_initial_bind)
-    {
-    (*elem_pp)->dereference();
-    }
+  (*elem_pp)->dereference();
   *elem_pp = obj_p;
   }
 
@@ -389,17 +393,12 @@ A_INLINE void SkInvokedContextBase::bind_arg_and_ref(
   // more readable.
   uint32_t pos,
   // Object to set/bind - assumes that it already has its reference count incremented
-  SkInstance * obj_p,
-  // If to not deref the existing value
-  bool is_initial_bind
+  SkInstance * obj_p
   )
   {
   SK_ASSERTX(pos < m_data.get_size(), "Access out of range");
   SkInstance ** elem_pp = m_data.get_array() + pos;
   obj_p->reference();
-  if (!is_initial_bind)
-    {
-    (*elem_pp)->dereference(); // Deref after ref as it might refer to the same instance
-    }
+  (*elem_pp)->dereference(); // Deref after ref as it might refer to the same instance
   *elem_pp = obj_p;
   }

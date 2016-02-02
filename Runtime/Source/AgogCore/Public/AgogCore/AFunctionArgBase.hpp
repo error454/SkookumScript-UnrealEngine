@@ -16,6 +16,7 @@
 
 // This is intentionally placed outside the header ifdef block.
 #include <AgogCore/AgogCore.hpp>
+#include <AgogCore/AMemory.hpp>
 
 
 #ifndef __SFUNCTIONARGBASE_HPP
@@ -79,6 +80,9 @@ template<class _ArgType>
 class AFunctionArgBase
   {
   public:
+
+    A_NEW_OPERATORS(AFunctionArgBase);
+
   // Common types
 
     typedef AFunctionArgBase<_ArgType> tAFunctionArgBase;  // Local shorthand for AFunctionArgBase template
@@ -94,7 +98,8 @@ class AFunctionArgBase
   // Non-Modifying Methods
 
     virtual AFunctionArgBase * copy_new() const = 0;
-	virtual bool               is_invokable() const  { return true; }
+
+	  virtual bool               is_invokable() const  { return true; }
 
   };  // AFunctionArgBase
 

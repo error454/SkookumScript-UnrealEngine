@@ -22,6 +22,7 @@ class SkTransform : public SkClassBindingSimple<SkTransform, FTransform>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

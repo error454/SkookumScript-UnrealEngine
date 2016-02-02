@@ -17,11 +17,12 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic Integer class
-class SkInteger : public SkClassBindingSimpleZero<SkInteger, SkIntegerType>
+class SK_API SkInteger : public SkClassBindingSimpleZero<SkInteger, SkIntegerType>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };
 

@@ -243,7 +243,7 @@ class SkParameterBase;
 class SkTypedClass;
 class SkUnaryParam;
 
-#if defined (A_PLAT_PS3) || defined(A_PLAT_PS4) || defined(A_PLAT_LINUX64) || defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
+#if defined (A_PLAT_PS3) || defined(A_PLAT_PS4) || defined(A_PLAT_LINUX64) || defined(A_PLAT_ANDROID) || defined(A_PLAT_OSX) || defined(A_PLAT_iOS) || defined(A_PLAT_tvOS)
   #include <AgogCore/APArray.hpp>
 #else
   template<class _ElementType, class _KeyType = _ElementType, class _CompareClass = ACompareAddress<_KeyType> > class APArray;
@@ -254,6 +254,40 @@ class SkUnaryParam;
 #endif // (SKOOKUM & SK_CODE_IN)
 
 //---------------------------------------------------------------------------------------
+// Method name to operator translator
+#ifdef SK_CODE
+
+class SkMethodToOperator
+  {
+  public:
+
+    SK_NEW_OPERATORS(SkMethodToOperator);
+
+    SkMethodToOperator();
+
+    ASymbol method_to_operator(const ASymbol & method_name) const;
+
+  private:
+
+    struct SkTranslate
+      {
+      ASymbol m_from;
+      ASymbol m_to;
+
+      void set(const ASymbol & from, const ASymbol & to) { m_from = from; m_to = to; }
+
+      operator const ASymbol & () const { return m_from; }
+      };
+
+    APSortedLogical<SkTranslate, ASymbol> m_mthd2op;
+    SkTranslate                           m_mthd2op_table[27];
+
+  };
+
+#endif
+
+
+//---------------------------------------------------------------------------------------
 // Notes      SkookumScript Parser
 // Subclasses 
 // See Also   
@@ -261,7 +295,7 @@ class SkUnaryParam;
 // InLibs     SkookumLib.lib
 // Examples:    
 // Author(s)  Conan Reis
-class SkParser : public AString
+class SK_API SkParser : public AString
   {
   friend class SkCompiler;
 
@@ -830,6 +864,9 @@ class SkParser : public AString
 
   // Class Methods
 
+    static void initialize();
+    static void deinitialize();
+
     static void clear_stats();
     static void print_stats();
 
@@ -840,7 +877,6 @@ class SkParser : public AString
     static void         enable_strict(bool strict = true)                    { ms_default_flags.enable(Flag_strict, strict); }
     static AString      get_result_context_string(const AString & code, eResult result, uint32_t result_pos, uint32_t result_start = ADef_uint32, uint32_t start_pos = 0u);
     static AString      get_result_string(eResult result);
-    static void         initialize_pre_load();
     static eResult      invoke_script(const AString & code, AString * result_str_p = nullptr, SkInstance ** result_pp = nullptr, SkInstance * instance_p = nullptr, bool print_info = true);
 
   #endif // (SKOOKUM & SK_CODE_IN)
@@ -1042,6 +1078,9 @@ class SkParser : public AString
 
     // Default arguments to use if no SkParser::Args structure is supplied.
     static Args ms_def_args;
+
+    // Conversion table from method to operator
+    static const SkMethodToOperator * ms_method_to_operator_p;
 
   #endif // (SKOOKUM & SK_CODE_IN)
 

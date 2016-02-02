@@ -71,7 +71,7 @@
 // UsesLibs    
 // Inlibs   AgogCore/AgogCore.lib
 // Author   Conan Reis
-class ARandom
+class A_API ARandom
   {
   protected:
   // Internal Class Methods

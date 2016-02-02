@@ -88,3 +88,10 @@ void SkTransform::register_bindings()
   ms_class_p->resolve_raw_data("@scale", SkUEClassBindingHelper::compute_raw_data_info(ue_scale_var_p));
   SkUEClassBindingHelper::resolve_raw_data(ms_class_p, ue_struct_p); // Resolve the remaining raw data members as usual
   }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkTransform::get_class()
+  {
+  return ms_class_p;
+  }

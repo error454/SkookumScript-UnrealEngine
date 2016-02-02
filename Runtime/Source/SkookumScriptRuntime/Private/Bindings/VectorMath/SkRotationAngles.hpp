@@ -22,6 +22,7 @@ class SkRotationAngles : public SkClassBindingSimpleForceInit<SkRotationAngles, 
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

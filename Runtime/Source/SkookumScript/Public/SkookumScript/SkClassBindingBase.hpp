@@ -76,7 +76,7 @@ class SkClassBindingBase : public SkClassBindingAbstract<_BindingClass>, public 
   protected:
 
     // Protected constructor so a sub class can construct us
-    SkClassBindingBase() : SkInstance(tBindingAbstract::ms_class_p) {}
+    SkClassBindingBase() : SkInstance(_BindingClass::get_class()) {}
 
     // Make method bindings known to SkookumScript
     static void register_bindings(ASymbol class_name);
@@ -95,7 +95,7 @@ template<class _BindingClass, typename _DataType>
 template<typename... tParamClasses>
 inline SkInstance * SkClassBindingBase<_BindingClass, _DataType>::new_instance(const tParamClasses & ... constructor_args)
   {
-  SkInstance * instance_p = SkInstance::new_instance(tBindingAbstract::ms_class_p);
+  SkInstance * instance_p = SkInstance::new_instance(_BindingClass::get_class());
 
   static_cast<_BindingClass *>(instance_p)->construct(constructor_args...);
 
@@ -213,26 +213,26 @@ void SkClassBindingBase<_BindingClass, _DataType>::register_bindings(ASymbol cla
   tBindingAbstract::initialize(class_name);
 
   // Bind raw pointer callback function
-  tBindingAbstract::ms_class_p->register_raw_pointer_func(sizeof(_DataType) <= sizeof(SkInstance::tUserData) ? &SkInstance::get_raw_pointer_val : &SkInstance::get_raw_pointer_ref);
+  _BindingClass::get_class()->register_raw_pointer_func(sizeof(_DataType) <= sizeof(SkInstance::tUserData) ? &SkInstance::get_raw_pointer_val : &SkInstance::get_raw_pointer_ref);
 
   // Bind basic methods
   static_assert(_BindingClass::Binding_has_ctor || sizeof(_DataType) <= sizeof(tUserData), "If _DataType does not fit inside m_user_data, it will be allocated from the heap, hence there must be a constructor to allocate the memory.");
   if (_BindingClass::Binding_has_ctor)
     {
-    tBindingAbstract::ms_class_p->register_method_func("!", _BindingClass::mthd_ctor, SkBindFlag_instance_no_rebind);
+    _BindingClass::get_class()->register_method_func("!", _BindingClass::mthd_ctor, SkBindFlag_instance_no_rebind);
     }
   if (_BindingClass::Binding_has_ctor_copy)
     {
-    tBindingAbstract::ms_class_p->register_method_func("!copy", _BindingClass::mthd_ctor_copy, SkBindFlag_instance_no_rebind);
+    _BindingClass::get_class()->register_method_func("!copy", _BindingClass::mthd_ctor_copy, SkBindFlag_instance_no_rebind);
     }
   if (_BindingClass::Binding_has_assign)
     {
-    tBindingAbstract::ms_class_p->register_method_func("assign", _BindingClass::mthd_op_assign, SkBindFlag_instance_no_rebind);
+    _BindingClass::get_class()->register_method_func("assign", _BindingClass::mthd_op_assign, SkBindFlag_instance_no_rebind);
     }
   static_assert(_BindingClass::Binding_has_dtor || sizeof(_DataType) <= sizeof(tUserData), "If _DataType does not fit inside m_user_data, it will be allocated from the heap, hence there must be a destructor to free the memory.");
   if (_BindingClass::Binding_has_dtor)
     {
-    tBindingAbstract::ms_class_p->register_method_func("!!", _BindingClass::mthd_dtor, SkBindFlag_instance_no_rebind);
+    _BindingClass::get_class()->register_method_func("!!", _BindingClass::mthd_dtor, SkBindFlag_instance_no_rebind);
     }
   }
 

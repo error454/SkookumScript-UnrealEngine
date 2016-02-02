@@ -28,7 +28,7 @@
 // Notes      Named object class
 // See Also   ASymbol
 // Author(s)  Conan Reis
-class ANamed
+class A_API ANamed
   {
   public:
 

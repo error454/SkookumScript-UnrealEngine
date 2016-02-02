@@ -22,6 +22,7 @@ class SkColor : public SkClassBindingSimpleForceInit<SkColor, FLinearColor>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

@@ -13,6 +13,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/AStringRef.hpp>
 #ifdef A_INL_IN_CPP
   #include <AgogCore/AStringRef.inl>

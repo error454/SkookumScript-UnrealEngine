@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------------------
 // SkookumScript Name + Runtime Data Index
 
-struct SkNamedIndexed : ANamed
+struct SK_API SkNamedIndexed : ANamed
   {
   SK_NEW_OPERATORS(SkNamedIndexed);
 

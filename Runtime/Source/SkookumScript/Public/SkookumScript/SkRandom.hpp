@@ -19,12 +19,13 @@
 //---------------------------------------------------------------------------------------
 // SkookumScript Atomic Random Number Generator class.  It is high speed and
 // seed driven (allowing the reproduction of generated sequences).
-class SkRandom : public SkClassBindingSimple<SkRandom, ARandom>
+class SK_API SkRandom : public SkClassBindingSimple<SkRandom, ARandom>
   {
   public:
 
     enum { Binding_has_dtor = false }; // If to generate destructor
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

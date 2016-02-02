@@ -32,7 +32,7 @@ typedef tagPOINT POINT;    // Forward declaration so windows header does not nee
 
 //---------------------------------------------------------------------------------------
 // UI 2D Vector
-struct AVec2i
+struct A_API AVec2i
   {
   // Data Members
 

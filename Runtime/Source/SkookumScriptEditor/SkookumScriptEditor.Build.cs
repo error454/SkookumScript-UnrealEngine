@@ -42,11 +42,8 @@ namespace UnrealBuildTool.Rules
           "KismetCompiler",
           "Kismet",
           "BlueprintGraph",
-          "LevelEditor",
           "SlateCore",
-          "Slate",
           "SourceControl",
-          "EditorStyle",
           // ... add private dependencies that you statically link with here ...
         }
         );

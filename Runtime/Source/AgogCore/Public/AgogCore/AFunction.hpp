@@ -37,7 +37,7 @@
 // Inlibs   AgogCore/AgogCore.lib
 // Examples:    
 // Author   Conan Reis
-class AFunction : public AFunctionBase
+class A_API AFunction : public AFunctionBase
   {
   public:
   // Common Methods

@@ -142,3 +142,10 @@ void SkRotationAngles::register_bindings()
   ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkRotationAngles>);
   SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Rotator"));
   }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkRotationAngles::get_class()
+  {
+  return ms_class_p;
+  }

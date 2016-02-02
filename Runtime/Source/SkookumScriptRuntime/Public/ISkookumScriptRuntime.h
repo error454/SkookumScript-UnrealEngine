@@ -22,9 +22,9 @@ class ISkookumScriptRuntimeEditorInterface
   public:
 
   #if WITH_EDITORONLY_DATA
-    virtual FString       ensure_temp_project(const TCHAR * generated_overlay_name_p) = 0;
+    virtual FString       get_project_path() = 0;
+    virtual FString       get_default_project_path() = 0;
     virtual FString       make_project_editable() = 0;
-    virtual void          set_overlay_path(const FString & scripts_path, const FString & overlay_name) = 0; // E.g. ProjectName/Scripts/Project-Generated
     virtual int32         get_overlay_path_depth() const = 0;
     virtual void          generate_all_class_script_files() = 0;
     virtual void          recompile_blueprints_with_errors() = 0;

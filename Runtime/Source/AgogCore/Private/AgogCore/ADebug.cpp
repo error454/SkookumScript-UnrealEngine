@@ -13,12 +13,23 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/ADebug.hpp>
 #include <AgogCore/AFunctionArg.hpp>
 #include <AgogCore/APArray.hpp>
 #include <AgogCore/AString.hpp>
 #include <stdio.h>     // Uses: _vsnprintf(), va_list
 #include <exception>   // Uses: uncaught_exception()
+
+#if defined(A_PLAT_PC) && defined(A_EXTRA_CHECK)
+  #include <windows.h>  // Uses: IsDebuggerPresent(), OutputDebugStringA()
+#endif
+#if defined(A_PLAT_OSX) && defined(A_EXTRA_CHECK)
+  #include <sys/sysctl.h>  // Uses: struct kinfo_proc etc.
+#endif
+#ifdef A_PLAT_ANDROID
+  #include <android/log.h>
+#endif
 
 
 //=======================================================================================
@@ -35,23 +46,6 @@ enum
   {
   ADebug_print_char_max  = 2047  // Not including null character
   };
-
-namespace Agog
-  {
-
-  //#######################################################################################
-  // These 4 functions *must* be defined somewhere in the app.
-  // $Note - CReis These functions are declared in this way (giving a link error if they
-  // are not defined) to ensure that they are not forgotten when setting up a new project.
-  // [See _AgogCoreDefaults.cpp for examples]
-
-  void               dprint(const char * cstr_p);
-  AErrorOutputBase * on_error_pre(bool nested);
-  void               on_error_post(eAErrAction action);
-  void               on_error_quit();
-
-  };
-
 
 //=======================================================================================
 // Global Variables
@@ -184,6 +178,30 @@ uint32_t ADebug::ms_resolve_error_depth = 0u;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 //---------------------------------------------------------------------------------------
+
+void ADebug::initialize()
+  {
+
+  }
+
+//---------------------------------------------------------------------------------------
+
+void ADebug::deinitialize()
+  {
+  for (auto func_p : g_dprint_funcs)
+    {
+    delete func_p;
+    }
+  g_dprint_funcs.empty_compact();
+
+  for (auto func_p : g_context_funcs)
+    {
+    delete func_p;
+    }
+  g_context_funcs.empty_compact();
+  }
+
+//---------------------------------------------------------------------------------------
 // Prints out simple debug context.
 // Notes:      This can be called in the C++ Debugging "Immediate" window to print out the
 //             current debug context.
@@ -259,6 +277,36 @@ bool ADebug::is_nested_error()
   }
 
 //---------------------------------------------------------------------------------------
+// Determines if debugger is present
+bool ADebug::is_debugging()
+  {
+  #if defined(A_EXTRA_CHECK)
+    #if defined(A_PLAT_PC)
+      return ::IsDebuggerPresent();
+    #elif defined(A_PLAT_OSX)
+      int mib[4];
+      struct kinfo_proc info;
+      size_t size;
+    
+      info.kp_proc.p_flag = 0;
+      mib[0] = CTL_KERN;
+      mib[1] = KERN_PROC;
+      mib[2] = KERN_PROC_PID;
+      mib[3] = getpid();
+    
+      size = sizeof(info);
+      sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &size, NULL, 0);
+    
+      return ((info.kp_proc.p_flag & P_TRACED) != 0);
+    #else
+      return false;
+    #endif
+  #else
+    return false;
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
 // Writes the string to the debug console.
 // Arg         str - string to print. 
 // Arg         call_print_funcs_b - if true any registered print functions are called
@@ -274,7 +322,7 @@ void ADebug::print(
   bool            call_print_funcs_b // = true
   )
   {
-  Agog::dprint(str);
+  AgogCore::get_app_info()->debug_print(str);
 
   // Send string to any additional print function objects
   uint func_num = call_print_funcs_b
@@ -309,7 +357,7 @@ void ADebug::print(
   bool         call_print_funcs_b // = true
   )
   {
-  Agog::dprint(cstr_p);
+  AgogCore::get_app_info()->debug_print(cstr_p);
 
   // Send string to any additional print function objects
   uint func_num = call_print_funcs_b
@@ -370,7 +418,7 @@ void ADebug::print_args(
     buffer_p[ADebug_print_char_max] = '\0';
     }
 
-  Agog::dprint(buffer_p);
+  AgogCore::get_app_info()->debug_print(buffer_p);
 
   // Send string to any additional print function objects
   uint func_num = g_dprint_funcs.get_length();
@@ -440,8 +488,31 @@ void ADebug::print_format(
 // Author(s): Conan Reis
 void ADebug::print_std(const AString & str)
   {
-  fwrite(str.as_cstr(), sizeof(char), str.get_length(), stdout);
-  fflush(stdout);
+  #if defined(A_PLAT_PC) && defined(A_EXTRA_CHECK)
+    if (is_debugging())
+      {
+      // Note that Unicode version OutputDebugStringW() actually calls OutputDebugStringA()
+      // so calling it directly is faster.
+      ::OutputDebugStringA(str.as_cstr());
+      }
+    /*
+    else
+      {
+      ::printf("%s", str.as_cstr()); // This ensures strings containing a '%' will print properly
+      }
+    */
+  #elif defined(A_PLAT_OSX) && defined(A_EXTRA_CHECK)
+    if (is_debugging())
+      {
+      ::printf("%s", str.as_cstr()); // This ensures strings containing a '%' will print properly      
+      }
+  #elif defined(A_PLAT_ANDROID)
+    __android_log_write(ANDROID_LOG_INFO, "SkookumScript", str.as_cstr());
+  #else
+    //fwrite(str.as_cstr(), sizeof(char), str.get_length(), stdout);
+    //fflush(stdout);
+    //::printf("%s", str.as_cstr()); // This ensures strings containing a '%' will print properly
+  #endif
   }
 
 //---------------------------------------------------------------------------------------
@@ -520,7 +591,7 @@ bool ADebug::resolve_error(
 
   ms_resolve_error_depth++;
 
-  AErrorOutputBase * err_output_p = Agog::on_error_pre(nested_err);	// See _AgogCoreDefaults.cpp
+  AErrorOutputBase * err_output_p = AgogCore::get_app_info()->on_error_pre(nested_err);	// See _AgogCoreDefaults.cpp
 
   eAErrAction action;
   bool        debug_break = (err_output_p && !nested_err)
@@ -544,11 +615,11 @@ bool ADebug::resolve_error(
 
   ms_resolve_error_depth--;
 
-  Agog::on_error_post(action);
+  AgogCore::get_app_info()->on_error_post(action);
 
   if (action == AErrAction_quit)
     {
-    Agog::on_error_quit();
+    AgogCore::get_app_info()->on_error_quit();
     }
 
   return debug_break;
@@ -575,10 +646,35 @@ bool ADebug::determine_choice(
     print("### Had another exception while a previous exception is being handled: ###");
     }
 
-  const char * title_p     = (msg.m_title_p ? msg.m_title_p : "");
+  const char * title_p     = msg.m_title_p;
   const char * desc_high_p = msg.m_desc_high_p ? msg.m_desc_high_p : "An error has occurred.";
   const char * desc_low_p  = msg.m_desc_low_p ? msg.m_desc_low_p : "";
   const char * func_name_p = msg.m_func_name_p ? msg.m_func_name_p : "";
+
+  if (title_p == nullptr)
+    {
+    switch (msg.m_err_level)
+      {
+      case AErrLevel_internal:
+        title_p = "Internal Info";
+        break;
+
+      case AErrLevel_notify:
+        title_p = "Notification / Warning";
+        break;
+
+      case AErrLevel_warning:
+        title_p = "Warning";
+        break;
+
+      case AErrLevel_error:
+        title_p = "Error";
+        break;
+
+      default:  // AErrLevel_fatal
+        title_p = "Fatal Error";
+      }
+    }
 
   if (msg.m_source_path_p)
     {
@@ -608,7 +704,7 @@ bool ADebug::determine_choice(
     info();
     }
 
-  // Unprompted so don't do a user break
-  return false;
+  // Break if in debugger otherwise just continue
+  return ADebug::is_debugging();
   }
 

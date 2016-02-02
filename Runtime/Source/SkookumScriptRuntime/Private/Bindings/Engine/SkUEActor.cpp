@@ -24,7 +24,7 @@ namespace SkUEActor_Impl
   {
 
   //---------------------------------------------------------------------------------------
-  // Helper function
+  // Get array of actors of the given class
   static UClass * get_actor_array(TArray<UObject*> * object_array_p, SkClass * class_p)
     {
     UClass * uclass_p = SkUEClassBindingHelper::get_ue_class_from_sk_class(class_p);
@@ -39,31 +39,46 @@ namespace SkUEActor_Impl
     }
 
   //---------------------------------------------------------------------------------------
+  // Find actor of given name (returns nullptr if not found)
+  static AActor * find_named(SkInvokedMethod * scope_p, SkClass ** sk_class_pp, UClass ** ue_class_pp)
+    {
+    // Get actor array
+    TArray<UObject*> object_array;
+    SkClass * sk_class_p = ((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
+    UClass * ue_class_p = get_actor_array(&object_array, sk_class_p);
+
+    // Find our actor
+    FString name = AStringToFString(scope_p->get_arg<SkString>(SkArg_1));
+    UWorld * world_p = SkUEClassBindingHelper::get_world();
+    AActor * actor_p = nullptr;
+    for (UObject ** RESTRICT obj_pp = object_array.GetData(), **RESTRICT end_pp = obj_pp + object_array.Num(); obj_pp != end_pp; ++obj_pp)
+      {
+      if ((*obj_pp)->GetWorld() == world_p && (*obj_pp)->GetName() == name)
+        {
+        actor_p = static_cast<AActor *>(*obj_pp);
+        break;
+        }
+      }
+
+    *sk_class_pp = sk_class_p;
+    *ue_class_pp = ue_class_p;
+
+    return actor_p;
+    }
+
+  //---------------------------------------------------------------------------------------
   // Actor@find_named(Name name) <ThisClass_|None>
   static void mthdc_find_named(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
     if (result_pp) // Do nothing if result not desired
       {      
-      // Get actor array
-      TArray<UObject*> object_array;
-      SkClass * class_p = &((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
-      UClass * uclass_p = get_actor_array(&object_array, class_p);
+      // Find actor
+      SkClass * sk_class_p;
+      UClass * ue_class_p;
+      AActor * actor_p = find_named(scope_p, &sk_class_p, &ue_class_p);
 
-      // Find our actor
-      FString name = AStringToFString(scope_p->get_arg<SkString>(SkArg_1));
-      UWorld * world_p = SkUEClassBindingHelper::get_world();
-      AActor * actor_p = nullptr;
-      for (UObject ** RESTRICT obj_pp = object_array.GetData(), **RESTRICT end_pp = obj_pp + object_array.Num(); obj_pp != end_pp; ++obj_pp)
-        {
-        if ((*obj_pp)->GetWorld() == world_p && (*obj_pp)->GetName() == name)
-          {
-          actor_p = static_cast<AActor *>(*obj_pp);
-          break;
-          }
-        }
-
-      // Create instance from our actor
-      *result_pp = actor_p ? SkUEActor::new_instance(actor_p, uclass_p, class_p) : SkBrain::ms_nil_p;
+      // Create instance from our actor, or return nil if none found
+      *result_pp = actor_p ? SkUEActor::new_instance(actor_p, ue_class_p, sk_class_p) : SkBrain::ms_nil_p;
       }
     }
 
@@ -71,14 +86,23 @@ namespace SkUEActor_Impl
   // Actor@named(Name name) <ThisClass_>
   static void mthdc_named(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
-    mthdc_find_named(scope_p, result_pp);
-  
-    #if (SKOOKUM & SK_DEBUG)
-      if (result_pp && *result_pp == SkBrain::ms_nil_p)
-        {
-        A_ERRORX(a_str_format("Tried to get instance named '%s' from class '%s', but no such instance exists!\n", scope_p->get_arg<SkString>(SkArg_1).as_cstr(), ((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info().get_name().as_cstr_dbg()));
-        }
-    #endif
+    if (result_pp) // Do nothing if result not desired
+      {
+      // Find actor
+      SkClass * sk_class_p;
+      UClass * ue_class_p;
+      AActor * actor_p = find_named(scope_p, &sk_class_p, &ue_class_p);
+
+      #if (SKOOKUM & SK_DEBUG)
+        if (!actor_p)
+          {
+          A_ERRORX(a_str_format("Tried to get instance named '%s' from class '%s', but no such instance exists!\n", scope_p->get_arg<SkString>(SkArg_1).as_cstr(), ((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info()->get_name().as_cstr_dbg()));
+          }
+      #endif
+
+      // Create instance from our actor, even if null
+      *result_pp = SkUEActor::new_instance(actor_p, ue_class_p, sk_class_p);
+      }
     }
 
   //---------------------------------------------------------------------------------------
@@ -89,7 +113,7 @@ namespace SkUEActor_Impl
       {
       // Get actor array
       TArray<UObject*> object_array;
-      SkClass * class_p = &((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
+      SkClass * class_p = ((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
       UClass * uclass_p = get_actor_array(&object_array, class_p);
 
       // Build SkList from it
@@ -117,7 +141,7 @@ namespace SkUEActor_Impl
       {
       // Get actor array
       TArray<UObject*> object_array;
-      SkClass * class_p = &((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
+      SkClass * class_p = ((SkMetaClass *)scope_p->get_topmost_scope())->get_class_info();
       UClass * uclass_p = get_actor_array(&object_array, class_p);
 
       // Return first one
@@ -283,7 +307,7 @@ namespace SkUEActor_Impl
       closure_p->closure_method_call(&event_p->m_argument_p[0], listener_p->get_num_arguments(), &closure_result_p, scope_p);
       if (do_until)
         {
-        exit = closure_result_p->as<SkBoolean>();        
+        exit = closure_result_p->as<SkBoolean>();
         for (uint32_t i = 0; i < num_arguments; ++i)
           {
           if (exit)
@@ -295,8 +319,9 @@ namespace SkUEActor_Impl
             event_p->m_argument_p[i]->dereference(); // Dereference parameters if not needed after all
             }
           }
+        closure_result_p->dereference(); // Free Boolean return value
         }
-        listener_p->free_event(event_p, false);
+      listener_p->free_event(event_p, false);
       } while (listener_p->has_event() && !exit);
 
       if (!do_until || !exit)

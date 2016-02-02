@@ -51,7 +51,7 @@ enum eSkParameter
 // Notes      Parameter Abstract Base Class
 // Subclasses SkUnaryParam, SkGroupParam
 // Author(s)  Conan Reis
-class SkParameterBase : public ANamed
+class SK_API SkParameterBase : public ANamed
   {
   public:
 

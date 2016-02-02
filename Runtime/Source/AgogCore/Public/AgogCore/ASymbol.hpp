@@ -143,11 +143,17 @@
 
 #if !defined(ASYMBOL_DEFINE_STR)
   // Define for identifier definition
-  #define ASYMBOL_DEFINE_STR(_prefix, _id, _str)  const ASymbol _prefix##_##_id(ASymbol::create(_str));
+  #define ASYMBOL_DEFINE_STR(_prefix, _id, _str)       const ASymbol _prefix##_##_id(ASymbol::create(_str));
+  #define ASYMBOL_DEFINE_STR_NULL(_prefix, _id, _str)  const ASymbol _prefix##_##_id;
+  #define ASYMBOL_ASSIGN_STR(_prefix, _id, _str)       const_cast<ASymbol&>(_prefix##_##_id) = ASymbol::create(_str);
+  #define ASYMBOL_ASSIGN_STR_NULL(_prefix, _id, _str)  const_cast<ASymbol&>(_prefix##_##_id) = ASymbol::ms_null;
 #endif
 
 // Define for identifier definition
-#define ASYMBOL_DEFINE(_prefix, _id)              ASYMBOL_DEFINE_STR(_prefix, _id, #_id)
+#define ASYMBOL_DEFINE(_prefix, _id)         ASYMBOL_DEFINE_STR(_prefix, _id, #_id)
+#define ASYMBOL_DEFINE_NULL(_prefix, _id)    ASYMBOL_DEFINE_STR_NULL(_prefix, _id, #_id)
+#define ASYMBOL_ASSIGN(_prefix, _id)         ASYMBOL_ASSIGN_STR(_prefix, _id, #_id)
+#define ASYMBOL_ASSIGN_NULL(_prefix, _id)    ASYMBOL_ASSIGN_STR_NULL(_prefix, _id, #_id)
 
 
 //---------------------------------------------------------------------------------------
@@ -169,7 +175,7 @@ class ASymbolTable;
 
 //---------------------------------------------------------------------------------------
 // Indirect id and string structure used internally by ASymbol objects and ASymbolTable.
-struct ASymbolRef
+struct A_API ASymbolRef
   {
   public:
 
@@ -228,7 +234,7 @@ struct ASymbolRef
 //
 // Symbols also have the option to not store the strings that they represent in which case
 // they can have significant memory savings over strings.
-class ASymbol
+class A_API ASymbol
   {
   friend class ASymbolTable;  // ASymbolTable needs access to ASymbol internal structures
   friend class ANamed;

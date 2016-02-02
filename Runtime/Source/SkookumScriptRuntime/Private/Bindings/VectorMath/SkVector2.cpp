@@ -454,3 +454,10 @@ void SkVector2::register_bindings()
   ms_class_p->register_raw_accessor_func(&SkUEClassBindingHelper::access_raw_data_struct<SkVector2>);
   SkUEClassBindingHelper::resolve_raw_data_struct(ms_class_p, TEXT("Vector2D"));
   }
+
+//---------------------------------------------------------------------------------------
+
+SkClass * SkVector2::get_class()
+  {
+  return ms_class_p;
+  }

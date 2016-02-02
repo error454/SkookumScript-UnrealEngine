@@ -4,7 +4,7 @@
 //
 // Params:
 //   excluding: item to exclude
-//   random: random number generator to use
+//   rnd_gen: random number generator to use
 //
 // Return Params:
 //   index_found: random index used
@@ -13,12 +13,8 @@
 //
 // Examples:
 //   ```
-//   !idx
-//   !letters: {"A" "B" "C" "D"}
-//   !letter:  letters.any(; idx)
-//   println("letter: " letter ", random idx: " idx)
-//
-//   // Tell different random bad guy in list to do something
+//   // Tell random bad guy in list who wasn't selected
+//   // last time to do something.
 //   !guy 
 //   loop
 //     [
@@ -32,7 +28,7 @@
 //---------------------------------------------------------------------------------------
 
 ( <ItemClass_|None> excluding
-  Random random: @@random
+  Random rnd_gen: @@random
 ; Integer index_found  
 ) ItemClass_
 
@@ -41,7 +37,7 @@
   
   loop
     [
-    index_found: random.uniform_int(length)
+    index_found: rnd_gen.uniform_int(length)
     found: at(index_found)
     if not found.same?(excluding) [exit]
     ]

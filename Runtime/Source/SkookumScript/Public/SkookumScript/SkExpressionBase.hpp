@@ -65,8 +65,7 @@ enum eSkExprType
   SkExprType_literal_list,             // SkLiteralList {elem1, elem2}
   SkExprType_closure_method,           // SkLiteralClosure(Method)  ^[do_this() do_that()]
   SkExprType_closure_coroutine,        // SkLiteralClosure(Coroutine)  ^[_do_this() _do_that()]
-  SkExprType_bind,                     // SkBind - variable initial bind expression.  Could be a member variable, a parameter variable, or a temporary variable.
-  SkExprType_rebind,                   // SkRebind - variable re-bind expression.  Could be a member variable, a parameter variable, or a temporary variable.
+  SkExprType_bind,                     // SkBind - variable bind (both initial and re-bind) expression.  Could be a member variable, a parameter variable, or a temporary variable.
   SkExprType_cast,                     // SkCast - expr<>Class
   SkExprType_conversion,               // SkConversion - expr>>Class
   SkExprType_code,                     // SkCode - code block (generally nested)
@@ -145,9 +144,11 @@ struct SkApplyExpressionBase
 // SkookumScript ExpressionBase
 // Subclasses See eSkExprType above.
 // Author(s): Conan Reis
-class SkExpressionBase
+class SK_API SkExpressionBase
   {
   public:
+
+    SK_NEW_OPERATORS(SkExpressionBase);
 
   // Debug Data Members - public for quick access
 
@@ -228,7 +229,7 @@ class SkExpressionBase
       virtual eSkExprType get_type() const = 0;
       virtual bool        is_loop(const ASymbol & loop_name) const  { return false; }
       virtual bool        is_immediate(uint32_t * durational_idx_p = nullptr) const;
-      virtual bool        is_nil() const                            { return (this == nullptr); }
+      virtual bool        is_nil() const                            { return false; }
 
     // Called by SkInvokedExpression
 

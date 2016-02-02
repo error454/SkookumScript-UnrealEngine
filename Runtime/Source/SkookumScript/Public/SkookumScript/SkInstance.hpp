@@ -72,7 +72,7 @@ enum eSkCodeFlag
 // 
 // Subclasses: SkBoolean, SkClosure, SkDataInstance(SkActor), SkInstanceUnreffed(SkMetaClass)
 // Author(s):  Conan Reis
-class SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
+class SK_API SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
   {
   // Accesses protected elements
   friend class SkBrain;
@@ -339,7 +339,7 @@ const uint32_t SkInstanceUnreffed_infinite_ref_count = 1000000u;
 //            rewriting all the code that references it.]
 // Subclasses SkMetaClass
 // Author(s)  Conan Reis
-class SkInstanceUnreffed : public SkInstance
+class SK_API SkInstanceUnreffed : public SkInstance
   {
   public:
 

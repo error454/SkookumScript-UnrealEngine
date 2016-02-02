@@ -85,7 +85,7 @@ enum eSkObjectType
 //   SkInvokedContextBase(SkInvokedMethod, SkInvokedCoroutine))
 //
 // #Author(s) Conan Reis
-class SkObjectBase
+class SK_API SkObjectBase
   {
   public:
 

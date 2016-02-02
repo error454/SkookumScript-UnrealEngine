@@ -92,7 +92,7 @@ typedef APArray<SkInstance> tSkInvokedDataArray;
 // Notes      Invoked Object Abstract Base Class
 // Subclasses SkInvokedExpression, SkInvokedContextBase
 // Author(s)  Conan Reis
-class SkInvokedBase :
+class SK_API SkInvokedBase :
   public SkObjectBase,
   public AListNode<SkInvokedBase>  // used by `m_calls`
   {
@@ -202,7 +202,7 @@ class SkInvokedBase :
 //            currently includes the expressions SkCode, SkLoop, SkConcurrentRace and
 //            SkInvokeCascade.
 // Author(s)  Conan Reis
-class SkInvokedExpression : public SkInvokedBase
+class SK_API SkInvokedExpression : public SkInvokedBase
   {
   public:
 
@@ -225,20 +225,20 @@ class SkInvokedExpression : public SkInvokedBase
 
     // Overriding from SkObjectBase
 
-    virtual eSkObjectType get_obj_type() const { return SkObjectType_invoked_expr; }
+    virtual eSkObjectType get_obj_type() const override { return SkObjectType_invoked_expr; }
 
     // Overriding from SkInvokedBase
 
-    virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort);
-    virtual void pending_return(bool completed = true);
+    virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort) override;
+    virtual void pending_return(bool completed = true) override;
     
-    virtual const SkExpressionBase * get_expr() const       { return m_expr_p; }
+    virtual const SkExpressionBase * get_expr() const override { return m_expr_p; }
     virtual SkMind *                 get_updater() const override;
 
     #if (SKOOKUM & SK_DEBUG)
 
-      virtual SkExpressionBase * get_caller_expr() const;
-      virtual SkDebugInfo        get_debug_info() const;
+      virtual SkExpressionBase * get_caller_expr() const override;
+      virtual SkDebugInfo        get_debug_info() const override;
 
     #endif
 
@@ -271,7 +271,7 @@ class SkInvokedExpression : public SkInvokedBase
 //            The 'm_scope_p' member will always be an object derived from SkInstanceBase
 // Subclasses SkInvokedMethod, SkInvokedCoroutine
 // Author(s)  Conan Reis
-class SkInvokedContextBase : public SkInvokedBase
+class SK_API SkInvokedContextBase : public SkInvokedBase
   {
   public:
 
@@ -382,7 +382,7 @@ class SkInvokedContextBase : public SkInvokedBase
       public:
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        SkAutoDestroyInstance(_ParamClasses... args) : SkInstance(SkObject::ms_class_p)
+        SkAutoDestroyInstance(_ParamClasses... args) : SkInstance(SkObject::get_class())
           {
           //A_DPRINT("SkAutoDestroyInstance::ctor() - called.\n");
           m_ref_count = 1u;
@@ -406,8 +406,8 @@ class SkInvokedContextBase : public SkInvokedBase
 
   // Methods
 
-    void bind_arg(uint32_t pos, SkInstance * obj_p, bool is_initial_bind);
-    void bind_arg_and_ref(uint32_t pos, SkInstance * obj_p, bool is_initial_bind);
+    void bind_arg(uint32_t pos, SkInstance * obj_p);
+    void bind_arg_and_ref(uint32_t pos, SkInstance * obj_p);
 
   // Data Members
 

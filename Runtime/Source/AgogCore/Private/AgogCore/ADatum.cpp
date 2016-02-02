@@ -14,6 +14,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/ADatum.hpp>
 #ifdef A_INL_IN_CPP
   #include <AgogCore/ADatum.inl>
@@ -28,7 +29,7 @@ void ADatum::Reference::decrement()
     {
     if (m_term == ATerm_short)
       {
-      delete []m_buffer_p;
+      free_buffer(m_buffer_p);
       }
 
     delete this;
@@ -445,7 +446,7 @@ void ADatum::ensure_size(
 
         if (dref_p->m_term == ATerm_short)
           {
-          delete []old_buffer_p;
+          free_buffer(old_buffer_p);
           }
         }
       else
@@ -453,7 +454,7 @@ void ADatum::ensure_size(
         // Delete before allocating more
         if (dref_p->m_term == ATerm_short)
           {
-          delete []dref_p->m_buffer_p;
+          free_buffer(dref_p->m_buffer_p);
           }
 
         dref_p->m_buffer_p = alloc_buffer(new_size);

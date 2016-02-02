@@ -13,10 +13,14 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/AMemory.hpp>
 #include <AgogCore/AChecksum.hpp>
 #include <AgogCore/APSorted.hpp>
 
+#if defined(A_PLAT_PC)
+#include <intrin.h>
+#endif
 
 //=======================================================================================
 // Local Data Structures
@@ -88,7 +92,7 @@ struct AMemoryInfo
       }
 
     uint32_t get_total_size_static() const            { return m_alloc_count * m_size_static; }
-    uint32_t get_total_size_static_actual() const     { return m_alloc_count * AMemory::request_byte_size(m_size_static); }
+    uint32_t get_total_size_static_actual() const     { return m_alloc_count * AgogCore::get_app_info()->request_byte_size(m_size_static); }
     uint32_t get_total_size() const                   { return get_total_size_static() + m_size_dynamic_total; }
     uint32_t get_total_size_actual() const            { return get_total_size_static_actual() + m_size_dynamic_total_actual; }
     float    get_size_dynamic_average() const         { return (m_alloc_count > 0u) ? float(m_size_dynamic_total) / float(m_alloc_count) : 0.0f; }
@@ -202,7 +206,7 @@ uint32_t AMemoryStats::print_summary(
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Print Header
-    bool fixed_size_pools = AMemory::is_using_fixed_size_pools();
+    bool fixed_size_pools = AgogCore::get_app_info()->is_using_fixed_size_pools();
 
     ADebug::print(fixed_size_pools
       ? "                      Type |    Count |   {Size} |   [Size] | {Static} | [Static] | {Dynamic} | [Dynamic] | Static | Debug | Dyn Avg.\n"
@@ -370,7 +374,7 @@ void AMemoryStats::track_memory(
       }
 
     info_p->m_size_dynamic_total        += size_dynamic;
-    info_p->m_size_dynamic_total_actual += AMemory::request_byte_size(size_dynamic);
+    info_p->m_size_dynamic_total_actual += AgogCore::get_app_info()->request_byte_size(size_dynamic);
     info_p->m_alloc_count               += alloc_count;
     }
 
@@ -404,67 +408,38 @@ void AMemoryStats::track_memory_shared(
 // AMemory Class Data
 //=======================================================================================
 
-tAMallocFunc       AMemory::ms_malloc_func       = AMemory::malloc_default;
-tAFreeFunc         AMemory::ms_free_func         = AMemory::free_default;
-tAReqByteSizeFunc AMemory::ms_req_byte_size_func = AMemory::request_byte_size_default;
-
-
 //=======================================================================================
 // AMemory Method Definitions
 //=======================================================================================
 
-// namespace Agog
-//   {
-//   void dprint(const AString & str);
-//   };
-// 
-// uint32_t print_countdown = 9u;
-
 //---------------------------------------------------------------------------------------
-void* AMemory::malloc_default(size_t size, const char * name_p)
+// Obtain a callstack at the current code location
+void ACallStack::set()
   {
-  return new /*( name_p )*/ char[size];
-
-  // void * mem_p = new /*( name_p )*/ char[size];
-  // 
-  // if (print_countdown)
-  //   {
-  //   print_countdown--;
-  //   }
-  // else
-  //   {
-  //   Agog::dprint(a_cstr_format("AMemory::malloc() 0x%p\t %u\t - %s\n", mem_p, size, name_p));
-  //   }
-  // 
-  // return mem_p;
-  }
-
-//---------------------------------------------------------------------------------------
-void AMemory::free_default(void * mem_p)
-  {
-  delete [] (char * )mem_p;
-  }
-
-//---------------------------------------------------------------------------------------
-// Converts the size requested to allocate to the actual amount allocated.
-//             Often memory systems use fixed size pools so their can be a certain amount
-//             of wasted space.
-// Returns:    Actual amount allocated (in bytes)
-// Arg         size_requested - size requested to allocate
-// Author(s):   Conan Reis
-uint32_t AMemory::request_byte_size_default(uint32_t bytes_requested)
-  {
-  // Assume 1:1 for default
-  return bytes_requested;
-  }
-
-//---------------------------------------------------------------------------------------
-void AMemory::override_functions(
-  tAMallocFunc malloc_func,
-  tAFreeFunc free_func,
-  tAReqByteSizeFunc req_byte_size_func)
-  {
-  ms_malloc_func        = malloc_func;
-  ms_free_func          = free_func;
-  ms_req_byte_size_func = req_byte_size_func;
+  #if defined(A_PLAT_PC) && defined(A_UNOPTIMIZED)
+    //WINBASEAPI VOID WINAPI GetCurrentThreadStackLimits(PULONG_PTR LowLimit, PULONG_PTR HighLimit);
+    //uintptr_t stack_low_limit, stack_high_limit;
+    //GetCurrentThreadStackLimits(&stack_low_limit, &stack_high_limit); // Windows 8 and up
+    void * return_p = _AddressOfReturnAddress();
+    void ** frame_pp = ((void ***)return_p)[-1];
+    void ** stack_high_limit_pp = (void **)return_p + 100000; // Estimate
+    uint32_t i;
+    for (i = 0; 
+         i < A_COUNT_OF(m_stack_p) 
+           && ((uintptr_t)frame_pp & 7) == 0
+           && frame_pp > (void **)return_p
+           && frame_pp < stack_high_limit_pp;
+         ++i)
+      {
+      m_stack_p[i] = frame_pp[1];
+      frame_pp = (void **)frame_pp[0];
+      }
+    for (; i < A_COUNT_OF(m_stack_p); ++i)
+      {
+      m_stack_p[i] = nullptr;
+      }
+  #else
+    // Unimplemented, just set to NULL
+    ::memset(m_stack_p, 0, sizeof(m_stack_p));
+  #endif
   }

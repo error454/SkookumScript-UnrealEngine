@@ -14,6 +14,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/ARegion.hpp>
 #if defined(A_PLAT_PC)
   #include <windows.h>  // For definition of RECT

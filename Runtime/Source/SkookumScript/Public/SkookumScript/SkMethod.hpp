@@ -34,7 +34,7 @@ class SkInvokedMethod;
 // Notes      Method parameters & body abstract class
 // Subclasses SkMethod, SkMethodFunc, SkMethodMthd
 // Author(s)  Conan Reis
-class SkMethodBase : public SkInvokableBase
+class SK_API SkMethodBase : public SkInvokableBase
   {
   public:
   // Common Methods
@@ -48,10 +48,6 @@ class SkMethodBase : public SkInvokableBase
     #if (SKOOKUM & SK_COMPILED_IN)
       SkMethodBase(const ASymbol & name, SkClass * scope_p, const void ** binary_pp) : SkInvokableBase(name, scope_p, binary_pp) {}
     #endif
-
-    #if (SKOOKUM & SK_COMPILED_OUT)
-      bool is_operator() const;
-    #endif // (SKOOKUM & SK_COMPILED_OUT)
 
     #if defined(SK_AS_STRINGS)
       virtual AString as_code_params() const;
@@ -71,7 +67,7 @@ class SkMethodBase : public SkInvokableBase
 //---------------------------------------------------------------------------------------
 // Notes      Custom/Compound Method Class
 // Author(s)  Conan Reis
-class SkMethod : public SkMethodBase
+class SK_API SkMethod : public SkMethodBase
   {
   friend class SkParser;
 
@@ -156,7 +152,7 @@ typedef void (* tSkMethodFunc)(SkInvokedMethod * scope_p, SkInstance ** result_p
 
 //---------------------------------------------------------------------------------------
 // SkookumScript method wrapper for atomic/C++ function Class
-class SkMethodFunc : public SkMethodBase
+class SK_API SkMethodFunc : public SkMethodBase
   {
   public:
 	  SK_NEW_OPERATORS(SkMethodFunc);
@@ -232,7 +228,7 @@ typedef void (SkInstance::* tSkMethodMthd)(SkInvokedMethod * scope_p, SkInstance
 
 //---------------------------------------------------------------------------------------
 // SkookumScript method wrapper for atomic/C++ instance method Class
-class SkMethodMthd : public SkMethodBase
+class SK_API SkMethodMthd : public SkMethodBase
   {
   public:
 	  SK_NEW_OPERATORS(SkMethodMthd);

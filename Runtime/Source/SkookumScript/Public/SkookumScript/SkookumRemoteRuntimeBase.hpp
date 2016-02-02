@@ -29,7 +29,7 @@
 
 //---------------------------------------------------------------------------------------
 // Skookum remote runtime communication commands that are specific to the client runtime.
-class SkookumRemoteRuntimeBase : public SkookumRemoteBase 
+class SK_API SkookumRemoteRuntimeBase : public SkookumRemoteBase
   {
   friend class SkDebug;
 

@@ -18,7 +18,7 @@
 
 //---------------------------------------------------------------------------------------
 // List of SkInstances
-class SkInstanceList
+class SK_API SkInstanceList
   {
   public:
 	  SK_NEW_OPERATORS(SkInstanceList);

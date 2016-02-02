@@ -38,7 +38,7 @@ typedef APSortedLogical<SkActor, ASymbol>  tSkActors;
 // InLibs     SkookumLib.lib
 // Examples:    
 // Author(s)  Conan Reis
-class SkActorClass : public SkClass
+class SK_API SkActorClass : public SkClass
   {
   // Accesses protected elements
   friend class SkParser;

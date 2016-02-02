@@ -37,7 +37,7 @@
 // Translation table that enables conversion from symbols to strings.
 //
 // See the ASymbol class for more info.
-class ASymbolTable
+class A_API ASymbolTable
   {
   friend class ASymbol;  // ASymbol needs access to ASymbol internal structures
 
@@ -56,6 +56,10 @@ class ASymbolTable
     #endif
 
   // Common Methods
+
+    static void initialize();
+    static void deinitialize();
+    static bool is_initialized();
 
     explicit ASymbolTable(bool sharing_symbols = false, uint32_t initial_size = 0u);
     ~ASymbolTable();
@@ -93,8 +97,6 @@ class ASymbolTable
     #endif
 
   // Class Methods
-
-    static ASymbolTable & get_main();
 
     ASymbolRef * get_symbol_by_index(uint32_t index) const;
 

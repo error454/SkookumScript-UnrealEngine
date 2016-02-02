@@ -14,6 +14,7 @@
 // Includes
 //=======================================================================================
 
+#include <AgogCore/AgogCore.hpp> // Always include AgogCore first (as some builds require a designated precompiled header)
 #include <AgogCore/ASymbolTable.hpp>
 #ifdef A_INL_IN_CPP
   #include <AgogCore/ASymbolTable.inl>
@@ -37,6 +38,35 @@
 
 ASymbolTable * ASymbolTable::ms_auto_parse_syms_p = nullptr;
 
+
+//---------------------------------------------------------------------------------------
+
+void ASymbolTable::initialize()
+  {
+  #if defined(A_SYMBOLTABLE_CLASSES)
+    ms_main_p = new ASymbolTable(false, AgogCore::get_app_info()->get_pool_init_symbol_ref());
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+
+void ASymbolTable::deinitialize()
+  {
+  #if defined(A_SYMBOLTABLE_CLASSES)
+    delete ms_main_p;
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
+
+bool ASymbolTable::is_initialized()
+  {
+  #if defined(A_SYMBOLTABLE_CLASSES)
+    return ms_main_p != nullptr;
+  #else
+    return true;
+  #endif
+  }
 
 //---------------------------------------------------------------------------------------
 // Default constructor
@@ -623,11 +653,13 @@ ASymbolRef * ASymbolTable::symbol_reference(uint32_t sym_id, const AString & str
       sym_ref_p->m_str_ref_p->is_equal(*str.m_str_ref_p),
       AErrMsg(
         a_str_format(
-          "Symbol id collision!  The new string '%s' and the string '%s' are different,\n"
+          "Symbol id collision!  The new string '%s' (len=%d) and the existing symbol '%s' (len=%d) are different,\n"
           "but they both have the same id 0x%X.\n"
           "[Try to use a different string if possible and hope that it has a unique id.]",
           str.as_cstr(),
+          (int32_t)str.get_length(),
           sym_ref_p->m_str_ref_p->m_cstr_p,
+          (int32_t)sym_ref_p->m_str_ref_p->m_length,
           sym_id),
         AErrLevel_notify));
 
@@ -689,11 +721,13 @@ ASymbolRef * ASymbolTable::symbol_reference(uint32_t sym_id, const char * cstr_p
       sym_ref_p->m_str_ref_p->is_equal(cstr_p, length),
       AErrMsg(
         a_str_format(
-          "Symbol id collision!  The new string '%s' and the string '%s' are different,\n"
+          "Symbol id collision!  The new string '%s' (len=%d) and the existing symbol '%s' (len=%d) are different,\n"
           "but they both have the same id 0x%X.\n"
           "[Try to use a different string if possible and hope that it has a unique id.]",
-          cstr_p,
+          cstr_p, 
+          (int32_t)length,
           sym_ref_p->m_str_ref_p->m_cstr_p,
+          (int32_t)sym_ref_p->m_str_ref_p->m_length,
           sym_id),
         AErrLevel_notify));
 
@@ -713,27 +747,6 @@ ASymbolRef * ASymbolTable::symbol_reference(uint32_t sym_id, const char * cstr_p
 
   return sym_ref_p;
   }
-
-//---------------------------------------------------------------------------------------
-// Returns the common / default symbol table.  If the main symbol table is
-//             needed after global initialization use ASymbolTable::ms_main_p instead
-//             which is faster.
-// Returns:    common / default symbol table.
-// Modifiers:   static
-// Author(s):   Conan Reis
-ASymbolTable & ASymbolTable::get_main()
-  {
-  // $Note - CReis Uses Scott Meyers' tip "Make sure that objects are initialized before
-  // they're used" from "Effective C++" [Item 47 in 1st & 2nd Editions and Item 4 in 3rd
-  // Edition] This is instead of using a non-local static object for a singleton.
-
-  // $Note - CReis Using the same value as pooled symbol references - it could be its own value
-  static ASymbolTable s_main(false, Agog::get_agog_core_vals().m_pool_init_symbol_ref);
-  //A_DSINGLETON_GUARD;
-
-  return s_main;
-  }
-
 
 //---------------------------------------------------------------------------------------
 //  Setups the auto-parse temporary symbol table. Symbol creation calls will put shared copies of

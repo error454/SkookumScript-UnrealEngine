@@ -18,10 +18,11 @@
 
 //---------------------------------------------------------------------------------------
 // SkookumScript atomic List (dynamic array of typed objects) class
-class SkList : public SkClassBindingSimple<SkList, SkInstanceList>
+class SK_API SkList : public SkClassBindingSimple<SkList, SkInstanceList>
   {
   public:
 
-    static void register_bindings();
+    static void       register_bindings();
+    static SkClass *  get_class();
 
   };

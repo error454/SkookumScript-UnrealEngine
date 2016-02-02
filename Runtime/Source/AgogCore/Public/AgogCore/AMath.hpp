@@ -367,55 +367,55 @@ enum eAYaw
 // Global Functions
 //=======================================================================================
 
-bool     a_is_finite(       f32 f);
-bool     a_is_approx_zero(  f32 f, f32 eps = FLT_EPSILON);
-bool     a_is_approx_equal( f32 fa, f32 fb, f32 eps = FLT_EPSILON);
+A_API bool     a_is_finite(       f32 f);
+A_API bool     a_is_approx_zero(  f32 f, f32 eps = FLT_EPSILON);
+A_API bool     a_is_approx_equal( f32 fa, f32 fb, f32 eps = FLT_EPSILON);
 
-int      a_round(           f32 f);
-int      a_floor(           f32 f);
-int      a_ceil(            f32 f);
-int      a_trunc(           f32 f);
-int      a_float2int(       f32 f);
-f32      a_floor_fraction(  f32 f);
-int      a_floor_fraction(f32 & out_frac, f32 f);
-uint32_t a_log10ceil(  uint32_t value);
+A_API int      a_round(           f32 f);
+A_API int      a_floor(           f32 f);
+A_API int      a_ceil(            f32 f);
+A_API int      a_trunc(           f32 f);
+A_API int      a_float2int(       f32 f);
+A_API f32      a_floor_fraction(  f32 f);
+A_API int      a_floor_fraction(f32 & out_frac, f32 f);
+A_API uint32_t a_log10ceil(  uint32_t value);
 
-uint32_t a_div_modulo(  uint32_t & modulo, uint32_t numerator, uint32_t denominator);
-int32_t  a_div_modulo(   int32_t & modulo, int32_t numerator, int32_t denominator);
+A_API uint32_t a_div_modulo(  uint32_t & modulo, uint32_t numerator, uint32_t denominator);
+A_API int32_t  a_div_modulo(   int32_t & modulo, int32_t numerator, int32_t denominator);
 
-f32   a_sqr(             f32 f);
-f32   a_cube(            f32 f);
-f32   a_cubic_attenuate( f32 t);
-f32   a_reciprocal(      f32 f);
-f32   a_reciprocal_est(  f32 f);
-f32   a_sqrt(            f32 radicand);
-f32   a_sqrt_est(        f32 radicand);
-f32   a_rsqrt(           f32 radicand);
-f32   a_rsqrt_est(       f32 radicand);
-f32   a_rsqrt(           f32 radicand, f32 factor);
-f32   a_rsqrt_est(       f32 radicand, f32 factor);
-f32   a_hypot(           f32 x, f32 y);
-f32   a_hypot(           f32 x, f32 y, f32 z);
-f32   a_lerp(            f32 va, f32 vb, f32 t);
+A_API f32   a_sqr(             f32 f);
+A_API f32   a_cube(            f32 f);
+A_API f32   a_cubic_attenuate( f32 t);
+A_API f32   a_reciprocal(      f32 f);
+A_API f32   a_reciprocal_est(  f32 f);
+A_API f32   a_sqrt(            f32 radicand);
+A_API f32   a_sqrt_est(        f32 radicand);
+A_API f32   a_rsqrt(           f32 radicand);
+A_API f32   a_rsqrt_est(       f32 radicand);
+A_API f32   a_rsqrt(           f32 radicand, f32 factor);
+A_API f32   a_rsqrt_est(       f32 radicand, f32 factor);
+A_API f32   a_hypot(           f32 x, f32 y);
+A_API f32   a_hypot(           f32 x, f32 y, f32 z);
+A_API f32   a_lerp(            f32 va, f32 vb, f32 t);
 
-bool  a_is_pow_2(        uint x);
-uint  a_floor_pow_2(     uint32_t x);
-uint  a_ceil_pow_2(      uint32_t x);
-int   a_floor_log_2(     uint x);
-int   a_floor_log_2(     f32 x);
-int   a_ceil_log_2(      uint x);
-int   a_ceil_log_2(      f32 x);
+A_API bool  a_is_pow_2(        uint x);
+A_API uint  a_floor_pow_2(     uint32_t x);
+A_API uint  a_ceil_pow_2(      uint32_t x);
+A_API int   a_floor_log_2(     uint x);
+A_API int   a_floor_log_2(     f32 x);
+A_API int   a_ceil_log_2(      uint x);
+A_API int   a_ceil_log_2(      f32 x);
 
-f32   a_sin(             f32 rads);
-f32   a_cos(             f32 rads);
-void  a_sin_cos(         f32 & out_sin, f32 & out_cos, f32 rads);
-f32   a_tan(             f32 rads);
-f32   a_asin(            f32 sina);
-f32   a_acos(            f32 cosa);
-f32   a_atan2(           f32 y, f32 x);
+A_API f32   a_sin(             f32 rads);
+A_API f32   a_cos(             f32 rads);
+A_API void  a_sin_cos(         f32 & out_sin, f32 & out_cos, f32 rads);
+A_API f32   a_tan(             f32 rads);
+A_API f32   a_asin(            f32 sina);
+A_API f32   a_acos(            f32 cosa);
+A_API f32   a_atan2(           f32 y, f32 x);
 
-eAYaw a_angle_to_yaw(f32 rads);
-f32   a_yaw_to_angle(eAYaw yaw);
+A_API eAYaw a_angle_to_yaw(f32 rads);
+A_API f32   a_yaw_to_angle(eAYaw yaw);
 
 template<class _Type>    _Type    a_abs(_Type a);
 template<class _Type>    _Type    a_sign(_Type value);

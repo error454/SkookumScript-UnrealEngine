@@ -36,7 +36,7 @@ const int SkMind_flag_user_shift = 16;
 // 
 // Most if not all Mind objects will be singletons and so the name of the class is used
 // for the string representation of a mind object.
-class SkMind : public SkClassBindingAbstract<SkMind>, public SkDataInstance, public AListNode<SkMind>
+class SK_API SkMind : public SkClassBindingAbstract<SkMind>, public SkDataInstance, public AListNode<SkMind>
   {
   friend class SkInstance;
   friend class SkInvokedCoroutine;

@@ -327,11 +327,11 @@ APCompactArray<_ElementType, _KeyType, _CompareClass> & APCompactArray<_ElementT
   uint32_t length = array.m_count;
 
   // $Note - CReis The GCC compiler cannot resolve inherited members without "this->" or "SourceClass::" prefixing them.
-  if (length != this->m_size)
+  if (length != this->m_count)
     {
     tAPArrayBase::free_array(this->m_array_p);
-    this->m_size    = AMemory::request_pointer_count(length);
-    this->m_array_p = tAPArrayBase::alloc_array(this->m_size);
+    this->m_count   = AMemory::request_pointer_count(length);
+    this->m_array_p = tAPArrayBase::alloc_array(this->m_count);
     }
 
   this->m_count = length;
