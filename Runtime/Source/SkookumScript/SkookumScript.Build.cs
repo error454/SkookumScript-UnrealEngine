@@ -143,6 +143,11 @@ public class SkookumScript : ModuleRules
             var dllUrl = libUrlBase + dllFileName;
             try
             {
+              if(!Directory.Exists(dllDirPath))
+              {
+                Directory.CreateDirectory(dllDirPath);
+              }
+              
               Log.TraceInformation("Downloading build {0} of {1}...", buildNumber, dllFileName);
               var tmpFilePath = dllFilePath + ".tmp";
               client.DownloadFile(dllUrl, @tmpFilePath);
