@@ -116,11 +116,14 @@ void FSkookumScriptEditor::StartupModule()
     m_on_assets_deleted_handle        = FEditorDelegates::OnAssetsDeleted.AddRaw(this, &FSkookumScriptEditor::on_assets_deleted);
     m_on_asset_post_import_handle     = FEditorDelegates::OnAssetPostImport.AddRaw(this, &FSkookumScriptEditor::on_asset_post_import);
 
-    FAssetRegistryModule & asset_registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
-    m_on_asset_added_handle             = asset_registry.Get().OnAssetAdded().AddRaw(this, &FSkookumScriptEditor::on_asset_added);
-    m_on_asset_renamed_handle           = asset_registry.Get().OnAssetRenamed().AddRaw(this, &FSkookumScriptEditor::on_asset_renamed);
-    m_on_in_memory_asset_created_handle = asset_registry.Get().OnInMemoryAssetCreated().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_created);
-    m_on_in_memory_asset_deleted_handle = asset_registry.Get().OnInMemoryAssetDeleted().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_deleted);
+    FAssetRegistryModule* asset_registry = FModuleManager::GetModulePtr<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
+    if (asset_registry)
+      {
+      m_on_asset_added_handle = asset_registry->Get().OnAssetAdded().AddRaw(this, &FSkookumScriptEditor::on_asset_added);
+      m_on_asset_renamed_handle = asset_registry->Get().OnAssetRenamed().AddRaw(this, &FSkookumScriptEditor::on_asset_renamed);
+      m_on_in_memory_asset_created_handle = asset_registry->Get().OnInMemoryAssetCreated().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_created);
+      m_on_in_memory_asset_deleted_handle = asset_registry->Get().OnInMemoryAssetDeleted().AddRaw(this, &FSkookumScriptEditor::on_in_memory_asset_deleted);
+      }
 
     // Instrument all already existing blueprints
     TArray<UObject*> blueprint_array;

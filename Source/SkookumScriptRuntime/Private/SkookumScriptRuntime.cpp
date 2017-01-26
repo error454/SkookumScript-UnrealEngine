@@ -7,6 +7,8 @@
 // Author: Conan Reis
 //=======================================================================================
 
+#include "SkookumScriptRuntimePrivatePCH.h"
+
 #include "ISkookumScriptRuntime.h"
 #include "Bindings/SkUEBindings.hpp"
 #include "Bindings/SkUEClassBinding.hpp"
@@ -695,7 +697,7 @@ void FSkookumScriptRuntime::set_project_generated_bindings(SkUEBindingsInterface
 
   // Make sure the SkookumScriptEditor module is loaded at this point as it might need to update blueprint classes and recompile blueprints with errors
   #if WITH_EDITORONLY_DATA
-    FModuleManager::Get().LoadModuleChecked<IModuleInterface>("SkookumScriptEditor");
+    FModuleManager::GetModulePtr<IModuleInterface>("SkookumScriptEditor");
   #endif
 
   // Now that binaries are loaded, point to the bindings to use
