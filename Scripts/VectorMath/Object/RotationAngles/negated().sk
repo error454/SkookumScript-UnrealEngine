@@ -1,0 +1,27 @@
+//---------------------------------------------------------------------------------------
+// Method call for negation prefix operator '-' - ex: -rot
+// Returns the negated value of this RotationAngles - i.e. -this or 0 - this
+// The original RotationAngles remains unchanged.
+//
+// #Note
+//   Since this method is the alias for the negation prefix operator '-' it returns a new
+//   object rather than modifying the existing value.
+//   Methods often change the existing value/state of the object so that the instantiation
+//   operator ! or constructors can be used to create versions that return new objects.
+//   For that behaviour use negate() instead.
+//
+// #Examples
+//   do_stuff(-rot)
+//   do_stuff(rot.negated)
+//   -[rot * 5]
+//
+//   To negate the RotationAngles itself by modifying the existing value use:
+//     rot := -rot
+//     [or]
+//     rot := rot.negated
+//
+// #Author(s)  Zachary Burke
+//---------------------------------------------------------------------------------------
+
+() RotationAngles
+
