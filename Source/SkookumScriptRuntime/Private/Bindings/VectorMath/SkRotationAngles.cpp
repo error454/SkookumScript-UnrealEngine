@@ -173,7 +173,7 @@ namespace SkRotationAngles_Impl
     }
 
   //---------------------------------------------------------------------------------------
-  // # Skookum:   RotationAngles@*=(Real num) Vector3
+  // # Skookum:   RotationAngles@*=(Real num) RotationAngles
   // # Author(s): Zachary Burke
   static void mthd_op_multiply_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp)
     {
