@@ -220,8 +220,8 @@ class SK_API SkClassUnaryBase : public SkClassDescBase
 
     // Type-checking Methods
 
-      virtual const SkClassUnaryBase * as_unary_class() const  { return this; }
-      virtual SkClassUnaryBase *       as_unary_class()        { return this; }
+      virtual const SkClassUnaryBase * as_unary_class() const override  { return this; }
+      virtual SkClassUnaryBase *       as_unary_class() override        { return this; }
 
     // Method Member Methods
 

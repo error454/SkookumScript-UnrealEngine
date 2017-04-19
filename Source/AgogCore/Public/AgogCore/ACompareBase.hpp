@@ -78,8 +78,8 @@ class ACmpLogical : public ACompareBase<_ElementType>
 
     ACmpLogical() {}
 
-    virtual eAEquate                     compare(const _ElementType & lhs, const _ElementType & rhs);
-    virtual ACompareBase<_ElementType> * copy_new() const;
+    virtual eAEquate                     compare(const _ElementType & lhs, const _ElementType & rhs) override;
+    virtual ACompareBase<_ElementType> * copy_new() const override;
 
   };
 

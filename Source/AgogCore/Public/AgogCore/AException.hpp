@@ -55,7 +55,7 @@ class A_API AException : public AExceptionBase
 
   // Modifying Methods
 
-    virtual eAErrAction resolve();
+    virtual eAErrAction resolve() override;
 
   protected:
   // Data Members

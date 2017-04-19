@@ -131,7 +131,7 @@ class SK_API SkClosureInfoMethod : public SkClosureInfoBase, public SkMethod
 
     SkClosureInfoMethod();
     SkClosureInfoMethod(SkClosureInfoMethod * closure_p);
-    virtual ~SkClosureInfoMethod();
+    virtual ~SkClosureInfoMethod() override;
 
   // Converter Methods
 
@@ -188,7 +188,7 @@ class SK_API SkClosureInfoCoroutine : public SkClosureInfoBase, public SkCorouti
 
     SkClosureInfoCoroutine();
     SkClosureInfoCoroutine(SkClosureInfoMethod * closure_p);
-    virtual ~SkClosureInfoCoroutine();
+    virtual ~SkClosureInfoCoroutine() override;
 
   // Converter Methods
 
@@ -245,7 +245,7 @@ class SK_API SkLiteralClosure : public SkExpressionBase
 
     SkLiteralClosure(SkExpressionBase * recv_p = nullptr);
     SkLiteralClosure(SkLiteralClosure * closure_method_p, eSkExprType type);
-    virtual ~SkLiteralClosure();
+    virtual ~SkLiteralClosure() override;
 
   // Converter Methods
 

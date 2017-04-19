@@ -179,7 +179,7 @@ void USkookumScriptBehaviorComponent::InitializeComponent()
     {
     if (!m_is_instance_externally_owned)
       {
-      SK_ASSERTX(SkookumScript::get_initialization_level() >= SkookumScript::InitializationLevel_gameplay, "SkookumScript must be in gameplay mode when InitializeComponent() is invoked.");
+      SK_MAD_ASSERTX(SkookumScript::get_initialization_level() >= SkookumScript::InitializationLevel_gameplay, "SkookumScript must be in gameplay mode when InitializeComponent() is invoked.");
 
       create_sk_instance();
       m_component_instance_p->get_class()->resolve_raw_data();
@@ -222,7 +222,7 @@ void USkookumScriptBehaviorComponent::UninitializeComponent()
   // Delete SkookumScript instance if present
   if (m_component_instance_p)
     {
-    SK_ASSERTX(SkookumScript::get_initialization_level() >= SkookumScript::InitializationLevel_gameplay, "SkookumScript must be in gameplay mode when UninitializeComponent() is invoked.");
+    SK_MAD_ASSERTX(SkookumScript::get_initialization_level() >= SkookumScript::InitializationLevel_gameplay, "SkookumScript must be in gameplay mode when UninitializeComponent() is invoked.");
 
     m_component_instance_p->method_call(ms_symbol_on_detach);
     m_component_instance_p->as<SkUESkookumScriptBehaviorComponent>() = nullptr;
@@ -246,6 +246,8 @@ void USkookumScriptBehaviorComponent::UninitializeComponent()
 
 void USkookumScriptBehaviorComponent::OnUnregister()
   {
+  SK_MAD_ASSERTX(!m_component_instance_p, "Instance should have been destroyed at this point.");
+
   Super::OnUnregister();
   }
 

@@ -430,6 +430,14 @@ A_INLINE bool SkClass::is_scope_qualifier(SkClassDescBase * recv_type_p) const
   }
 
 //---------------------------------------------------------------------------------------
+// Determines if this class has been deleted/removed from the class tree
+// See: removed_subclass()
+A_INLINE bool SkClass::is_deleted() const
+  {
+  return !m_superclass_p && get_name_id() != ASymbolId_Object;
+  }
+
+//---------------------------------------------------------------------------------------
 //  Gets the qualified (or unqualified) method.
 // Returns:     A pointer to the requested method or nullptr if it does not exist.
 // Arg          method_qual - name and optional highest level scope of method.  Note

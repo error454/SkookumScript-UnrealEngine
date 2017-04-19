@@ -116,7 +116,7 @@ class SK_API SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
     SK_NEW_OPERATORS(SkInstance);
 
     SkInstance();
-    virtual ~SkInstance();
+    virtual ~SkInstance() override;
 
     virtual bool is_metaclass() const;
     SkClass *    get_class() const;
@@ -132,7 +132,7 @@ class SK_API SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
 
     #if defined(SK_AS_STRINGS)
       virtual AString         as_string_debug() const;
-      virtual const ASymbol & get_name_debug() const                             { return ASymbol::ms_null; }
+      virtual const ASymbol & get_name_debug() const                            { return ASymbol::ms_null; }
     #endif
 
     // !!DEPRECATED!!
@@ -379,9 +379,9 @@ class SK_API SkInstance : public SkObjectBase, public ARefCountMix<SkInstance>
 
     // Overriding from SkObjectBase
 
-      virtual SkInstance *  as_new_instance() const                                     { reference(); return const_cast<SkInstance *>(this); }
-      virtual eSkObjectType get_obj_type() const                                        { return SkObjectType_instance; }
-      virtual SkInstance *  get_topmost_scope() const;
+      virtual SkInstance *  as_new_instance() const override                            { reference(); return const_cast<SkInstance *>(this); }
+      virtual eSkObjectType get_obj_type() const override                               { return SkObjectType_instance; }
+      virtual SkInstance *  get_topmost_scope() const override;
       virtual SkInstance *  get_data_by_name(const ASymbol & name) const;
       virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p);
 
@@ -479,8 +479,8 @@ class SK_API SkInstanceUnreffed : public SkInstance
 
     // Overriding from SkInstance (overriding from ARefCountMix<>)
 
-      virtual bool is_ref_counted() const                                               { return false; }
-      virtual void on_no_references();
+      virtual bool is_ref_counted() const override                                               { return false; }
+      virtual void on_no_references() override;
 
   };
 

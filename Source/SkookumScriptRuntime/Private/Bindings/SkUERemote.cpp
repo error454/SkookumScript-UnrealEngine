@@ -64,7 +64,8 @@ SkUERemote::SkUERemote(FSkookumScriptRuntimeGenerator * runtime_generator_p) :
   m_socket_p(nullptr),
   m_data_idx(ADef_uint32),
   m_editor_interface_p(nullptr),
-  m_runtime_generator_p(runtime_generator_p)
+  m_runtime_generator_p(runtime_generator_p),
+  m_last_connected_to_ide(false)
   {
   }
 
@@ -433,6 +434,24 @@ void SkUERemote::on_class_updated(SkClass * class_p)
   }
 
 //---------------------------------------------------------------------------------------
+void SkUERemote::on_connect_change(eConnectState old_state)
+  {
+  // Call base class
+  SkRemoteRuntimeBase::on_connect_change(old_state);
+
+  // When in read-only (REPL) mode, regenerate all script files upon each connection to IDE
+  #if WITH_EDITORONLY_DATA
+    if (m_runtime_generator_p
+     && m_runtime_generator_p->get_project_mode() == SkProjectMode_read_only
+     && m_connect_state == SkRemoteBase::ConnectState_authenticated)
+      {
+      m_runtime_generator_p->delete_all_class_script_files();
+      m_runtime_generator_p->generate_all_class_script_files();
+      }
+  #endif
+  }
+
+//---------------------------------------------------------------------------------------
 double SkUERemote::get_elapsed_seconds()
   {
   return FPlatformTime::Seconds() - GStartTime;
@@ -534,10 +553,19 @@ bool SkUERemote::spawn_remote_ide()
           }
         }
 
+      // If we were not connected to the IDE when the plugin shut down (or crashed), start out minimized
+      if (!m_last_connected_to_ide)
+        {
+        launch_params += FString::Printf(TEXT(" -m"), *project_path);
+        }
+
+      // If we know what project to launch, let the IDE know
       if (!project_path.IsEmpty())
         {
-        launch_params = FString::Printf(TEXT("-p \"%s\""), *project_path);
+        launch_params += FString::Printf(TEXT(" -p \"%s\""), *project_path);
         }
+
+      launch_params.Trim();
       }
 
     // Path seems to need to be made fully qualified in order to work

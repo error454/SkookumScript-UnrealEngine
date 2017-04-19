@@ -151,7 +151,7 @@ send-args        = [argument] {ws [',' ws] [argument]}
 return-args      = [return-arg] {ws [',' ws] [return-arg]}
 argument*        = [named-spec ws] expression
 return-arg*      = [named-spec ws] variable-ident | define-temporary
-named-spec       = variable-name '#'
+named-spec       = variable-name ws ':'
 
   * only trailing arguments may be named
 
@@ -742,7 +742,8 @@ class SK_API SkParser : public AString
     // Represents parsed list of annotations
     struct Annotations
       {
-      uint32_t  m_flags;            // One bit per type of annotation
+      uint32_t  m_flags;  // One bit per type of annotation
+      tSkAkas   m_akas;   // Alternative names for invokables      
       
       Annotations() : m_flags(0) {}
       };

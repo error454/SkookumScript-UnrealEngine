@@ -59,7 +59,7 @@ class SK_API SkActorClass : public SkClass
     SK_NEW_OPERATORS(SkActorClass);
 
     explicit SkActorClass(const ASymbol & name = ASymbol::get_null(), SkClass * superclass_p = nullptr, uint32_t flags = Flag__default_actor, uint32_t annotation_flags = 0);
-    virtual ~SkActorClass();
+    virtual ~SkActorClass() override;
 
   // Methods
 

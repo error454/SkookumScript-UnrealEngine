@@ -26,6 +26,7 @@
 
 #include "SkRotationAngles.hpp"
 #include "SkRotation.hpp"
+#include "SkVector3.hpp"
 
 #include <SkookumScript/SkBoolean.hpp>
 #include <SkookumScript/SkReal.hpp>
@@ -74,6 +75,141 @@ namespace SkRotationAngles_Impl
       {
       const FRotator & rot = scope_p->this_as<SkRotationAngles>();
       *result_pp = SkRotation::new_instance(rot.Quaternion());
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@=(RotationAngles rot) Boolean
+  // # Author(s): Zachary Burke
+  static void mthd_op_equals(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkBoolean::new_instance(scope_p->this_as<SkRotationAngles>() == scope_p->get_arg<SkRotationAngles>(SkArg_1));
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@~=(RotationAngles rot) Boolean
+  // # Author(s): Zachary Burke
+  static void mthd_op_not_equal(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkBoolean::new_instance(scope_p->this_as<SkRotationAngles>() != scope_p->get_arg<SkRotationAngles>(SkArg_1));
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@+(RotationAngles rot) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_add(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkRotationAngles::new_instance(scope_p->this_as<SkRotationAngles>() + scope_p->get_arg<SkRotationAngles>(SkArg_1));
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@+=(RotationAngles rot) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_add_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    SkInstance * this_p = scope_p->get_this();
+
+    this_p->as<SkRotationAngles>() += scope_p->get_arg<SkRotationAngles>(SkArg_1);
+
+    // Return this if result desired
+    if (result_pp)
+      {
+      this_p->reference();
+      *result_pp = this_p;
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@-(RotationAngles rot) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_subtract(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkRotationAngles::new_instance(scope_p->this_as<SkRotationAngles>() - scope_p->get_arg<SkRotationAngles>(SkArg_1));
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@-=(RotationAngles rot) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_subtract_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    SkInstance * this_p = scope_p->get_this();
+
+    this_p->as<SkRotationAngles>() -= scope_p->get_arg<SkRotationAngles>(SkArg_1);
+
+    // Return this if result desired
+    if (result_pp)
+      {
+      this_p->reference();
+      *result_pp = this_p;
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@*(Real num) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_multiply(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkRotationAngles::new_instance(scope_p->this_as<SkRotationAngles>() * scope_p->get_arg<SkReal>(SkArg_1));
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@*=(Real num) RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_multiply_assign(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    SkInstance * this_p = scope_p->get_this();
+
+    this_p->as<SkRotationAngles>() *= scope_p->get_arg<SkReal>(SkArg_1);
+
+    // Return this if result desired
+    if (result_pp)
+      {
+      this_p->reference();
+      *result_pp = this_p;
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   -RotationAngles
+  // # Author(s): Zachary Burke
+  static void mthd_op_negated(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkRotationAngles::new_instance(-scope_p->this_as<SkRotationAngles>());
+      }
+    }
+
+  //---------------------------------------------------------------------------------------
+  // # Skookum:   RotationAngles@Vector3() Vector3
+  // # Author(s): Zachary Burke
+  static void mthd_Vector3(SkInvokedMethod * scope_p, SkInstance ** result_pp)
+    {
+    // Do nothing if result not desired
+    if (result_pp)
+      {
+      *result_pp = SkVector3::new_instance(scope_p->this_as<SkRotationAngles>().Vector());
       }
     }
 
@@ -139,6 +275,18 @@ namespace SkRotationAngles_Impl
       { "String",             mthd_String },
       { "Rotation",           mthd_Rotation },
 
+      { "equal?",             mthd_op_equals },
+      { "not_equal?",         mthd_op_not_equal },
+      { "add",                mthd_op_add },
+      { "add_assign",         mthd_op_add_assign },
+      { "subtract",           mthd_op_subtract },
+      { "subtract_assign",    mthd_op_subtract_assign },
+      { "multiply",           mthd_op_multiply },
+      { "multiply_assign",    mthd_op_multiply_assign },
+      { "negated",            mthd_op_negated },
+
+      { "Vector3",            mthd_Vector3 },
+      
       { "set",                mthd_set },
       { "zero?",              mthd_zeroQ },
       { "zero",               mthd_zero },

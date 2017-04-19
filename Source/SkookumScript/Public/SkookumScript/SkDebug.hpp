@@ -61,10 +61,12 @@
   // Mad asserts are for extra checking for coders & advanced developers
   // Any condition asserted by mad asserts MUST NOT BE FATAL and MUST BE 100% RECOVERABLE
   #ifdef A_MAD_CHECK
-    #define SK_MAD_ASSERTX(_boolean_exp, _error_msg)                A_VERIFY(_boolean_exp, _error_msg, AErrId_generic, ADebug)
+    #define SK_MAD_ASSERTX(_boolean_exp, _ex_desc)                  A_VERIFY(_boolean_exp, _ex_desc, AErrId_generic, SkDebug)
+    #define SK_MAD_ASSERTX_NO_THROW(_boolean_exp, _ex_desc)         A_VERIFY_NO_THROW(_boolean_exp, _ex_desc, AErrId_generic, SkDebug)
     #define SK_MAD_ERRORX(_ex_desc)                                 A_ERROR(_ex_desc, AErrId_generic, SkDebug)
   #else
-    #define SK_MAD_ASSERTX(_boolean_exp, _error_msg)                (void(0))
+    #define SK_MAD_ASSERTX(_boolean_exp, _ex_desc)                  (void(0))
+    #define SK_MAD_ASSERTX_NO_THROW(_boolean_exp, _ex_desc)         (void(0))
     #define SK_MAD_ERRORX(_ex_desc)                                 (void(0))
   #endif
 
@@ -102,7 +104,8 @@
   #define SK_ERROR_INFO(_ex_desc, _info)                            (void(0))
   #define SK_ERROR_ID(_ex_desc, _err_id, _ExClass)                  (void(0))
 
-  #define SK_MAD_ASSERTX(_boolean_exp, _error_msg)                  (void(0))
+  #define SK_MAD_ASSERTX(_boolean_exp, _ex_desc)                    (void(0))
+  #define SK_MAD_ASSERTX_NO_THROW(_boolean_exp, _ex_desc)           (void(0))
   #define SK_MAD_ERRORX(_ex_desc)                                   (void(0))
 
   #define SKDEBUG_STORE_CALL(_scope_p)                              (void(0))
@@ -416,8 +419,8 @@ class SK_API SkMemberExpression : public SkMemberInfo
       SkMemberExpression(const void ** binary_pp);
 
       #if (SKOOKUM & SK_COMPILED_OUT)
-        virtual void     as_binary(void ** binary_pp) const;
-        virtual uint32_t as_binary_length() const             { return SkMemberInfo::as_binary_length() + 2u; }
+        virtual void     as_binary(void ** binary_pp) const override;
+        virtual uint32_t as_binary_length() const override             { return SkMemberInfo::as_binary_length() + 2u; }
       #endif
 
   //protected: // Public for now

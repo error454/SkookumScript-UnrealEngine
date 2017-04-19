@@ -32,12 +32,8 @@
 
 FSkookumScriptRuntimeGenerator::FSkookumScriptRuntimeGenerator(ISkookumScriptRuntimeInterface * runtime_interface_p)
   : m_runtime_interface_p(runtime_interface_p)
+  , m_project_mode(SkProjectMode_read_only)
   {
-  // Clear contents of scripts folder for a fresh start
-  // Won't work here if project has several maps using different blueprints
-  //FString directory_to_delete(m_scripts_path / TEXT("Object"));
-  //IFileManager::Get().DeleteDirectory(*directory_to_delete, false, true);
-
   // Reset super classes
   m_used_classes.Empty();
 
@@ -70,6 +66,19 @@ FString FSkookumScriptRuntimeGenerator::get_default_project_file_path()
 int32 FSkookumScriptRuntimeGenerator::get_overlay_path_depth() const
   {
   return m_overlay_path_depth;
+  }
+
+//---------------------------------------------------------------------------------------
+
+void FSkookumScriptRuntimeGenerator::delete_all_class_script_files()
+  {
+  // Clear contents of overlay scripts folder
+  FString directory_to_delete(m_overlay_path / TEXT("Object"));
+  IFileManager::Get().DeleteDirectory(*directory_to_delete, false, true);
+  IFileManager::Get().MakeDirectory(*directory_to_delete, true);
+
+  // Reset super classes
+  m_used_classes.Empty();
   }
 
 //---------------------------------------------------------------------------------------
@@ -109,9 +118,14 @@ FString FSkookumScriptRuntimeGenerator::make_project_editable()
     // Check if maybe already editable - if so, silently do nothing
     FString editable_scripts_path = FPaths::GameDir() / TEXT("Scripts");
     FString editable_project_file_path(editable_scripts_path / TEXT("Skookum-project.ini"));
-    if (!FPaths::FileExists(editable_project_file_path))
+    if (FPaths::FileExists(editable_project_file_path))
       {
-      // Check temporary location (in `Intermediate` folder)
+      // Found editable project - make sure mode is set properly
+      m_project_mode = SkProjectMode_editable;
+      }
+    else
+      {
+      // No editable project found - check temporary location (in `Intermediate` folder)
       FString temp_root_path(FPaths::GameIntermediateDir() / TEXT("SkookumScript"));
       FString temp_scripts_path(temp_root_path / TEXT("Scripts"));
       FString temp_project_file_path = temp_scripts_path / TEXT("Skookum-project.ini");
@@ -164,6 +178,8 @@ FString FSkookumScriptRuntimeGenerator::make_project_editable()
           proj_ini += TEXT("Overlay8=Project|Project\r\n"); // Create Project overlay definition
           verify(FFileHelper::SaveStringToFile(proj_ini, *editable_project_file_path, FFileHelper::EEncodingOptions::ForceAnsi));
 
+          // Now in new mode
+          m_project_mode = SkProjectMode_editable;
           // Remember new project path
           m_project_file_path = FPaths::ConvertRelativePathToFull(editable_project_file_path);
           // Also update overlay path and depth
@@ -527,12 +543,7 @@ void FSkookumScriptRuntimeGenerator::initialize_paths()
   FString project_file_path;
   if (!FPaths::GameDir().IsEmpty())
     {
-    bool created = false;
-    project_file_path = get_or_create_project_file(FPaths::GameDir(), FApp::GetGameName(), &created);
-    if (created)
-      {
-      generate_all_class_script_files();
-      }
+    project_file_path = get_or_create_project_file(FPaths::GameDir(), FApp::GetGameName(), &m_project_mode);
     }
   if (!project_file_path.IsEmpty())
     {

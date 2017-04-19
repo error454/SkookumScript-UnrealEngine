@@ -59,7 +59,7 @@ class SK_API SkMethodBase : public SkInvokableBase
     #endif
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code_params() const;
+      virtual AString as_code_params() const override;
     #endif
 
   // Methods
@@ -67,7 +67,7 @@ class SK_API SkMethodBase : public SkInvokableBase
     SkMethodBase & assign(const SkMethodBase & method)      { SkInvokableBase::assign(method); return *this; }
 
     virtual void invoke(SkInvokedMethod * scope_p, SkInvokedBase * caller_p = nullptr, SkInstance ** result_pp = nullptr) const = 0;
-    virtual bool is_class_member() const;
+    virtual bool is_class_member() const override;
     virtual void track_memory(AMemoryStats * mem_stats_p) const = 0;
 
   };  // SkMethodBase
@@ -86,7 +86,7 @@ class SK_API SkMethod : public SkMethodBase
     SK_NEW_OPERATORS(SkMethod);
     SkMethod(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkMethodBase(name, scope_p, invoked_data_array_size, annotation_flags), m_expr_p(nullptr) {}
     SkMethod(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags, SkExpressionBase * expr_p = nullptr) : SkMethodBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags), m_expr_p(expr_p) {}
-    virtual ~SkMethod();
+    virtual ~SkMethod() override;
 
   // Converter Methods
 
@@ -186,7 +186,7 @@ class SK_API SkMethodFunc : public SkMethodBase
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
 
@@ -196,14 +196,14 @@ class SK_API SkMethodFunc : public SkMethodBase
 
     // Overridden from SkMethodBase
 
-      virtual void invoke(SkInvokedMethod * scope_p, SkInvokedBase * caller_p = nullptr, SkInstance ** result_pp = nullptr) const;
-      virtual void track_memory(AMemoryStats * mem_stats_p) const;
+      virtual void invoke(SkInvokedMethod * scope_p, SkInvokedBase * caller_p = nullptr, SkInstance ** result_pp = nullptr) const override;
+      virtual void track_memory(AMemoryStats * mem_stats_p) const override;
 
     // Overridden from SkInvokableBase
 
-      virtual eSkInvokable get_invoke_type() const;
-      virtual bool         is_bound() const;
-      virtual bool         is_placeholder();
+      virtual eSkInvokable get_invoke_type() const override;
+      virtual bool         is_bound() const override;
+      virtual bool         is_placeholder() override;
 
 
   // Atomic Methods
@@ -266,7 +266,7 @@ class SK_API SkMethodMthd : public SkMethodBase
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
 
@@ -276,13 +276,13 @@ class SK_API SkMethodMthd : public SkMethodBase
 
     // Overridden from SkMethodBase
 
-      virtual void invoke(SkInvokedMethod * scope_p, SkInvokedBase * caller_p = nullptr, SkInstance ** result_pp = nullptr) const;
-      virtual void track_memory(AMemoryStats * mem_stats_p) const;
+      virtual void invoke(SkInvokedMethod * scope_p, SkInvokedBase * caller_p = nullptr, SkInstance ** result_pp = nullptr) const override;
+      virtual void track_memory(AMemoryStats * mem_stats_p) const override;
 
     // Overridden from SkInvokableBase
 
-      virtual eSkInvokable get_invoke_type() const;
-      virtual bool         is_bound() const;
+      virtual eSkInvokable get_invoke_type() const override;
+      virtual bool         is_bound() const override;
 
   };  // SkMethodMthd
 

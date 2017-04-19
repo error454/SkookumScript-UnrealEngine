@@ -223,13 +223,13 @@ class SK_API SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
   // Converter Methods
 
     #if (SKOOKUM & SK_COMPILED_OUT)
-      virtual void as_binary_ref(void ** binary_pp) const;
+      virtual void as_binary_ref(void ** binary_pp) const override;
     #endif
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
-      virtual AString get_scope_desc() const;
+      virtual AString as_code() const override;
+      virtual AString get_scope_desc() const override;
     #endif
 
 
@@ -244,52 +244,52 @@ class SK_API SkMetaClass : public SkClassUnaryBase, public SkInstanceUnreffed
 
     // Overriding from SkClassUnaryBase & SkClassDescBase
 
-      virtual SkClassDescBase *  as_finalized_generic(const SkClassDescBase & scope_type) const;
+      virtual SkClassDescBase *  as_finalized_generic(const SkClassDescBase & scope_type) const override;
       SkClassUnaryBase *         find_common_class(const SkClass & cls) const;
-      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const;
-      virtual eSkClassType       get_class_type() const;
-      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
-      virtual SkClass *          get_key_class() const;
-      virtual const ASymbol &    get_key_class_name() const;
-      virtual SkMetaClass &      get_metaclass() const;
-      virtual bool               is_generic() const;
-      virtual bool               is_metaclass() const; 
-      virtual bool               is_class_type(const SkClassDescBase * type_p) const;
+      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const override;
+      virtual eSkClassType       get_class_type() const override;
+      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const override;
+      virtual SkClass *          get_key_class() const override;
+      virtual const ASymbol &    get_key_class_name() const override;
+      virtual SkMetaClass &      get_metaclass() const override;
+      virtual bool               is_generic() const override;
+      virtual bool               is_metaclass() const override; 
+      virtual bool               is_class_type(const SkClassDescBase * type_p) const override;
 
       // Method Member Methods
 
-        virtual void           append_method(SkMethodBase * method_p, bool * has_signature_changed_p = nullptr);
-        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
-        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
-        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const;
-        virtual bool           is_method_valid(const ASymbol & method_name) const;
+        virtual void           append_method(SkMethodBase * method_p, bool * has_signature_changed_p = nullptr) override;
+        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
+        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
+        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const override;
+        virtual bool           is_method_valid(const ASymbol & method_name) const override;
 
       // Coroutine Member Methods
 
-        virtual void              append_coroutine(SkCoroutineBase * coroutine_p, bool * has_signature_changed_p = nullptr);
-        virtual SkCoroutineBase * find_coroutine_inherited(const ASymbol & coroutine_name) const  { return nullptr; }
-        virtual bool              is_coroutine_registered(const ASymbol & coroutine_name) const  { return false; }
-        virtual bool              is_coroutine_valid(const ASymbol & coroutine_name) const       { return false; }
+        virtual void              append_coroutine(SkCoroutineBase * coroutine_p, bool * has_signature_changed_p = nullptr) override;
+        virtual SkCoroutineBase * find_coroutine_inherited(const ASymbol & coroutine_name) const override  { return nullptr; }
+        virtual bool              is_coroutine_registered(const ASymbol & coroutine_name) const override  { return false; }
+        virtual bool              is_coroutine_valid(const ASymbol & coroutine_name) const override       { return false; }
 
       // Data Member Methods
 
-        virtual SkTypedName *    append_data_member(const ASymbol & name, SkClassDescBase * type_p);
-        virtual SkTypedNameRaw * append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p);
+        virtual SkTypedName *    append_data_member(const ASymbol & name, SkClassDescBase * type_p) override;
+        virtual SkTypedNameRaw * append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p) override;
 
     // Overriding from SkInstance
 
-      virtual void method_call(const ASymbol & method_name, SkInstance ** args_pp, uint32_t arg_count, SkInstance ** result_pp = nullptr, SkInvokedBase * caller_p = nullptr);
+      virtual void method_call(const ASymbol & method_name, SkInstance ** args_pp, uint32_t arg_count, SkInstance ** result_pp = nullptr, SkInvokedBase * caller_p = nullptr) override;
 
       #if defined(SK_AS_STRINGS)
-        virtual AString as_string_debug() const;
+        virtual AString as_string_debug() const override;
       #endif
 
-      virtual SkInstance *  get_data_by_name(const ASymbol & name) const;
-      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p);
+      virtual SkInstance *  get_data_by_name(const ASymbol & name) const override;
+      virtual bool          set_data_by_name(const ASymbol & name, SkInstance * data_p) override;
 
     // Overriding from SkObjectBase
 
-      virtual eSkObjectType get_obj_type() const       { return SkObjectType_meta_class; }
+      virtual eSkObjectType get_obj_type() const override       { return SkObjectType_meta_class; }
 
 
   protected:
@@ -501,7 +501,7 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
   // Converter Methods
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
 
@@ -544,7 +544,7 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
       uint32_t         as_binary_group_length(bool skip_demand_loaded) const;
       void             as_binary_placeholder_recurse(void ** binary_pp) const;
       uint32_t         as_binary_placeholder_recurse_length();
-      virtual void     as_binary_ref(void ** binary_pp) const;
+      virtual void     as_binary_ref(void ** binary_pp) const override;
     #endif
 
 
@@ -569,7 +569,7 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
 
   // Methods
 
-    virtual SkMetaClass & get_metaclass() const;
+    virtual SkMetaClass & get_metaclass() const override;
 
     uint32_t     get_flags() const                                      { return m_flags; }
     uint32_t     get_annotation_flags() const                           { return m_annotation_flags; }
@@ -606,7 +606,7 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
       void                       append_subclass(SkClass * subclass_p);
       void                       build_vtables_recurse(bool force_new);
       SkClass *                  find_common_class(const SkClass & cls) const;
-      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const;
+      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const override;
       uint32_t                   get_class_recurse_count(bool skip_demand_loaded) const;
       tSkClasses &               get_subclasses()                       { return m_subclasses; }
       const tSkClasses &         get_subclasses() const                 { return m_subclasses; }
@@ -624,6 +624,7 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
       bool                       is_subclass(const SkClass & superclass) const;
       bool                       is_superclass(const SkClass & subclass) const;
       bool                       is_scope_qualifier(SkClassDescBase * recv_type_p) const;
+      bool                       is_deleted() const;
       eAIterateResult            iterate_recurse(AFunctionArgRtnBase<SkClass *, eAIterateResult> * apply_class_p, eAHierarchy hierarchy = AHierarchy__all);
       void                       iterate_recurse(AFunctionArgBase<SkClass *> * apply_class_p, eAHierarchy hierarchy = AHierarchy__all);
       SkClass *                  next_class(SkClass * root_p) const;
@@ -635,17 +636,17 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
 
       // Instance & Class Methods
 
-        virtual void           append_method(SkMethodBase * method_p, bool * has_signature_changed_p = nullptr);
-        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
-        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
+        virtual void           append_method(SkMethodBase * method_p, bool * has_signature_changed_p = nullptr) override;
+        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
+        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
         SkMethodBase *         find_method_inherited_receiver(const ASymbol & method_name, SkInstance ** receiver_pp, SkInvokedBase * caller_p) const;
         SkInvokableBase *      get_invokable_from_vtable(eSkScope scope, int16_t vtable_index) const;
         SkInvokableBase *      get_invokable_from_vtable_i(int16_t vtable_index) const;
         SkInvokableBase *      get_invokable_from_vtable_c(int16_t vtable_index) const;
         int16_t                find_invokable_in_vtable_i(const ASymbol & name) const;
         int16_t                find_invokable_in_vtable_c(const ASymbol & name) const;
-        virtual bool           is_method_valid(const ASymbol & method_name) const;
-        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const;
+        virtual bool           is_method_valid(const ASymbol & method_name) const override;
+        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const override;
         void                   register_method_func(const ASymbol & method_name, tSkMethodFunc atomic_f, eSkBindFlag flags = SkBindFlag_default);
         void                   register_method_func(const char * method_name_p, tSkMethodFunc atomic_f, eSkBindFlag flags = SkBindFlag_default);
         void                   register_method_mthd(const ASymbol & method_name, tSkMethodMthd atomic_m, eSkBindFlag flags = SkBindFlag_default);
@@ -687,30 +688,30 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
 
     // Coroutine Methods
 
-      virtual void         append_coroutine(SkCoroutineBase * coroutine_p, bool * has_signature_changed_p = nullptr);
-      SkCoroutineBase *    find_coroutine(const ASymbol & coroutine_name) const       { return m_coroutines.get(coroutine_name); }
-      SkCoroutineBase *    find_coroutine_inherited(const ASymbol & coroutine_name) const;
-      SkCoroutineBase *    find_coroutine_overridden(const ASymbol & coroutine_name) const;
-      SkCoroutineBase *    find_coroutine_scoped_inherited(const SkQualifier & coroutine_qual) const;
-      virtual bool         is_coroutine_registered(const ASymbol & coroutine_name) const;
-      virtual bool         is_coroutine_valid(const ASymbol & coroutine_name) const  { return m_coroutines.find(coroutine_name); }
-      void                 register_coroutine_func(const ASymbol & coroutine_name, tSkCoroutineFunc update_f, eSkBindFlag flags = SkBindFlag_default);
-      void                 register_coroutine_func(const char * coroutine_name_p, tSkCoroutineFunc update_f, eSkBindFlag flags = SkBindFlag_default);
-      void                 register_coroutine_mthd(const ASymbol & coroutine_name, tSkCoroutineMthd update_m, eSkBindFlag flags = SkBindFlag_default);
-      void                 register_coroutine_mthd(const char * coroutine_name_p, tSkCoroutineMthd update_m, eSkBindFlag flags = SkBindFlag_default);
-      void                 register_coroutine_func_bulk(const CoroutineInitializerFunc   * bindings_p, uint32_t count, eSkBindFlag flags);
-      void                 register_coroutine_func_bulk(const CoroutineInitializerFuncId * bindings_p, uint32_t count, eSkBindFlag flags);
-      void                 register_coroutine_mthd_bulk(const CoroutineInitializerMthd   * bindings_p, uint32_t count, eSkBindFlag flags);
-      void                 register_coroutine_mthd_bulk(const CoroutineInitializerMthdId * bindings_p, uint32_t count, eSkBindFlag flags);
-      bool                 remove_coroutine(const ASymbol & coroutine_name)          { return m_coroutines.free(coroutine_name); }
-      bool                 unlink_coroutine(const ASymbol & coroutine_name)          { return m_coroutines.remove(coroutine_name); }
-      const tSkCoroutines & get_coroutines() const                                   { return m_coroutines; }
+      virtual void              append_coroutine(SkCoroutineBase * coroutine_p, bool * has_signature_changed_p = nullptr) override;
+      SkCoroutineBase *         find_coroutine(const ASymbol & coroutine_name) const       { return m_coroutines.get(coroutine_name); }
+      virtual SkCoroutineBase * find_coroutine_inherited(const ASymbol & coroutine_name) const override;
+      SkCoroutineBase *         find_coroutine_overridden(const ASymbol & coroutine_name) const;
+      SkCoroutineBase *         find_coroutine_scoped_inherited(const SkQualifier & coroutine_qual) const;
+      virtual bool              is_coroutine_registered(const ASymbol & coroutine_name) const override;
+      virtual bool              is_coroutine_valid(const ASymbol & coroutine_name) const override  { return m_coroutines.find(coroutine_name); }
+      void                      register_coroutine_func(const ASymbol & coroutine_name, tSkCoroutineFunc update_f, eSkBindFlag flags = SkBindFlag_default);
+      void                      register_coroutine_func(const char * coroutine_name_p, tSkCoroutineFunc update_f, eSkBindFlag flags = SkBindFlag_default);
+      void                      register_coroutine_mthd(const ASymbol & coroutine_name, tSkCoroutineMthd update_m, eSkBindFlag flags = SkBindFlag_default);
+      void                      register_coroutine_mthd(const char * coroutine_name_p, tSkCoroutineMthd update_m, eSkBindFlag flags = SkBindFlag_default);
+      void                      register_coroutine_func_bulk(const CoroutineInitializerFunc   * bindings_p, uint32_t count, eSkBindFlag flags);
+      void                      register_coroutine_func_bulk(const CoroutineInitializerFuncId * bindings_p, uint32_t count, eSkBindFlag flags);
+      void                      register_coroutine_mthd_bulk(const CoroutineInitializerMthd   * bindings_p, uint32_t count, eSkBindFlag flags);
+      void                      register_coroutine_mthd_bulk(const CoroutineInitializerMthdId * bindings_p, uint32_t count, eSkBindFlag flags);
+      bool                      remove_coroutine(const ASymbol & coroutine_name)          { return m_coroutines.free(coroutine_name); }
+      bool                      unlink_coroutine(const ASymbol & coroutine_name)          { return m_coroutines.remove(coroutine_name); }
+      const tSkCoroutines &     get_coroutines() const                                   { return m_coroutines; }
 
     // Data Methods
 
-      virtual SkTypedName *     append_data_member(const ASymbol & name, SkClassDescBase * type_p);
-      virtual SkTypedNameRaw *  append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p);
-      virtual SkTypedName *     get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
+      virtual SkTypedName *     append_data_member(const ASymbol & name, SkClassDescBase * type_p) override;
+      virtual SkTypedNameRaw *  append_data_member_raw(const ASymbol & name, SkClassDescBase * type_p) override;
+      virtual SkTypedName *     get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const override;
       SkTypedName *             get_instance_data_type(uint32_t data_idx, SkClass ** data_owner_class_pp = nullptr) const;
       SkTypedName *             get_instance_data_type(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
       SkTypedNameRaw *          get_instance_data_type_raw(const ASymbol & data_name, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
@@ -761,22 +762,30 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
 
     // Overriding from SkClassDescBase
 
-      virtual SkClassDescBase * as_finalized_generic(const SkClassDescBase & scope_type) const;
-      virtual eSkClassType      get_class_type() const;
-      virtual SkClassDescBase * get_item_type() const;
-      virtual const ASymbol &   get_key_class_name() const;
-      virtual bool              is_class_type(const SkClassDescBase * type_p) const;
-      virtual bool              is_generic() const;
-      virtual bool              is_method_registered(const ASymbol & method_name, bool allow_placeholder) const;
+      virtual SkClassDescBase * as_finalized_generic(const SkClassDescBase & scope_type) const override;
+      virtual eSkClassType      get_class_type() const override;
+      virtual SkClassDescBase * get_item_type() const override;
+      virtual const ASymbol &   get_key_class_name() const override;
+      virtual bool              is_class_type(const SkClassDescBase * type_p) const override;
+      virtual bool              is_generic() const override;
+      virtual bool              is_method_registered(const ASymbol & method_name, bool allow_placeholder) const override;
 
     // Overriding from SkClassUnaryBase
 
-      virtual SkClass * get_key_class() const;
+      virtual SkClass * get_key_class() const override;
 
     // User data
 
       template<typename T> T *   get_user_data() const           { return (T*)m_user_data_p; }
       template<typename T> void  set_user_data(T * user_data_p)  { m_user_data_p = (void *)user_data_p; }
+
+    // Sanity checking
+
+    #if (SKOOKUM & SK_DEBUG)
+      virtual void reference() const override          { ++m_ref_count; }
+      virtual void dereference() override              { --m_ref_count; }    
+      virtual void dereference_delay() const override  { --m_ref_count; }    
+    #endif
 
   protected:
 
@@ -909,6 +918,12 @@ class SK_API SkClass : public SkClassUnaryBase, public ANamed
 
       void * m_user_data_p;
 
+    // Sanity checking
+
+    #if (SKOOKUM & SK_DEBUG)
+      mutable uint32_t m_ref_count;
+    #endif
+
   };  // SkClass
 
 
@@ -954,7 +969,7 @@ class SK_API SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassU
     explicit SkClassUnion(const SkClassUnaryBase & initial_class) : m_common_class_p(const_cast<SkClassUnaryBase *>(&initial_class)) { initial_class.reference(); initial_class.reference(); m_union.append(initial_class); }
     explicit SkClassUnion(const SkClassDescBase & initial_class)  : m_common_class_p(nullptr) { merge_class(initial_class); }
     SkClassUnion(const SkClassUnion & class_union);
-    virtual ~SkClassUnion();
+    virtual ~SkClassUnion() override;
     
     SkClassUnion & operator=(const SkClassUnion & class_union);
 
@@ -963,8 +978,8 @@ class SK_API SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassU
     #if (SKOOKUM & SK_COMPILED_OUT)
       void         as_binary(void ** binary_pp) const;
       uint32_t     as_binary_length() const;
-      virtual void as_binary_ref(void ** binary_pp) const;
-      virtual uint32_t as_binary_ref_typed_length() const;
+      virtual void as_binary_ref(void ** binary_pp) const override;
+      virtual uint32_t as_binary_ref_typed_length() const override;
     #endif
 
 
@@ -976,7 +991,7 @@ class SK_API SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassU
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
   // Comparison Methods
@@ -994,45 +1009,45 @@ class SK_API SkClassUnion : public SkClassDescBase, public ARefCountMix<SkClassU
 
     // Type-checking Methods
 
-      virtual const SkClassUnaryBase * as_unary_class() const         { return m_common_class_p; }
-      virtual SkClassUnaryBase *       as_unary_class()               { return m_common_class_p; }
+      virtual const SkClassUnaryBase * as_unary_class() const override         { return m_common_class_p; }
+      virtual SkClassUnaryBase *       as_unary_class() override               { return m_common_class_p; }
       SkClassUnaryBase *               get_common_class() const       { return m_common_class_p; }
       void                             set_common_class(SkClassUnaryBase * class_p);
-      virtual bool                     is_builtin_actor_class() const;
+      virtual bool                     is_builtin_actor_class() const override;
       bool                             is_class_maybe(const SkClassDescBase * type_p) const;
       bool                             is_valid_param_for(const SkClassDescBase * arg_type_p) const;
-      virtual bool                     is_metaclass() const; 
+      virtual bool                     is_metaclass() const override; 
       bool                             is_trivial() const             { return (m_union.get_length() <= 1u); }
       void                             merge_class(const SkClassUnaryBase & new_class);
       void                             merge_class(const SkClassDescBase & new_class);
 
     // Overriding from SkClassUnaryBase, SkClassDescBase, ARefCountMix<>
 
-      virtual void reference() const;
-      virtual void dereference();
-      virtual void dereference_delay() const;
+      virtual void reference() const override;
+      virtual void dereference() override;
+      virtual void dereference_delay() const override;
       void         on_no_references();
 
-      virtual SkClassDescBase *  as_finalized_generic(const SkClassDescBase & scope_type) const;
-      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const;
-      virtual eSkClassType       get_class_type() const;
-      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const;
-      virtual SkClassDescBase *  get_item_type() const;
-      virtual SkClass *          get_key_class() const;
-      virtual const ASymbol &    get_key_class_name() const;
-      virtual SkMetaClass &      get_metaclass() const;
-      virtual bool               is_class_type(const SkClassDescBase * type_p) const;
-      virtual bool               is_generic() const;
+      virtual SkClassDescBase *  as_finalized_generic(const SkClassDescBase & scope_type) const override;
+      virtual SkClassUnaryBase * find_common_type(const SkClassDescBase & cls) const override;
+      virtual eSkClassType       get_class_type() const override;
+      virtual SkTypedName *      get_data_type(const ASymbol & data_name, eSkScope * scope_p = nullptr, uint32_t * data_idx_p = nullptr, SkClass ** data_owner_class_pp = nullptr) const override;
+      virtual SkClassDescBase *  get_item_type() const override;
+      virtual SkClass *          get_key_class() const override;
+      virtual const ASymbol &    get_key_class_name() const override;
+      virtual SkMetaClass &      get_metaclass() const override;
+      virtual bool               is_class_type(const SkClassDescBase * type_p) const override;
+      virtual bool               is_generic() const override;
 
       // Method Member Methods
 
-        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
-        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const;
-        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const;
+        virtual SkMethodBase * find_method(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
+        virtual SkMethodBase * find_method_inherited(const ASymbol & method_name, bool * is_class_member_p = nullptr) const override;
+        virtual bool           is_method_inherited_valid(const ASymbol & method_name) const override;
 
       // Coroutine Member Methods
 
-        virtual SkCoroutineBase * find_coroutine_inherited(const ASymbol & coroutine_name) const;
+        virtual SkCoroutineBase * find_coroutine_inherited(const ASymbol & coroutine_name) const override;
 
   // Class Methods
 

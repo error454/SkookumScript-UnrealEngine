@@ -23,6 +23,14 @@
 #include "Misc/FileHelper.h"
 
 //---------------------------------------------------------------------------------------
+// Mode the plugin is currently in 
+enum eSkProjectMode
+  {
+  SkProjectMode_read_only, // IDE is used as a REPL only, no scripts exist in project itself
+  SkProjectMode_editable   // Project depends on Sk scripts and plugin features
+  };
+
+//---------------------------------------------------------------------------------------
 // This class provides functionality for processing UE4 runtime type information
 // and for generating Sk script files
 
@@ -99,7 +107,7 @@ class FSkookumScriptGeneratorBase
     //---------------------------------------------------------------------------------------
     // Methods
 
-    static FString        get_or_create_project_file(const FString & ue_project_directory_path, const TCHAR * project_name_p, bool * created_p = nullptr);
+    static FString        get_or_create_project_file(const FString & ue_project_directory_path, const TCHAR * project_name_p, eSkProjectMode * project_mode_p = nullptr, bool * created_p = nullptr);
     bool                  compute_scripts_path_depth(FString project_ini_file_path, const FString & overlay_name);
     void                  save_text_file(const FString & file_path, const FString & contents);
     bool                  save_text_file_if_changed(const FString & file_path, const FString & new_file_contents); // Helper to change a file only if needed

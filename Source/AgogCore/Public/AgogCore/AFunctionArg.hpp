@@ -152,7 +152,7 @@ class AFunctionArgRtn : public AFunctionArgRtnBase<_ArgType, _ReturnType>
 
   // Non-Modifying Methods
 
-    virtual AFunctionArgRtnBase<_ArgType, _ReturnType> * copy_new() const;
+    virtual AFunctionArgRtnBase<_ArgType, _ReturnType> * copy_new() const override;
 
   protected:
   // Data Members
@@ -173,7 +173,7 @@ class AFunctionArgLambda : public AFunctionArgBase<_ArgType>
     AFunctionArgLambda(_FunctorType && lambda_functor) : m_functor(lambda_functor) {}
 
     virtual void invoke(_ArgType arg) override { m_functor(arg); }
-    virtual AFunctionArgBase<_ArgType> * copy_new() const { return new AFunctionArgLambda(*this); }
+    virtual AFunctionArgBase<_ArgType> * copy_new() const override { return new AFunctionArgLambda(*this); }
 
   protected:
     _FunctorType  m_functor;

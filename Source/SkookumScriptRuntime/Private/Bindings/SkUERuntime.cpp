@@ -372,8 +372,8 @@ void SkUERuntime::set_project_generated_bindings(SkUEBindingsInterface * project
   {
   SK_ASSERTX(!m_is_compiled_scripts_bound || !project_generated_bindings_p, "Tried to set project bindings but routines have already been bound to the default generated bindings. You need to call this function earlier in the initialization sequence.");
 
-  // Change only if switching from nullptr to something or vice versa (i.e. ignore duplicate attempts to set it)
-  if (!project_generated_bindings_p != !m_project_generated_bindings_p)
+  // Change only if pointer is different
+  if (project_generated_bindings_p != m_project_generated_bindings_p)
     {
     m_project_generated_bindings_p = project_generated_bindings_p;
 

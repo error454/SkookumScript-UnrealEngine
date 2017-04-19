@@ -109,9 +109,11 @@ template<
 
     AVCompactArray();
     AVCompactArray(const AVCompactArray & array);
+    AVCompactArray(AVCompactArray && array);
     AVCompactArray(AVCompactArray * array_p);
     ~AVCompactArray();
     AVCompactArray & operator=(const AVCompactArray & array);
+    AVCompactArray & operator=(AVCompactArray && array);
     AVCompactArray & operator=(const AVCompactArrayBase<_ElementType> & array);
 
 
@@ -245,6 +247,7 @@ class AVCompactArrayLogical : public AVCompactArray<_ElementType, _KeyType, ACom
 
     AVCompactArrayLogical();
     AVCompactArrayLogical(const AVCompactArray<_ElementType, _KeyType, ACompareLogical<_KeyType> > & array);
+    AVCompactArrayLogical(AVCompactArray<_ElementType, _KeyType, ACompareLogical<_KeyType> > && array);
     AVCompactArrayLogical(AVCompactArray<_ElementType, _KeyType, ACompareLogical<_KeyType> > * array_p);
     explicit AVCompactArrayLogical(const _ElementType ** elems_p, uint32_t elem_count);
     explicit AVCompactArrayLogical(const _ElementType * elems_p, uint32_t elem_count);
@@ -273,6 +276,7 @@ class AVCompactArrayFree : public AVCompactArray<_ElementType, _KeyType, _Compar
 
     AVCompactArrayFree();
     AVCompactArrayFree(const AVCompactArray<_ElementType, _KeyType, _CompareClass> & array);
+    AVCompactArrayFree(AVCompactArray<_ElementType, _KeyType, _CompareClass> && array);
     AVCompactArrayFree(AVCompactArray<_ElementType, _KeyType, _CompareClass> * array_p);
     explicit AVCompactArrayFree(const _ElementType ** elems_p, uint32_t elem_count, uint32_t buffer_size = 0u);
     //explicit AVCompactArrayFree(const _ElementType * elems_p, uint32_t elem_count);
@@ -314,6 +318,16 @@ inline AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(con
   {
   // $Note - CReis The GCC compiler cannot resolve inherited members without "this->" or "SourceClass::" prefixing them.
   ::memcpy(this->m_array_p, array.m_array_p, this->m_count * sizeof(_ElementType));
+  }
+
+//---------------------------------------------------------------------------------------
+//  Move constructor
+template<class _ElementType, class _KeyType, class _CompareClass>
+inline AVCompactArray<_ElementType, _KeyType, _CompareClass>::AVCompactArray(tAVCompactArray && array) :
+  AVCompactArrayBase<_ElementType>(array.m_count, array.m_array_p)
+  {
+  array.m_array_p = nullptr;
+  array.m_count = 0;
   }
 
 //---------------------------------------------------------------------------------------
@@ -370,11 +384,27 @@ AVCompactArray<_ElementType, _KeyType, _CompareClass> & AVCompactArray<_ElementT
   if (length > this->m_count)
     {
     tAVCompactArrayBase::free_array(this->m_array_p);
-    this->m_array_p = tAVCompactArrayBase::alloc_array(this->m_count);
+    this->m_array_p = tAVCompactArrayBase::alloc_array(length);
     }
 
   this->m_count = length;
   ::memcpy(this->m_array_p, array.m_array_p, length * sizeof(_ElementType));
+
+  return *this;
+  }
+
+//---------------------------------------------------------------------------------------
+// Move operator
+template<class _ElementType, class _KeyType, class _CompareClass>
+AVCompactArray<_ElementType, _KeyType, _CompareClass> & AVCompactArray<_ElementType, _KeyType, _CompareClass>::operator=(
+  tAVCompactArray && array
+  )
+  {
+  this->empty();
+  this->m_array_p = array.m_array_p;
+  this->m_count = array.m_count;
+  array.m_array_p = nullptr;
+  array.m_count = 0;
 
   return *this;
   }
@@ -2049,8 +2079,7 @@ int AVCompactArray<_ElementType, _KeyType, _CompareClass>::sort_compare(
   const void * rhs_p
   )
   {
-  return A_INT_AS_DIFF32(
-    _CompareClass::comparison(**((_ElementType **)lhs_p), **((_ElementType **)rhs_p)));
+  return int(_CompareClass::comparison(**((_ElementType **)lhs_p), **((_ElementType **)rhs_p)));
   }
 
 
@@ -2069,6 +2098,14 @@ inline AVCompactArrayLogical<_ElementType, _KeyType>::AVCompactArrayLogical()
 // Author(s):    Conan Reis
 template<class _ElementType, class _KeyType>
 inline AVCompactArrayLogical<_ElementType, _KeyType>::AVCompactArrayLogical(const AVCompactArray<_ElementType, _KeyType, ACompareLogical<_KeyType> > & array) :
+  tAVCompactArray(array)
+  {
+  }
+
+//---------------------------------------------------------------------------------------
+// Author(s):    Conan Reis
+template<class _ElementType, class _KeyType>
+inline AVCompactArrayLogical<_ElementType, _KeyType>::AVCompactArrayLogical(AVCompactArray<_ElementType, _KeyType, ACompareLogical<_KeyType> > && array) :
   tAVCompactArray(array)
   {
   }
@@ -2160,6 +2197,14 @@ inline AVCompactArrayFree<_ElementType, _KeyType, _CompareClass>::AVCompactArray
 // Author(s):    Conan Reis
 template<class _ElementType, class _KeyType, class _CompareClass>
 inline AVCompactArrayFree<_ElementType, _KeyType, _CompareClass>::AVCompactArrayFree(const AVCompactArray<_ElementType, _KeyType, _CompareClass> & array) :
+  tAVCompactArray(array)
+  {
+  }
+
+//---------------------------------------------------------------------------------------
+// Author(s):    Conan Reis
+template<class _ElementType, class _KeyType, class _CompareClass>
+inline AVCompactArrayFree<_ElementType, _KeyType, _CompareClass>::AVCompactArrayFree(AVCompactArray<_ElementType, _KeyType, _CompareClass> && array) :
   tAVCompactArray(array)
   {
   }

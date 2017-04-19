@@ -48,7 +48,7 @@ class SK_API SkDataInstance : public SkInstance
 
     SK_NEW_OPERATORS(SkDataInstance);
     SkDataInstance(SkClass * class_p);
-    virtual ~SkDataInstance();
+    virtual ~SkDataInstance() override;
 
 
   // Methods

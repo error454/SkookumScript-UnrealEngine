@@ -590,16 +590,13 @@
 #define A_SWAP32(_value1, _value2) {*(uint32_t *)&_value1 ^= *(uint32_t *)&_value2; *(uint32_t *)&_value2 ^= *(uint32_t *)&_value1; *(uint32_t *)&_value1 ^= *(uint32_t *)&_value2;}
 
 // Converts sized signed integer to AEquate_less(-1), AEquate_equal(0), AEquate_greater(1)
-#define A_INT32_AS_EQUATE(_num)  static_cast<eAEquate>((_num > 0) ? 1 : _num >> 31)
-#define A_INT64_AS_EQUATE(_num)  static_cast<eAEquate>((_num > 0) ? 1 : _num >> 63)
+#define A_INT32_AS_EQUATE(_num)  static_cast<eAEquate>(((_num) > 0) ? 1 : (_num) >> 31)
+#define A_INT64_AS_EQUATE(_num)  static_cast<eAEquate>(((_num) > 0) ? 1 : (_num) >> 63)
 #ifdef A_BITS64
   // Converts system sized integer to AEquate_less(-1), AEquate_equal(0), AEquate_greater(1)
   #define A_INT_AS_EQUATE(_num)  A_INT64_AS_EQUATE(_num)
-  // Ensures difference works as 32-bit value
-  #define A_INT_AS_DIFF32(_num)  ((_num > 0) ? 1 : _num >> 63)
 #else
   #define A_INT_AS_EQUATE(_num)  A_INT32_AS_EQUATE(_num)
-  #define A_INT_AS_DIFF32(_num)  _num
 #endif
 
 

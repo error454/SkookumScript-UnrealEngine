@@ -337,8 +337,7 @@ APCompactArray<_ElementType, _KeyType, _CompareClass> & APCompactArray<_ElementT
   if (length != this->m_count)
     {
     tAPArrayBase::free_array(this->m_array_p);
-    this->m_count   = AMemory::request_pointer_count(length);
-    this->m_array_p = tAPArrayBase::alloc_array(this->m_count);
+    this->m_array_p = tAPArrayBase::alloc_array(length);
     }
 
   this->m_count = length;
@@ -2046,8 +2045,7 @@ int APCompactArray<_ElementType, _KeyType, _CompareClass>::sort_compare(
   const void * rhs_p
   )
   {
-  return A_INT_AS_DIFF32(
-    _CompareClass::comparison(**((_ElementType **)lhs_p), **((_ElementType **)rhs_p)));
+  return int(_CompareClass::comparison(**((_ElementType **)lhs_p), **((_ElementType **)rhs_p)));
   }
 
 

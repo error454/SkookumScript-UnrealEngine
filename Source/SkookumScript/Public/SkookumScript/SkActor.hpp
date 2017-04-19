@@ -54,7 +54,7 @@ class SK_API SkActor :
     SK_NEW_OPERATORS(SkActor);
 
     SkActor(const ASymbol & name = ASymbol::get_null(), SkActorClass * class_p = nullptr, bool add_to_instance_list = true);
-    virtual ~SkActor();
+    virtual ~SkActor() override;
 
   // Accessor Methods
 

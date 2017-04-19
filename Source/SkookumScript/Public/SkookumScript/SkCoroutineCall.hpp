@@ -63,9 +63,9 @@ class SK_API SkCoroutineCall : public SkInvokeBase
 
     // Overriding from SkInvokeBase
 
-    virtual eSkInvokeType   get_invoke_type() const;
-    virtual SkInvokedBase * invoke_call(SkInstance * receiver_p, SkObjectBase * scope_p, SkInvokedBase * caller_p, SkInstance ** result_pp) const;
-    virtual void            track_memory(AMemoryStats * mem_stats_p) const;
+    virtual eSkInvokeType   get_invoke_type() const override;
+    virtual SkInvokedBase * invoke_call(SkInstance * receiver_p, SkObjectBase * scope_p, SkInvokedBase * caller_p, SkInstance ** result_pp) const override;
+    virtual void            track_memory(AMemoryStats * mem_stats_p) const override;
 
     // Special
 

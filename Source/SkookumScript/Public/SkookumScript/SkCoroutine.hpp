@@ -57,12 +57,12 @@ class SK_API SkCoroutineBase : public SkInvokableBase
     #endif
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code_params() const;
+      virtual AString as_code_params() const override;
     #endif
 
   // Methods
 
-    virtual bool is_class_member() const  { return false; }
+    virtual bool is_class_member() const override  { return false; }
     virtual bool on_update(SkInvokedCoroutine * data_p) const = 0;
     virtual void track_memory(AMemoryStats * mem_stats_p) const = 0;
 
@@ -89,7 +89,7 @@ class SK_API SkCoroutine : public SkCoroutineBase
 
     SkCoroutine(const ASymbol & name, SkClass * scope_p, uint32_t invoked_data_array_size, uint32_t annotation_flags) : SkCoroutineBase(name, scope_p, invoked_data_array_size, annotation_flags), m_expr_p(nullptr) {}
     SkCoroutine(const ASymbol & name, SkClass * scope_p, SkParameters * params_p, uint32_t invoked_data_array_size, uint32_t annotation_flags, SkExpressionBase * body_p = nullptr) : SkCoroutineBase(name, scope_p, params_p, invoked_data_array_size, annotation_flags), m_expr_p(body_p) {}
-    virtual ~SkCoroutine();
+    virtual ~SkCoroutine() override;
 
   // Converter Methods
 
@@ -195,17 +195,17 @@ class SK_API SkCoroutineMthd : public SkCoroutineBase
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
 
   // Methods
 
-    virtual eSkInvokable get_invoke_type() const;
-    virtual bool         is_bound() const;
-    virtual bool         on_update(SkInvokedCoroutine * data_p) const;
+    virtual eSkInvokable get_invoke_type() const override;
+    virtual bool         is_bound() const override;
+    virtual bool         on_update(SkInvokedCoroutine * data_p) const override;
     void                 set_update(tSkCoroutineMthd update_m);
-    virtual void         track_memory(AMemoryStats * mem_stats_p) const;
+    virtual void         track_memory(AMemoryStats * mem_stats_p) const override;
 
   };  // SkCoroutineMthd
 
@@ -257,18 +257,18 @@ class SK_API SkCoroutineFunc : public SkCoroutineBase
 
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_code() const;
+      virtual AString as_code() const override;
     #endif
 
 
   // Methods
 
-    virtual eSkInvokable get_invoke_type() const;
-    virtual bool         is_bound() const;
-    virtual bool         is_placeholder();
-    virtual bool         on_update(SkInvokedCoroutine * data_p) const;
+    virtual eSkInvokable get_invoke_type() const override;
+    virtual bool         is_bound() const override;
+    virtual bool         is_placeholder() override;
+    virtual bool         on_update(SkInvokedCoroutine * data_p) const override;
     void                 set_update(tSkCoroutineFunc update_f);
-    virtual void         track_memory(AMemoryStats * mem_stats_p) const;
+    virtual void         track_memory(AMemoryStats * mem_stats_p) const override;
 
   // Atomic Methods
 

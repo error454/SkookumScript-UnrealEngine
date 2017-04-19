@@ -298,7 +298,7 @@ class SkLoop : public SkExpressionBase
     SK_NEW_OPERATORS(SkLoop);
 
     SkLoop(SkExpressionBase * expr_p = nullptr, const ASymbol & name = ASymbol::get_null() ) : m_name(name), m_expr_p(expr_p) {}
-    virtual ~SkLoop();
+    virtual ~SkLoop() override;
 
   // Converter Methods
 
@@ -380,7 +380,7 @@ class SkLoopExit : public SkExpressionBase
     SK_NEW_OPERATORS(SkLoopExit);
 
     SkLoopExit(const ASymbol & name = ASymbol::get_null()) : m_name(name) {}
-    virtual ~SkLoopExit();
+    virtual ~SkLoopExit() override;
 
   // Converter Methods
 
@@ -434,7 +434,7 @@ class SkConversion : public SkExpressionBase
     SK_NEW_OPERATORS(SkConversion);
 
     SkConversion(SkClass * type_p, int16_t vtable_index, SkExpressionBase * expr_p);
-    virtual ~SkConversion();
+    virtual ~SkConversion() override;
 
   // Converter Methods
 
@@ -505,7 +505,7 @@ class SkCast : public SkExpressionBase
     SK_NEW_OPERATORS(SkCast);
 
     SkCast(SkClassDescBase * type_p, SkExpressionBase * expr_p);
-    virtual ~SkCast();
+    virtual ~SkCast() override;
 
   // Converter Methods
 

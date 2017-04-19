@@ -21,7 +21,9 @@
 //=======================================================================================
 
 #include "SkUEBlueprintInterface.hpp"
+#include "VectorMath/SkVector2.hpp"
 #include "VectorMath/SkVector3.hpp"
+#include "VectorMath/SkVector4.hpp"
 #include "VectorMath/SkRotationAngles.hpp"
 #include "VectorMath/SkTransform.hpp"
 #include "Engine/SkUEEntity.hpp"
@@ -49,7 +51,9 @@ SkUEBlueprintInterface::SkUEBlueprintInterface()
   SK_ASSERTX(!ms_singleton_p, "There can be only one instance of this class.");
   ms_singleton_p = this;
 
+  m_struct_vector2_p          = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Vector2D"), false);
   m_struct_vector3_p          = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Vector"), false);
+  m_struct_vector4_p          = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Vector4"), false);
   m_struct_rotation_angles_p  = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Rotator"), false);
   m_struct_transform_p        = FindObjectChecked<UScriptStruct>(UObject::StaticClass()->GetOutermost(), TEXT("Transform"), false);
   }
@@ -410,7 +414,7 @@ bool SkUEBlueprintInterface::expose_binding_entry(uint32_t binding_index, tSkUEO
   bool anything_changed = false;
 
   BindingEntry * binding_entry_p = m_binding_entry_array[binding_index];
-  if (binding_entry_p)
+  if (binding_entry_p && binding_entry_p->m_sk_invokable_p)
     {
     // Only expose entries that have not already been exposed
     if (!binding_entry_p->m_ue_function_p.IsValid())
@@ -580,6 +584,7 @@ void SkUEBlueprintInterface::exec_method(FFrame & stack, void * const result_p, 
         {
         (*function_entry.m_result_getter)(result_p, result_instance_p, function_entry.m_result_type);
         }
+      result_instance_p->dereference();
       }
 
   SKDEBUG_HOOK_SCRIPT_EXIT();
@@ -930,27 +935,38 @@ UProperty * SkUEBlueprintInterface::build_ue_param(UFunction * ue_function_p, Sk
     k2_param_fetcher_p = &fetch_k2_param_string;
     sk_value_getter_p = &get_sk_value_string;
     }
+  else if (sk_parameter_class_p == SkVector2::get_class())
+    {
+    property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+    static_cast<UStructProperty *>(property_p)->Struct = m_struct_vector2_p;
+    k2_param_fetcher_p = &fetch_k2_param_vector2;
+    sk_value_getter_p = &get_sk_value_vector2;
+    }
   else if (sk_parameter_class_p == SkVector3::get_class())
     {
-    UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
-    struct_property_p->Struct = m_struct_vector3_p;
-    property_p = struct_property_p;
+    property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+    static_cast<UStructProperty *>(property_p)->Struct = m_struct_vector3_p;
     k2_param_fetcher_p = &fetch_k2_param_vector3;
     sk_value_getter_p = &get_sk_value_vector3;
     }
+  else if (sk_parameter_class_p == SkVector4::get_class())
+    {
+    property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+    static_cast<UStructProperty *>(property_p)->Struct = m_struct_vector4_p;
+    k2_param_fetcher_p = &fetch_k2_param_vector4;
+    sk_value_getter_p = &get_sk_value_vector4;
+    }
   else if (sk_parameter_class_p == SkRotationAngles::get_class())
     {
-    UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
-    struct_property_p->Struct = m_struct_rotation_angles_p;
-    property_p = struct_property_p;
+    property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+    static_cast<UStructProperty *>(property_p)->Struct = m_struct_rotation_angles_p;
     k2_param_fetcher_p = &fetch_k2_param_rotation_angles;
     sk_value_getter_p = &get_sk_value_rotation_angles;
     }
   else if (sk_parameter_class_p == SkTransform::get_class())
     {
-    UStructProperty * struct_property_p = NewObject<UStructProperty>(ue_function_p, param_name);
-    struct_property_p->Struct = m_struct_transform_p;
-    property_p = struct_property_p;
+    property_p = NewObject<UStructProperty>(ue_function_p, param_name);
+    static_cast<UStructProperty *>(property_p)->Struct = m_struct_transform_p;
     k2_param_fetcher_p = &fetch_k2_param_transform;
     sk_value_getter_p = &get_sk_value_transform;
     }
@@ -1066,11 +1082,29 @@ SkInstance * SkUEBlueprintInterface::fetch_k2_param_string(FFrame & stack, const
 
 //---------------------------------------------------------------------------------------
 
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector2(FFrame & stack, const TypedName & typed_name)
+  {
+  FVector2D value(ForceInitToZero);
+  stack.StepCompiledIn<UStructProperty>(&value);
+  return SkVector2::new_instance(value);
+  }
+
+//---------------------------------------------------------------------------------------
+
 SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector3(FFrame & stack, const TypedName & typed_name)
   {
   FVector value(ForceInitToZero);
   stack.StepCompiledIn<UStructProperty>(&value);
   return SkVector3::new_instance(value);
+  }
+
+//---------------------------------------------------------------------------------------
+
+SkInstance * SkUEBlueprintInterface::fetch_k2_param_vector4(FFrame & stack, const TypedName & typed_name)
+  {
+  FVector4 value(ForceInitToZero);
+  stack.StepCompiledIn<UStructProperty>(&value);
+  return SkVector4::new_instance(value);
   }
 
 //---------------------------------------------------------------------------------------
@@ -1165,10 +1199,26 @@ uint32_t SkUEBlueprintInterface::get_sk_value_string(void * const result_p, SkIn
 
 //---------------------------------------------------------------------------------------
 
+uint32_t SkUEBlueprintInterface::get_sk_value_vector2(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
+  {
+  *((FVector2D *)result_p) = value_p->as<SkVector2>();
+  return sizeof(FVector2D);
+  }
+
+//---------------------------------------------------------------------------------------
+
 uint32_t SkUEBlueprintInterface::get_sk_value_vector3(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
   {
   *((FVector *)result_p) = value_p->as<SkVector3>();
   return sizeof(FVector);
+  }
+
+//---------------------------------------------------------------------------------------
+
+uint32_t SkUEBlueprintInterface::get_sk_value_vector4(void * const result_p, SkInstance * value_p, const TypedName & typed_name)
+  {
+  *((FVector4 *)result_p) = value_p->as<SkVector4>();
+  return sizeof(FVector4);
   }
 
 //---------------------------------------------------------------------------------------

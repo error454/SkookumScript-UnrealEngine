@@ -51,7 +51,7 @@
 
 static SkUEEngineGeneratedBindings s_engine_generated_bindings;
 static bool s_engine_ue_types_registered = false;
-static bool s_project_ue_types_registered = false;
+static SkUEBindingsInterface * s_project_ue_types_registered_p = nullptr;
 
 //=======================================================================================
 // SkUEBindings Methods
@@ -75,10 +75,10 @@ void SkUEBindings::ensure_static_ue_types_registered(SkUEBindingsInterface * pro
 
     s_engine_ue_types_registered = true;
     }
-  if (!s_project_ue_types_registered && project_generated_bindings_p)
+  if (project_generated_bindings_p && project_generated_bindings_p != s_project_ue_types_registered_p)
     {
     project_generated_bindings_p->register_static_ue_types();
-    s_project_ue_types_registered = true;
+    s_project_ue_types_registered_p = project_generated_bindings_p;
     }
   }
 

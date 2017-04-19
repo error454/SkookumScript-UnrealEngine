@@ -85,6 +85,8 @@ class SK_API SkInvokableBase : public SkQualifier
       void               get_expr_span(const SkExpressionBase & expr, uint32_t * idx_begin_p, uint32_t * idx_end_p) const;
       eSkMember          get_member_type() const;
       eAIterateResult    iterate_expressions(SkApplyExpressionBase * apply_expr_p);
+      const tSkAkas &    get_akas() const { return m_akas; }
+      void               set_akas(tSkAkas && akas) { m_akas = akas; }
     #endif
 
     AString                           as_string_name(bool qualified = true) const;
@@ -116,6 +118,10 @@ class SK_API SkInvokableBase : public SkQualifier
     uint16_t              m_invoked_data_array_size; // How many entries we need in data storage array in the invoked method/coroutine
     uint16_t              m_user_data;               // Custom data storage to be utilized by the engine integration
     uint32_t              m_annotation_flags;        // Which annotations are present on this invokable
+
+  #if (SKOOKUM & SK_DEBUG)
+    tSkAkas               m_akas;                    // Alternative names ("aliases") for this invokable (used just in IDE)
+  #endif
 
     // Future: ADebug / content creation data structure for parameter descriptions
 

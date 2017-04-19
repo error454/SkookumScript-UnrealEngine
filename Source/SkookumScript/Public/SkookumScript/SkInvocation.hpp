@@ -155,7 +155,7 @@ class SK_API SkInvocation : public SkExpressionBase
     SK_NEW_OPERATORS(SkInvocation);
 
     SkInvocation(SkInvokeBase * call_p, SkExpressionBase * receiver_p = nullptr);
-    virtual ~SkInvocation();
+    virtual ~SkInvocation() override;
 
   // Converter Methods
 
@@ -237,7 +237,7 @@ class SK_API SkInvokeSync : public SkInvocation
 	SK_NEW_OPERATORS(SkInvokeSync);
 
     SkInvokeSync(SkInvokeBase * call_p, SkExpressionBase * receiver_p = nullptr) : SkInvocation(call_p, receiver_p) {}
-    virtual ~SkInvokeSync()  {}
+    virtual ~SkInvokeSync() override  {}
 
   // Converter Methods
 
@@ -296,7 +296,7 @@ class SK_API SkInvokeRace : public SkInvocation
 	SK_NEW_OPERATORS(SkInvokeRace);
 
     SkInvokeRace(SkInvokeBase * call_p, SkExpressionBase * receiver_p = nullptr) : SkInvocation(call_p, receiver_p) {}
-    virtual ~SkInvokeRace()  {}
+    virtual ~SkInvokeRace() override  {}
 
   // Converter Methods
 
@@ -346,7 +346,7 @@ class SK_API SkInvokeCascade : public SkExpressionBase
     SK_NEW_OPERATORS(SkInvokeCascade);
 
     SkInvokeCascade(SkExpressionBase * receiver_p = nullptr) : m_receiver_p(receiver_p) {}
-    virtual ~SkInvokeCascade();
+    virtual ~SkInvokeCascade() override;
 
   // Converter Methods
 
@@ -427,7 +427,7 @@ class SK_API SkInstantiate : public SkExpressionBase
     SK_NEW_OPERATORS(SkInstantiate);
 
     SkInstantiate(SkClass * class_p, SkMethodCallBase * ctor_p) : m_class_p(class_p), m_ctor_p(ctor_p) {}
-    virtual ~SkInstantiate();
+    virtual ~SkInstantiate() override;
 
   // Converter Methods
 
@@ -499,7 +499,7 @@ class SK_API SkCopyInvoke : public SkExpressionBase
 
     SkCopyInvoke(SkClass * class_p, SkMethodCallBase * ctor_p, SkMethodCallBase * method_p) :
       m_class_p(class_p), m_ctor_p(ctor_p), m_method_p(method_p) {}
-    virtual ~SkCopyInvoke();
+    virtual ~SkCopyInvoke() override;
 
   // Converter Methods
 

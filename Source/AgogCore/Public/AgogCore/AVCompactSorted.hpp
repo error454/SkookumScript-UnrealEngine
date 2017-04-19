@@ -1607,8 +1607,7 @@ int AVCompactSorted<_ElementType, _KeyType, _CompareClass>::sort_compare(
   const void * rhs_p
   )
   {
-  return A_INT_AS_DIFF32(
-    _CompareClass::comparison(*((_ElementType *)lhs_p), *((_ElementType *)rhs_p)));
+  return int(_CompareClass::comparison(*((_ElementType *)lhs_p), *((_ElementType *)rhs_p)));
   }
 
 

@@ -53,10 +53,6 @@ TMap<SkClassDescBase*, TWeakObjectPtr<UBlueprint>>  SkUEClassBindingHelper::ms_d
 TMap<UBlueprint*, SkClass*>                         SkUEClassBindingHelper::ms_dynamic_class_map_u2s;
 #endif
 
-#if WITH_EDITORONLY_DATA
-FSkookumScriptRuntimeGenerator *                    SkUEClassBindingHelper::ms_runtime_generator_p;
-#endif
-
 int32_t                                             SkUEClassBindingHelper::ms_world_data_idx = -1;
 
 //---------------------------------------------------------------------------------------
@@ -792,22 +788,7 @@ UClass * SkUEClassBindingHelper::add_dynamic_class_mapping(SkClassDescBase * sk_
   UBlueprint * blueprint_p = FindObject<UBlueprint>(ANY_PACKAGE, *class_name);
   if (!blueprint_p)
     {
-  #if 0 // Demand-loading of Blueprint assets is asking for trouble - disabled
-    // If we still can't find the blueprint, try to load it
-    if (ms_runtime_generator_p)
-      {
-      bool class_deleted = false;
-      blueprint_p = ms_runtime_generator_p->load_blueprint_asset(AStringToFString(sk_class_desc_p->get_key_class()->get_class_path_str(ms_runtime_generator_p->get_overlay_path_depth())), &class_deleted);
-      if (class_deleted)
-        {
-        // Make class inert until we reloaded a new binary without the class
-        sk_class_p->clear_members();
-        }
-      }
-    if (!blueprint_p) return nullptr;
-  #else
     return nullptr;
-  #endif
     }
 
   // Add to map of known class equivalences

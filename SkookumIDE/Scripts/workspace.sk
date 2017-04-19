@@ -36,7 +36,6 @@ bob := 7
 // re-binds bob to "Hello World!" - bob type is now a String!
 bob : "Hello World!"  
 
-
 //-----------------------------------------
 // Randomness and types
 

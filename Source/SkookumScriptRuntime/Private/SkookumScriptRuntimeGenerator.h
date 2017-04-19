@@ -58,32 +58,34 @@ class FSkookumScriptRuntimeGenerator : public FSkookumScriptGeneratorBase
 
     // Methods
 
-                  FSkookumScriptRuntimeGenerator(ISkookumScriptRuntimeInterface * runtime_interface_p);
-                  ~FSkookumScriptRuntimeGenerator();
+                   FSkookumScriptRuntimeGenerator(ISkookumScriptRuntimeInterface * runtime_interface_p);
+                   ~FSkookumScriptRuntimeGenerator();
 
-    FString       get_project_file_path();
-    FString       get_default_project_file_path();
-    int32         get_overlay_path_depth() const;
-    void          generate_all_class_script_files();
-    FString       make_project_editable();
-    UBlueprint *  load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p);
+    eSkProjectMode get_project_mode() const { return m_project_mode; }
+    FString        get_project_file_path();
+    FString        get_default_project_file_path();
+    int32          get_overlay_path_depth() const;
+    void           delete_all_class_script_files();
+    void           generate_all_class_script_files();
+    FString        make_project_editable();
+    UBlueprint *   load_blueprint_asset(const FString & class_path, bool * sk_class_deleted_p);
 
-    void          generate_class_script_files(UClass * ue_class_p, bool generate_data, bool even_if_not_game_class, bool check_if_reparented);
-    void          rename_class_script_files(UClass * ue_class_p, const FString & old_class_name);
-    void          rename_class_script_files(UClass * ue_class_p, const FString & old_class_name, const FString & new_class_name);
-    void          delete_class_script_files(UClass * ue_class_p);
-    void          generate_used_class_script_files();
+    void           generate_class_script_files(UClass * ue_class_p, bool generate_data, bool even_if_not_game_class, bool check_if_reparented);
+    void           rename_class_script_files(UClass * ue_class_p, const FString & old_class_name);
+    void           rename_class_script_files(UClass * ue_class_p, const FString & old_class_name, const FString & new_class_name);
+    void           delete_class_script_files(UClass * ue_class_p);
+    void           generate_used_class_script_files();
 
     // FSkookumScriptGeneratorBase interface implementation
 
-    virtual bool  can_export_property(UProperty * property_p, int32 include_priority, uint32 referenced_flags) override final;
-    virtual void  on_type_referenced(UField * type_p, int32 include_priority, uint32 referenced_flags) override final;
-    virtual void  report_error(const FString & message) override final;
+    virtual bool   can_export_property(UProperty * property_p, int32 include_priority, uint32 referenced_flags) override final;
+    virtual void   on_type_referenced(UField * type_p, int32 include_priority, uint32 referenced_flags) override final;
+    virtual void   report_error(const FString & message) override final;
 
   protected:
 
-    void          initialize_paths();
-    void          set_overlay_path();
+    void           initialize_paths();
+    void           set_overlay_path();
 
     // Types
 
@@ -93,13 +95,15 @@ class FSkookumScriptRuntimeGenerator : public FSkookumScriptGeneratorBase
 
     ISkookumScriptRuntimeInterface * m_runtime_interface_p;
 
-    FString       m_project_file_path;
-    FString       m_default_project_file_path;
+    eSkProjectMode  m_project_mode;
 
-    FString       m_package_name_key;
-    FString       m_package_path_key;
+    FString         m_project_file_path;
+    FString         m_default_project_file_path;
 
-    tUsedClasses  m_used_classes;       // All classes used as types (by parameters, properties etc.)
+    FString         m_package_name_key;
+    FString         m_package_path_key;
+
+    tUsedClasses    m_used_classes;       // All classes used as types (by parameters, properties etc.)
 
   };
 

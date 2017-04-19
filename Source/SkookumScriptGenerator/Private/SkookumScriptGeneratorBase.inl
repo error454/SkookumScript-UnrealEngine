@@ -105,13 +105,18 @@ const FFileHelper::EEncodingOptions::Type FSkookumScriptGeneratorBase::ms_script
 
 //---------------------------------------------------------------------------------------
 
-FString FSkookumScriptGeneratorBase::get_or_create_project_file(const FString & ue_project_directory_path, const TCHAR * project_name_p, bool * created_p)
+FString FSkookumScriptGeneratorBase::get_or_create_project_file(const FString & ue_project_directory_path, const TCHAR * project_name_p, eSkProjectMode * project_mode_p, bool * created_p)
   {
-  // 1) Check permanent location
+  eSkProjectMode project_mode = SkProjectMode_editable;
   bool created = false;
+
+  // 1) Check permanent location
   FString project_file_path = ue_project_directory_path / TEXT("Scripts/Skookum-project.ini");
   if (!FPaths::FileExists(project_file_path))
     {
+    // No project file exists means we are in read only/REPL only mode
+    project_mode = SkProjectMode_read_only;
+
     // 2) Check/create temp location
     // Check temporary location (in `Intermediate` folder)
     FString temp_root_path(ue_project_directory_path / TEXT("Intermediate/SkookumScript"));
@@ -156,6 +161,7 @@ FString FSkookumScriptGeneratorBase::get_or_create_project_file(const FString & 
     IFileManager::Get().Delete(*(binary_path_stem + TEXT(".sk-sym")), false, true, true);
     }
 
+  if (project_mode_p) *project_mode_p = project_mode;
   if (created_p) *created_p = created;
   return project_file_path;
   }

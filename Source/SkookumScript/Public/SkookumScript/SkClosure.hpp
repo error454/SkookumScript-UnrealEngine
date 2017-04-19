@@ -53,19 +53,22 @@ class SK_API SkClosure : public SkInstance
 
   // Methods
 
+    AString             as_string() const;
     SkInstance *        get_receiver() const             { return reinterpret_cast<SkInstance *>(m_user_data.m_data.m_ptr[1]); } // $Revisit - MBreyer HACK
     SkClosureInfoBase * get_info() const                 { return reinterpret_cast<SkClosureInfoBase *>(m_user_data.m_data.m_ptr[0]); } // $Revisit - MBreyer HACK
     uint32_t            get_captured_count() const       { return get_info()->get_captured().get_count(); }
     SkInstance **       get_captured_array() const       { return (SkInstance **)(ptrdiff_t(this) + sizeof(SkClosure)); }
 
     static SkClosure * new_instance(SkClosureInfoBase * closure_info_p, SkInstance * receiver_p);
-    virtual void       delete_this();
+    virtual void       delete_this() override;
 
-    virtual AString as_string_debug() const;
+    #if defined(SK_AS_STRINGS)
+      virtual AString as_string_debug() const override   { return as_string(); }
+    #endif
 
-    virtual eSkObjectType get_obj_type() const  { return SkObjectType_closure; }
-    virtual SkInstance *  get_topmost_scope() const;
-    virtual void          on_no_references();
+    virtual eSkObjectType get_obj_type() const override  { return SkObjectType_closure; }
+    virtual SkInstance *  get_topmost_scope() const override;
+    virtual void          on_no_references() override;
 
   //---------------------------------------------------------------------------------------
   // Evaluates the closure as a method with 0 or more arguments and returns immediately

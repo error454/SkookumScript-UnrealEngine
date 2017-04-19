@@ -78,7 +78,7 @@ class ACompareMethod : public ACompareBase<_ElementType>
 
   // Non-Modifying Methods
 
-    virtual ACompareBase<_ElementType> * copy_new() const;
+    virtual ACompareBase<_ElementType> * copy_new() const override;
 
   protected:
   // Data Members

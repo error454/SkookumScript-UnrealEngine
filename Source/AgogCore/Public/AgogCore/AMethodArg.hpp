@@ -156,9 +156,9 @@ class AMethodArgRtn : public AFunctionArgRtnBase<_ArgType, _ReturnType>
 
   // Non-Modifying Methods
 
-    virtual tAFunctionArgRtnBase * copy_new() const;
+    virtual tAFunctionArgRtnBase * copy_new() const override;
 
-	virtual bool is_invokable() const  { return m_owner_p && m_method_p; }
+	virtual bool is_invokable() const override  { return m_owner_p && m_method_p; }
 
   protected:
   // Data Members

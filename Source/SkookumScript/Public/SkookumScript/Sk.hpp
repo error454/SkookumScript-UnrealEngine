@@ -27,7 +27,9 @@
 //=======================================================================================
 
 #include <AgogCore/AgogCore.hpp>
+#include <AgogCore/AString.hpp>
 #include <AgogCore/ASymbol.hpp>
+#include <AgogCore/AVCompactArray.hpp>
 
 //=======================================================================================
 // Global Macros / Defines
@@ -293,6 +295,10 @@ enum eSkAnnotationTarget
   SkAnnotationTarget_invokable,
   SkAnnotationTarget_instance_data,
   };
+
+//---------------------------------------------------------------------------------------
+// List of a.k.a. (also-known-as) names for invokables
+typedef AVCompactArray<AString> tSkAkas;
 
 //---------------------------------------------------------------------------------------
 // Notes      SkookumScript main class

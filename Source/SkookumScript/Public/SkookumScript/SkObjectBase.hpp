@@ -105,7 +105,7 @@ class SK_API SkObjectBase
       bool is_valid_id() const                         { return m_ptr_id && (m_ptr_id <= ms_ptr_id_prev); }
 
       virtual eSkObjectType get_obj_type() const = 0;
-      virtual bool          is_mind() const                 { return false; }
+      virtual bool          is_mind() const            { return false; }
 
     // Data methods
 

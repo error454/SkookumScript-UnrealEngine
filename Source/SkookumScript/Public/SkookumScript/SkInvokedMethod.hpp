@@ -60,20 +60,20 @@ class SK_API SkInvokedMethod : public SkInvokedContextBase
 
     // Overriding from SkInvokedBase
 
-      virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort);
-      virtual void pending_return(bool completed = true);
+      virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort) override;
+      virtual void pending_return(bool completed = true) override;
 
-      virtual eSkMember         get_invoke_type() const;
-      virtual SkInvokableBase * get_invokable() const;
-      virtual SkMind *          get_updater() const;
+      virtual eSkMember         get_invoke_type() const override;
+      virtual SkInvokableBase * get_invokable() const override;
+      virtual SkMind *          get_updater() const override;
 
       #if defined(SK_AS_STRINGS)
-        virtual AString  as_string_debug() const;
+        virtual AString  as_string_debug() const override;
       #endif
 
     // Inherited from SkObjectBase -> SkInvokedContextBase
 
-      virtual SkInstance * as_new_instance() const;
+      virtual SkInstance * as_new_instance() const override;
 
   // Class Methods
 
@@ -117,8 +117,8 @@ class SkInvokedDeferrableMethod : public SkInvokedMethod
 
     // Overriding from SkInvokedBase
 
-      virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort);
-      virtual void pending_return(bool completed = true);
+      virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort) override;
+      virtual void pending_return(bool completed = true) override;
   };
 
 
@@ -139,8 +139,8 @@ class SkIExternalMethodCallWrapper : public SkInvokedDeferrableMethod
 
   // Overriding from SkInvokedBase
 
-    virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort);
-    virtual void pending_return(bool completed = true);
+    virtual void abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort) override;
+    virtual void pending_return(bool completed = true) override;
 
   // Methods
 

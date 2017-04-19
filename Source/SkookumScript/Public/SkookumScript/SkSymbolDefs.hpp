@@ -310,6 +310,7 @@ const uint32_t ASymbolId_xor                = 0xf9cd8782;
 
   // Annotations
 const uint32_t ASymbolId_raw                = 0x1ab3db55;
+const uint32_t ASymbolId_aka                = 0x0ae89ba7;
 const uint32_t ASymbolId_reflected_cpp      = 0xd46e9678;
 const uint32_t ASymbolId_reflected_data     = 0x52e21d21;
 const uint32_t ASymbolId_blueprint          = 0x2645e266; // $Revisit MBreyer make this data driven 

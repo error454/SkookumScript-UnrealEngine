@@ -72,6 +72,9 @@ class SkUERemote : public SkRemoteRuntimeBase
     void                      clear_load_compiled_binaries_requested()    { m_remote_binaries = CompiledState_unknown; }
     bool                      is_compiled_binaries_have_errors() const    { return m_remote_binaries == CompiledState_errors; }
 
+    void                      set_last_connected_to_ide(bool last_connected_to_ide) { m_last_connected_to_ide = last_connected_to_ide; }
+    bool                      get_last_connected_to_ide() const                     { return m_last_connected_to_ide; }
+
     //---------------------------------------------------------------------------------------
     // Determines amount of time elapsed time in seconds (from some consistent start time at
     // or before its first call like: start of system, start of app launch, etc.)
@@ -124,6 +127,7 @@ class SkUERemote : public SkRemoteRuntimeBase
     virtual void              on_cmd_make_editable() override;
     virtual void              on_cmd_freshen_compiled_reply(eCompiledState state) override;
     virtual void              on_class_updated(SkClass * class_p) override;
+    virtual void              on_connect_change(eConnectState old_state) override;
 
   // Data Members
 
@@ -140,6 +144,9 @@ class SkUERemote : public SkRemoteRuntimeBase
 
     // Generator so we can get project information
     FSkookumScriptRuntimeGenerator * m_runtime_generator_p;
+
+    // If we were recently connected to the IDE
+    bool  m_last_connected_to_ide;
 
   };  // SkUERemote
 

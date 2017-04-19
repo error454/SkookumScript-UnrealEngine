@@ -123,20 +123,20 @@ class SK_API SkInvokedCoroutine :
 
     // Overriding from SkInvokedBase
 
-    virtual SkInstance *      as_new_instance() const;
-    virtual void              abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort);
-    virtual void              pending_return(bool completed = true);
-    virtual void              pending_schedule(bool completed = true);
-    virtual eSkMember         get_invoke_type() const;
-    virtual SkInvokableBase * get_invokable() const;
-    virtual SkMind *          get_updater() const;
+    virtual SkInstance *      as_new_instance() const override;
+    virtual void              abort_invoke(eSkNotify notify_caller = SkNotify_fail, eSkNotifyChild notify_child = SkNotifyChild_abort) override;
+    virtual void              pending_return(bool completed = true) override;
+    void                      pending_schedule(bool completed = true);
+    virtual eSkMember         get_invoke_type() const override;
+    virtual SkInvokableBase * get_invokable() const override;
+    virtual SkMind *          get_updater() const override;
 
     #if (SKOOKUM & SK_DEBUG)
-      virtual bool is_in_use() const                        { return is_valid_id() && ((m_flags & Flag_tracked_mask) != 0u); }
+      virtual bool is_in_use() const override                        { return is_valid_id() && ((m_flags & Flag_tracked_mask) != 0u); }
     #endif
 
     #if defined(SK_AS_STRINGS)
-      virtual AString as_string_debug() const;
+      virtual AString as_string_debug() const override;
     #endif
 
   // Methods

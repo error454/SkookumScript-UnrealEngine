@@ -84,7 +84,7 @@ class ACompare : public ACompareBase<_ElementType>
 
   // Non-Modifying Methods
 
-    virtual tACompareBase * copy_new() const;
+    virtual tACompareBase * copy_new() const override;
 
   protected:
   // Data Members

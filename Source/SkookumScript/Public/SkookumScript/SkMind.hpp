@@ -92,7 +92,7 @@ class SK_API SkMind : public SkClassBindingAbstract<SkMind>, public SkDataInstan
     SK_NEW_OPERATORS(SkMind);
 
     SkMind(SkClass * class_p = nullptr);
-    virtual ~SkMind();
+    virtual ~SkMind() override;
 
   // Accessor Methods
 

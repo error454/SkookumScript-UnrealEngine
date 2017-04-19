@@ -60,11 +60,6 @@ class SKOOKUMSCRIPTRUNTIME_API SkUEClassBindingHelper
       Raw_data_type_extra_mask  = 0x3F,
       };
 
-  #if WITH_EDITORONLY_DATA
-    static FSkookumScriptRuntimeGenerator * get_runtime_generator()                                                     { return ms_runtime_generator_p; }
-    static void                             set_runtime_generator(FSkookumScriptRuntimeGenerator * runtime_generator_p) { ms_runtime_generator_p = runtime_generator_p; }
-  #endif
-
     static UWorld *       get_world(); // Get tha world
     static void           set_world(UWorld * world_p);
 
@@ -187,10 +182,6 @@ class SKOOKUMSCRIPTRUNTIME_API SkUEClassBindingHelper
   #if WITH_EDITORONLY_DATA
     static TMap<UBlueprint*, SkClass*>                        ms_dynamic_class_map_u2s; // Maps Blueprints to their respective SkClasses
     static TMap<SkClassDescBase*, TWeakObjectPtr<UBlueprint>> ms_dynamic_class_map_s2u; // Maps SkClasses to their respective Blueprints
-  #endif
-
-  #if WITH_EDITORONLY_DATA
-    static FSkookumScriptRuntimeGenerator *                   ms_runtime_generator_p;
   #endif
 
     static int32_t      get_world_data_idx();

@@ -155,8 +155,8 @@ class SK_API SkInvokedBase :
     
     // Overriding from SkObjectBase
 
-      virtual SkInvokedContextBase * get_scope_context() const;
-      virtual SkInstance *           get_topmost_scope() const;
+      virtual SkInvokedContextBase * get_scope_context() const override;
+      virtual SkInstance *           get_topmost_scope() const override;
 
     // SkookumScript Atomic Methods
 
@@ -310,8 +310,8 @@ class SK_API SkInvokedContextBase : public SkInvokedBase
       typename _BindingClass::tDataType & this_as() { return get_this()->as<_BindingClass>(); }
 
     #if (SKOOKUM & SK_DEBUG)
-      virtual SkExpressionBase * get_caller_expr() const;
-      virtual SkDebugInfo        get_debug_info() const;
+      virtual SkExpressionBase * get_caller_expr() const override;
+      virtual SkDebugInfo        get_debug_info() const override;
     #endif
 
     #if defined(SK_AS_STRINGS)
@@ -359,9 +359,9 @@ class SK_API SkInvokedContextBase : public SkInvokedBase
 
     // Overriding from SkObjectBase -> SkInvokedBase
 
-      virtual eSkObjectType          get_obj_type() const { return SkObjectType_invoked_context; }
-      virtual SkInvokedContextBase * get_caller_context() const;
-      virtual SkInvokedContextBase * get_scope_context() const;
+      virtual eSkObjectType          get_obj_type() const override { return SkObjectType_invoked_context; }
+      virtual SkInvokedContextBase * get_caller_context() const override;
+      virtual SkInvokedContextBase * get_scope_context() const override;
 
   protected:
      
